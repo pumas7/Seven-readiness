@@ -207,8 +207,19 @@ let DATA = null; // se carga desde data.json
 const GH_USER = "pumas7";
 const GH_REPO = "Seven-readiness";
 const GH_WORKFLOW = "actualizar.yml";
-// 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: reemplazar el texto entre comillas por tu token de GitHub
-const GH_TOKEN = "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";
+// El token NO se guarda en el codigo. Se pide una vez y queda guardado en este navegador.
+function getToken(){
+  let t = localStorage.getItem('gh_token');
+  if(!t){
+    t = prompt('Pega tu token de GitHub (se guarda solo en este navegador, no en la web):');
+    if(t){ localStorage.setItem('gh_token', t.trim()); t = t.trim(); }
+  }
+  return t;
+}
+function borrarToken(){
+  localStorage.removeItem('gh_token');
+  showMsg('<b>Token borrado de este navegador.</b><br>La pr&oacute;xima vez que actualices te lo va a volver a pedir.', 'ok');
+}
 
 function showMsg(text, tipo){
   const m = document.getElementById('updateMsg');
@@ -220,8 +231,9 @@ function showMsg(text, tipo){
 async function dispararActualizacion(){
   const btn = document.getElementById('updateBtn');
   const icon = document.getElementById('btnIcon');
-  if(GH_TOKEN === "PEGAR_TOKEN_ACA"){
-    showMsg('<b>Falta configurar el token.</b><br>Segu&iacute; las instrucciones para pegar tu token de GitHub en el archivo.', 'err');
+  const GH_TOKEN = getToken();
+  if(!GH_TOKEN){
+    showMsg('<b>No se ingres&oacute; ning&uacute;n token.</b><br>Volv&eacute; a tocar el bot&oacute;n y peg&aacute; tu token de GitHub.', 'err');
     return;
   }
   btn.disabled = true;
@@ -243,7 +255,8 @@ async function dispararActualizacion(){
       setTimeout(()=>{ location.reload(true); }, 75000);
     } else {
       const err = await resp.text();
-      showMsg('<b>Hubo un problema.</b><br>C&oacute;digo ' + resp.status + '. Verific&aacute; el token o los permisos.<br><small>' + err.slice(0,150) + '</small>', 'err');
+      if(resp.status === 401){ localStorage.removeItem('gh_token'); }
+      showMsg('<b>Hubo un problema.</b><br>C&oacute;digo ' + resp.status + '. Verific&aacute; el token o los permisos.' + (resp.status===401 ? '<br>El token guardado no sirve, se borr&oacute;: volv&eacute; a tocar el bot&oacute;n para cargar uno nuevo.' : '') + '<br><small>' + err.slice(0,150) + '</small>', 'err');
       btn.disabled = false; icon.innerHTML = '&#128260;';
     }
   } catch(e){
