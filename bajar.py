@@ -5,34 +5,42 @@ Diseñado para correr en GitHub Actions: las credenciales vienen de variables de
 Genera data.json que el tablero (index.html) lee al abrirse.
 """
 import json, subprocess, datetime, os, sys
-
+ 
 # --- Credenciales desde variables de entorno (GitHub Secrets) ---
 CLIENT_ID = os.environ.get("VALD_CLIENT_ID")
 CLIENT_SECRET = os.environ.get("VALD_CLIENT_SECRET")
 TENANT = os.environ.get("VALD_TENANT_ID", "d51dc397-c103-4cb5-8076-ecd5ccac9274")
-
+ 
 if not CLIENT_ID or not CLIENT_SECRET:
     print("ERROR: faltan las variables VALD_CLIENT_ID / VALD_CLIENT_SECRET")
     sys.exit(1)
-
+ 
 FD = "https://prd-use-api-extforcedecks.valdperformance.com"
 NB = "https://prd-use-api-externalnordbord.valdperformance.com"
 DESDE = "2024-01-01T00:00:00.000Z"
-
+ 
 # Grupo SEVENS: nombre -> profileId
 PLAYERS = {
     "Santiago Alvarez Fourcade": "5f5fd3cb-baa4-4989-bdce-b306a6bd471b",
-    "Matteo Graziano": "dd3e8340-ddb6-4dd6-9a9f-b243393ec6aa",
-    "Marcos Moneta": "da3bdbc2-6fd1-4b3c-889b-77281b004d7d",
-    "Joaquin Pellandini": "2935c7bc-f6cf-46b9-9376-d084bba1bdbe",
+    "Martiniano Arrieta": "435762d5-58b0-48a1-903d-712f9620ec2f",
+    "Juan Patricio Batac": "730f56a7-a250-4d2c-bc86-35443b02b22f",
+    "Pedro De Haro": "393271ad-c005-4e28-b5b4-1775644e6708",
     "Sebastian Dubuc": "d7e1341d-c274-406e-8103-9cb767c000c1",
+    "Luciano Gonzalez Rizzoni": "db71bc95-2c88-4c78-99d3-34a6519c9728",
+    "Matteo Graziano": "dd3e8340-ddb6-4dd6-9a9f-b243393ec6aa",
+    "Santiago Mare": "78c12530-5cd3-4ed1-9dff-94530d2e19d4",
+    "Marcos Moneta": "da3bdbc2-6fd1-4b3c-889b-77281b004d7d",
+    "Gregorio Perez Pardo": "687215e3-b505-4bce-bd58-61eb3e292ce6",
+    "Joaquin Pellandini": "2935c7bc-f6cf-46b9-9376-d084bba1bdbe",
+    "Santiago Vera Feld": "1fbbc443-b63a-4e5c-adca-954d8450ec3a",
+    "Santino Zangara": "5fcd704c-10d2-471a-a8b2-1ee9d316f720",
 }
-
+ 
 WANT_CMRJ = ["CMRJ_REBOUND_RSI", "CMRJ_REBOUND_CONTACT_TIME", "CMRJ_REBOUND_ECC_DURATION",
              "CMRJ_REBOUND_JUMP_HEIGHT", "CMRJ_TAKEOFF_JUMP_HEIGHT"]
 WANT_CMJ = ["RSI_MODIFIED", "CONTRACTION_TIME", "ECCENTRIC_PEAK_VELOCITY", "JUMP_HEIGHT", "BODY_WEIGHT"]
-
-
+ 
+ 
 def get_token():
     r = subprocess.run([
         "curl", "-s", "-X", "POST", "https://auth.prd.vald.com/oauth/token",
@@ -46,16 +54,16 @@ def get_token():
         return json.loads(r.stdout)["access_token"]
     except Exception:
         return None
-
-
+ 
+ 
 print("Generando token...")
 TOKEN = get_token()
 if not TOKEN:
     print("ERROR: no se pudo generar el token. Revisar credenciales.")
     sys.exit(1)
 print("Token OK\n")
-
-
+ 
+ 
 def curl(url):
     r = subprocess.run(["curl", "-s", url, "-H", f"Authorization: Bearer {TOKEN}"],
                        capture_output=True, text=True)
@@ -63,8 +71,8 @@ def curl(url):
         return json.loads(r.stdout)
     except Exception:
         return None
-
-
+ 
+ 
 def get_all_fd_tests(pid):
     frm = DESDE
     allt = []
@@ -87,8 +95,8 @@ def get_all_fd_tests(pid):
             break
         frm = last
     return allt
-
-
+ 
+ 
 def get_trial_metrics(testid, wanted):
     d = curl(f"{FD}/v2019q3/teams/{TENANT}/tests/{testid}/trials")
     if not d:
@@ -100,10 +108,10 @@ def get_trial_metrics(testid, wanted):
         if code in wanted and r.get("limb") == "Trial":
             out[code] = r["value"]
     return out
-
-
+ 
+ 
 out = {"generated": datetime.datetime.now().isoformat(), "players": {}}
-
+ 
 for name, pid in PLAYERS.items():
     print(f"Bajando {name}...")
     pdata = {"cmrj": [], "cmj": [], "nordic": []}
@@ -137,8 +145,8 @@ for name, pid in PLAYERS.items():
         pdata[k].sort(key=lambda x: x["date"])
     out["players"][name] = pdata
     print(f"  CMRJ:{len(pdata['cmrj'])} CMJ:{len(pdata['cmj'])} Nordic:{len(pdata['nordic'])}")
-
+ 
 with open("data.json", "w") as f:
     json.dump(out, f, indent=2)
-
+ 
 print("\nLISTO. data.json generado.")
