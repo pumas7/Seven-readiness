@@ -37,7 +37,7 @@ PLAYERS = {
 }
  
 WANT_CMRJ = ["CMRJ_REBOUND_RSI", "CMRJ_REBOUND_CONTACT_TIME", "CMRJ_REBOUND_ECC_DURATION",
-             "CMRJ_REBOUND_JUMP_HEIGHT", "CMRJ_TAKEOFF_JUMP_HEIGHT"]
+             "CMRJ_REBOUND_JUMP_HEIGHT_IMP_MOM", "CMRJ_TAKEOFF_JUMP_HEIGHT_IMP_MOM"]
 WANT_CMJ = ["RSI_MODIFIED", "CONTRACTION_TIME", "ECCENTRIC_PEAK_VELOCITY", "JUMP_HEIGHT", "BODY_WEIGHT"]
  
  
@@ -97,20 +97,11 @@ def get_all_fd_tests(pid):
     return allt
  
  
-def get_trial_metrics(testid, wanted, debug=False):
+def get_trial_metrics(testid, wanted):
     d = curl(f"{FD}/v2019q3/teams/{TENANT}/tests/{testid}/trials")
     if not d:
         return {}
     trials = d if isinstance(d, list) else [d]
-    if debug:
-        # imprime TODOS los codigos disponibles en el primer trial (para verificar nombres)
-        codes = set()
-        for trial in trials:
-            for r in trial.get("results", []):
-                codes.add((r["definition"]["result"], r.get("limb")))
-        print("    [DEBUG codigos disponibles]:")
-        for c in sorted(codes):
-            print("      ", c)
     # acumulo los valores de cada metrica a lo largo de TODAS las reps y promedio
     acc = {}
     for trial in trials:
@@ -124,11 +115,18 @@ def get_trial_metrics(testid, wanted, debug=False):
     for code, vals in acc.items():
         if vals:
             out[code] = round(sum(vals) / len(vals), 4)
+    # renombrar las claves Imp-Mom a las que espera el index.html (sin sufijo)
+    RENAME = {
+        "CMRJ_REBOUND_JUMP_HEIGHT_IMP_MOM": "CMRJ_REBOUND_JUMP_HEIGHT",
+        "CMRJ_TAKEOFF_JUMP_HEIGHT_IMP_MOM": "CMRJ_TAKEOFF_JUMP_HEIGHT",
+    }
+    for old, new in RENAME.items():
+        if old in out:
+            out[new] = out.pop(old)
     return out
  
  
 out = {"generated": datetime.datetime.now().isoformat(), "players": {}}
-_debug_done = False
 
 for name, pid in PLAYERS.items():
     print(f"Bajando {name}...")
@@ -137,11 +135,7 @@ for name, pid in PLAYERS.items():
     for t in fd:
         tt = t["testType"]
         if tt == "CMRJ":
-            _dbg = (not _debug_done and name == "Santiago Alvarez Fourcade")
-            m = get_trial_metrics(t["testId"], WANT_CMRJ, debug=_dbg)
-            if _dbg:
-                _debug_done = True
-                print("    [DEBUG valores promediados]:", m)
+            m = get_trial_metrics(t["testId"], WANT_CMRJ)
             if m:
                 pdata["cmrj"].append({"date": t["recordedDateUtc"][:10], **m})
         elif tt == "CMJ":
