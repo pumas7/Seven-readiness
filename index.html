@@ -274,7 +274,7 @@ const EXPLAIN={
   'CMRJ_REBOUND_RSI':{que:'Indice de fuerza reactiva real del rebote: cu&aacute;nto tiempo vuela en el aire dividido por cu&aacute;nto tiempo pasa en el piso. Es LA medida del rebote: mide el resorte puro.',fatiga:'Si BAJA, perdi&oacute; capacidad reactiva: o vuela menos, o tarda m&aacute;s en el piso. Menos resorte.'},
   'CMRJ_REBOUND_JUMP_HEIGHT':{que:'Cu&aacute;nto salta en el rebote, en cent&iacute;metros.',fatiga:'Si BAJA de forma sostenida, hay menos rendimiento reactivo.'},
   'CMRJ_REBOUND_CONTACT_TIME':{que:'Cu&aacute;nto tiempo pasa en el piso entre que cae y vuelve a saltar. Menos tiempo es mejor (m&aacute;s reactivo).',fatiga:'Si SUBE, se puso m&aacute;s lento en el rebote: se&ntilde;al de fatiga reactiva.'},
-  'CMRJ_REBOUND_ECC_DURATION':{que:'Cu&aacute;nto dura la fase de frenado en el rebote (cuando absorbe el impacto antes de reimpulsar).',fatiga:'Si SUBE, tarda m&aacute;s en frenar y volver a impulsar: se&ntilde;al de fatiga.'},
+  'CMRJ_REBOUND_ECC_DURATION':{que:'Cu&aacute;nto dura la fase de frenado en el rebote (absorci&oacute;n del impacto antes de reimpulsar), en milisegundos. M&eacute;trica informativa.',fatiga:'De referencia: si se alarga mucho, puede indicar que tarda m&aacute;s en frenar y reimpulsar. No dispara sem&aacute;foro por s&iacute; sola.'},
   'asym':{que:'Diferencia de fuerza entre la pierna izquierda y la derecha, en porcentaje. Cerca de 0 significa que est&aacute;n parejas.',fatiga:'Si supera 15% hacia un lado, hay un desequilibrio marcado: es un factor de riesgo de lesi&oacute;n de isquiotibiales.'},
   'torqueNormL':{que:'Fuerza de la pierna IZQUIERDA en el n&oacute;rdico, ajustada al peso del jugador (para poder comparar entre jugadores de distinto tama&ntilde;o).',fatiga:'Si BAJA respecto a lo habitual, hay menos fuerza exc&eacute;ntrica de isquios en esa pierna.'},
   'torqueNormR':{que:'Fuerza de la pierna DERECHA en el n&oacute;rdico, ajustada al peso del jugador.',fatiga:'Si BAJA respecto a lo habitual, hay menos fuerza exc&eacute;ntrica de isquios en esa pierna.'}
@@ -295,7 +295,7 @@ const METRICS={
     {k:'CMRJ_REBOUND_RSI',label:'RSI reactivo (vuelo/contacto)',unit:'',dir:'down',dec:2,primary:true},
     {k:'CMRJ_REBOUND_JUMP_HEIGHT',label:'Altura rebote',unit:'cm',dir:'down',dec:1},
     {k:'CMRJ_REBOUND_CONTACT_TIME',label:'Tiempo de contacto',unit:'s',dir:'up',dec:3},
-    {k:'CMRJ_REBOUND_ECC_DURATION',label:'Duracion excentrica',unit:'s',dir:'up',dec:3}
+    {k:'CMRJ_REBOUND_ECC_DURATION',label:'Duracion excentrica',unit:'ms',dir:'up',dec:0,scale:1000,noStatus:true}
   ],
   nordic:[
     {k:'asym',label:'Asimetria I/D',unit:'%',dir:'absup',dec:1,primary:true},
@@ -305,7 +305,7 @@ const METRICS={
 };
 const NOTES={
   cmj:'CMJ com&uacute;n (jueves). Dos bandas: &plusmn;1 desv&iacute;o (la variaci&oacute;n normal del jugador) y SWC (el cambio m&iacute;nimo que importa). Un test fuera de &plusmn;1 desv&iacute;o super&oacute; el ruido normal; s&oacute;lo dispara ALERTA (rojo) si adem&aacute;s viene con tendencia (2-3 tests seguidos cayendo).',
-  cmrj:'CMRJ rebote (martes). Evaluaci&oacute;n nueva: la mayor&iacute;a tiene 1 test, todav&iacute;a sin base para calcular las bandas. Se va a poblar con las semanas.',
+  cmrj:'CMRJ rebote (martes). Con 2 tests ya empieza a mostrar sem&aacute;foro y bandas, pero con base a&uacute;n pobre (banda provisoria): tomarlo como orientativo hasta juntar 4+ evaluaciones. La <b>Duraci&oacute;n exc&eacute;ntrica</b> es informativa (no dispara sem&aacute;foro).',
   nordic:'N&oacute;rdicos (viernes). Foco en la asimetr&iacute;a izquierda/derecha (alerta si supera 15%). El torque se ajusta al peso corporal. Como se toma despu&eacute;s de la carga semanal, la fuerza conviene leerla como tendencia larga, no d&iacute;a a d&iacute;a.'
 };
 
@@ -320,12 +320,16 @@ function getBodyWeight(player){const c=DATA.players[player].cmj||[];for(let i=c.
 
 function stats(series,metric){
   const vals=series.map(s=>s[metric.k]).filter(v=>v!==null&&v!==undefined);
-  if(vals.length<4)return null;
+  if(vals.length<2)return null;
   const current=vals[vals.length-1];
   const base=vals.slice(Math.max(0,vals.length-9),vals.length-1); // ventana ~8 previos
-  if(base.length<3)return null;
+  if(base.length<1)return null;
   const mean=base.reduce((a,b)=>a+b,0)/base.length;
-  const sd=Math.sqrt(base.reduce((a,b)=>a+(b-mean)**2,0)/(base.length-1));
+  // con >=2 previos: sd muestral normal. Con 1 solo previo no hay dispersion real:
+  // usamos un sd proxy = 5% de la media como banda minima provisoria hasta juntar mas tests.
+  let sd;
+  if(base.length>=2){ sd=Math.sqrt(base.reduce((a,b)=>a+(b-mean)**2,0)/(base.length-1)); }
+  else { sd=Math.abs(mean)*0.05; }
   const swc=0.2*sd;
   const te=sd; // banda variabilidad = 1 SD
   // desviacion en la direccion "mala"
@@ -345,6 +349,7 @@ function stats(series,metric){
 }
 
 function statusOf(series,metric){
+  if(metric.noStatus){ return {status:'i'}; } // informativa: se muestra, no dispara semaforo
   if(metric.k==='asym'){
     const vals=series.map(s=>s[metric.k]).filter(v=>v!==null&&v!==undefined);
     if(!vals.length)return {status:'n'};
@@ -365,12 +370,15 @@ function playerStatus(player,tab){
   const series=getSeries(player,tab);
   if(!series.length)return {status:'n',last:null,metrics:[]};
   const last=series[series.length-1];
-  const rank={g:0,a:1,r:2,n:-1};let worst='n',res=[];
-  for(const m of METRICS[tab]){const s=statusOf(series,m);res.push({m,st:s,val:last[m.k]});if(rank[s.status]>rank[worst])worst=s.status;}
+  const rank={g:0,a:1,r:2,n:-1,i:-1};let worst='n',res=[];
+  for(const m of METRICS[tab]){const s=statusOf(series,m);res.push({m,st:s,val:last[m.k]});if((rank[s.status]??-1)>rank[worst])worst=s.status;}
   return {status:worst,last,metrics:res,series};
 }
-function statusLabel(s){return {g:'OK',a:'Vigilar',r:'Alerta',n:'Sin dato'}[s];}
-function cvar(v){return {g:'green',a:'amber',r:'red',n:'grey'}[v];}
+function statusLabel(s){return {g:'OK',a:'Vigilar',r:'Alerta',n:'Sin dato',i:'Info'}[s];}
+// formatea un valor aplicando escala opcional (ej. s->ms x1000), decimales y unidad
+function fmtV(v,m){ if(v===null||v===undefined||typeof v!=='number')return v; const sc=m.scale||1; return (v*sc).toFixed(m.dec); }
+function fmtU(v,m){ return fmtV(v,m)+(m.unit||''); }
+function cvar(v){return {g:'green',a:'amber',r:'red',n:'grey',i:'grey'}[v];}
 
 
 // ===== PESTAÑA PROMEDIOS: promedio del equipo por fecha =====
@@ -382,10 +390,10 @@ const AVG_METRICS = {
     {k:'ECCENTRIC_PEAK_VELOCITY',label:'Vel. pico excentrica',unit:'m/s',dec:2,dir:'flat'}
   ]},
   cmrj: {title:'CMRJ (martes)', tag:'Rebote', metrics:[
-    {k:'CMRJ_REBOUND_RSI',label:'RSI reactivo',unit:'',dec:2,dir:'up'},
-    {k:'CMRJ_REBOUND_JUMP_HEIGHT',label:'Altura rebote',unit:'cm',dec:1,dir:'up'},
-    {k:'CMRJ_REBOUND_CONTACT_TIME',label:'Tiempo contacto',unit:'s',dec:3,dir:'down'},
-    {k:'CMRJ_REBOUND_ECC_DURATION',label:'Duracion excentrica',unit:'s',dec:3,dir:'down'}
+    {k:'CMRJ_REBOUND_RSI',label:'RSI reactivo',unit:'',dec:2,dir:'down'},
+    {k:'CMRJ_REBOUND_JUMP_HEIGHT',label:'Altura rebote',unit:'cm',dec:1,dir:'down'},
+    {k:'CMRJ_REBOUND_CONTACT_TIME',label:'Tiempo contacto',unit:'s',dec:3,dir:'up'},
+    {k:'CMRJ_REBOUND_ECC_DURATION',label:'Duracion excentrica',unit:'ms',dec:0,dir:'up',scale:1000,noStatus:true}
   ]},
   nordic: {title:'Nordicos (viernes)', tag:'Isquios', metrics:[
     {k:'asym',label:'Asimetria I/D',unit:'%',dec:1,dir:'flat'},
@@ -456,18 +464,18 @@ function renderPromedios(){
       if(absd < swc || sd===0){ trendCls='flat'; arrow='&rarr;'; }
       else if(delta>0){ trendCls = m.dir==='down'?'down':'up'; arrow='&uarr;'; }
       else { trendCls = m.dir==='down'?'up':'down'; arrow='&darr;'; }
-      const deltaTxt = sd===0 ? 'primer dato' : `${delta>=0?'+':''}${delta.toFixed(m.dec)} vs promedio`;
+      const deltaTxt = sd===0 ? 'primer dato' : `${delta>=0?'+':''}${(delta*(m.scale||1)).toFixed(m.dec)} vs promedio`;
 
       const cid = 'spark_'+tab+'_'+m.k;
       card.innerHTML = `
         <div class="trend-bar tb-${trendCls}"></div>
         <div class="ac-label">${m.label}</div>
-        <div><span class="ac-number">${current.toFixed(m.dec)}</span><span class="ac-unit">${m.unit}</span></div>
+        <div><span class="ac-number">${fmtV(current,m)}</span><span class="ac-unit">${m.unit}</span></div>
         <div class="ac-delta ${trendCls}">${arrow} ${deltaTxt}</div>
         <div class="ac-spark"><canvas id="${cid}"></canvas></div>
-        <div class="ac-bands">Promedio grupo: <span class="bnum">${prevMean.toFixed(m.dec)}${m.unit}</span><br>
-          <span class="sw-te-txt">&plusmn;1 desvio:</span> <span class="bnum">${(prevMean-sd).toFixed(m.dec)} a ${(prevMean+sd).toFixed(m.dec)}</span><br>
-          <span class="sw-swc-txt">SWC:</span> <span class="bnum">&plusmn;${swc.toFixed(m.dec)}</span></div>`;
+        <div class="ac-bands">Promedio grupo: <span class="bnum">${fmtU(prevMean,m)}</span><br>
+          <span class="sw-te-txt">&plusmn;1 desvio:</span> <span class="bnum">${((prevMean-sd)*(m.scale||1)).toFixed(m.dec)} a ${((prevMean+sd)*(m.scale||1)).toFixed(m.dec)}</span><br>
+          <span class="sw-swc-txt">SWC:</span> <span class="bnum">&plusmn;${(swc*(m.scale||1)).toFixed(m.dec)}</span></div>`;
       grid.appendChild(card);
       // sparkline (protegido: si falla no corta el resto)
       try{ drawSpark(cid, serie, m, prevMean, sd, swc); }catch(e){ console.warn('spark fail', m.k, e); }
@@ -490,7 +498,7 @@ function drawSpark(cid, serie, m, mean, sd, swc){
   }
   const c=new Chart(ctx,{type:'line',data:{labels,datasets:ds},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{enabled:true,callbacks:{title:(t)=>t[0].label,label:(c)=>c.datasetIndex===0?`Prom: ${c.parsed.y.toFixed(m.dec)}${m.unit}`:null,filter:(t)=>t.datasetIndex===0}}},
+      plugins:{legend:{display:false},tooltip:{enabled:true,callbacks:{title:(t)=>t[0].label,label:(c)=>c.datasetIndex===0?`Prom: ${fmtU(c.parsed.y,m)}`:null,filter:(t)=>t.datasetIndex===0}}},
       scales:{x:{display:false},y:{display:false,min:dmin-pad,max:dmax+pad}}}});
   charts.push(c);
 }
@@ -505,7 +513,7 @@ function renderTeam(){
     let mh='';
     if(ps.metrics.length&&ps.last){
       for(const r of ps.metrics){let v=r.val;if(v===null||v===undefined)continue;
-        const disp=(typeof v==='number')?v.toFixed(r.m.dec):v;
+        const disp=(typeof v==='number')?fmtV(v,r.m):v;
         mh+=`<div class="mrow"><span class="ml">${r.m.label}</span><span class="mv">${disp}${r.m.unit}<span class="flag" style="background:var(--${cvar(r.st.status)})"></span></span></div>`;}
     }
     const ds=ps.last?ps.last.date:'sin registros';
@@ -579,9 +587,9 @@ function renderDetail(player){
       let statBox='';
       if(s.st && m.k!=='asym'){
         statBox=`<div class="stat-box">
-          <div class="sb-row"><span class="sb-lbl">Promedio</span><span class="sb-val">${s.st.mean.toFixed(m.dec)}${m.unit||''}</span></div>
-          <div class="sb-row"><span class="sb-lbl">SWC</span><span class="sb-val swc">&plusmn;${fmtBand(s.st.swc,m.dec)}</span></div>
-          <div class="sb-row"><span class="sb-lbl">&plusmn;1 desvio</span><span class="sb-val te">&plusmn;${fmtBand(s.st.te,m.dec)}</span></div>
+          <div class="sb-row"><span class="sb-lbl">Promedio</span><span class="sb-val">${fmtU(s.st.mean,m)}</span></div>
+          <div class="sb-row"><span class="sb-lbl">SWC</span><span class="sb-val swc">&plusmn;${fmtBand(s.st.swc*(m.scale||1),m.dec)}</span></div>
+          <div class="sb-row"><span class="sb-lbl">&plusmn;1 desvio</span><span class="sb-val te">&plusmn;${fmtBand(s.st.te*(m.scale||1),m.dec)}</span></div>
         </div>`;
       } else if(m.k==='asym'){
         // para asimetria muestro el promedio de |asim|
@@ -641,7 +649,9 @@ function drawChart(cid,series,metric){
   const vals=pts.map(p=>p.y);
   const base=vals.slice(0,-1);
   const mean=base.reduce((a,b)=>a+b,0)/base.length;
-  const sd=Math.sqrt(base.reduce((a,b)=>a+(b-mean)**2,0)/Math.max(1,base.length-1));
+  let sd;
+  if(base.length>=2){ sd=Math.sqrt(base.reduce((a,b)=>a+(b-mean)**2,0)/(base.length-1)); }
+  else { sd=Math.abs(mean)*0.05; } // 1 solo previo: banda minima provisoria = 5% de la media
   const swc=0.2*sd;
   const labels=pts.map(p=>p.x.slice(5));
   const st=statusOf(series,metric).status;
@@ -686,16 +696,25 @@ function drawChart(cid,series,metric){
       cx.font='600 9px Segoe UI, sans-serif';
       cx.textAlign='center';
       const n = meta.data.length;
+      const area = chart.chartArea;
+      // si hay pocos puntos (<=8), muestro el valor en TODOS; si hay muchos, solo el ultimo
+      const showAll = n<=8;
       meta.data.forEach((pt,i)=>{
-        // muestro el valor: siempre el ultimo, y los demas si hay pocos puntos o cada cierto intervalo
         const isLast = i===n-1;
-        if(isLast){
-          const val = vals[i];
-          if(val===null||val===undefined) return;
-          cx.fillStyle = lastColor;
-          cx.font = '700 11px Segoe UI, sans-serif';
-          cx.fillText(val.toFixed(metric.dec)+(metric.unit||''), pt.x, pt.y-9);
-        }
+        if(!(isLast || showAll)) return;
+        const val = vals[i];
+        if(val===null||val===undefined) return;
+        const txt = fmtU(val,metric);
+        cx.fillStyle = isLast ? lastColor : '#5a6b7d';
+        cx.font = isLast ? '700 11px Segoe UI, sans-serif' : '600 10px Segoe UI, sans-serif';
+        // alinear para no cortar contra los bordes: primero a la izq, ultimo a la der, resto centrado
+        let tx = pt.x, ty = pt.y-9;
+        if(i===0){ cx.textAlign='left'; tx = pt.x - 2; }
+        else if(isLast){ cx.textAlign='right'; tx = pt.x + 2; }
+        else { cx.textAlign='center'; }
+        // si el label se iria por arriba del area, lo bajo
+        if(ty < area.top+8){ ty = pt.y+16; }
+        cx.fillText(txt, tx, ty);
       });
       cx.restore();
     }
@@ -703,8 +722,8 @@ function drawChart(cid,series,metric){
   const c=new Chart(ctx,{type:'line',data:{labels,datasets:ds},
     plugins:[valueLabels],
     options:{responsive:true,maintainAspectRatio:false,
-      layout:{padding:{top:16}},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>c.datasetIndex===0?`${metric.label}: ${c.parsed.y.toFixed(metric.dec)}${metric.unit}`:null,filter:(t)=>t.datasetIndex===0}}},
+      layout:{padding:{top:16,right:44,left:8}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>c.datasetIndex===0?`${metric.label}: ${fmtU(c.parsed.y,metric)}`:null,filter:(t)=>t.datasetIndex===0}}},
       scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:8}},
               y:{min:yMin,max:yMax,grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:10}}}}}});
   charts.push(c);
