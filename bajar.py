@@ -97,21 +97,39 @@ def get_all_fd_tests(pid):
     return allt
  
  
-def get_trial_metrics(testid, wanted):
+def get_trial_metrics(testid, wanted, debug=False):
     d = curl(f"{FD}/v2019q3/teams/{TENANT}/tests/{testid}/trials")
     if not d:
         return {}
-    trial = d[0] if isinstance(d, list) else d
+    trials = d if isinstance(d, list) else [d]
+    if debug:
+        # imprime TODOS los codigos disponibles en el primer trial (para verificar nombres)
+        codes = set()
+        for trial in trials:
+            for r in trial.get("results", []):
+                codes.add((r["definition"]["result"], r.get("limb")))
+        print("    [DEBUG codigos disponibles]:")
+        for c in sorted(codes):
+            print("      ", c)
+    # acumulo los valores de cada metrica a lo largo de TODAS las reps y promedio
+    acc = {}
+    for trial in trials:
+        for r in trial.get("results", []):
+            code = r["definition"]["result"]
+            if code in wanted and r.get("limb") == "Trial":
+                v = r.get("value")
+                if v is not None:
+                    acc.setdefault(code, []).append(v)
     out = {}
-    for r in trial.get("results", []):
-        code = r["definition"]["result"]
-        if code in wanted and r.get("limb") == "Trial":
-            out[code] = r["value"]
+    for code, vals in acc.items():
+        if vals:
+            out[code] = round(sum(vals) / len(vals), 4)
     return out
  
  
 out = {"generated": datetime.datetime.now().isoformat(), "players": {}}
- 
+_debug_done = False
+
 for name, pid in PLAYERS.items():
     print(f"Bajando {name}...")
     pdata = {"cmrj": [], "cmj": [], "nordic": []}
@@ -119,7 +137,11 @@ for name, pid in PLAYERS.items():
     for t in fd:
         tt = t["testType"]
         if tt == "CMRJ":
-            m = get_trial_metrics(t["testId"], WANT_CMRJ)
+            _dbg = (not _debug_done and name == "Santiago Alvarez Fourcade")
+            m = get_trial_metrics(t["testId"], WANT_CMRJ, debug=_dbg)
+            if _dbg:
+                _debug_done = True
+                print("    [DEBUG valores promediados]:", m)
             if m:
                 pdata["cmrj"].append({"date": t["recordedDateUtc"][:10], **m})
         elif tt == "CMJ":
