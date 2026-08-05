@@ -77,12 +77,12 @@ def get_all_fd_tests(pid, debug_name=None):
     frm = DESDE
     allt = []
     seen = set()
-    for _ in range(50):
+    for _ in range(100):
         url = f"{FD}/tests?TenantId={TENANT}&ModifiedFromUtc={frm}&ProfileId={pid}"
         d = curl(url)
         if not d or "tests" not in d:
             if debug_name:
-                print(f"    [DEBUG {debug_name}] respuesta sin 'tests'. Raw keys: {list(d.keys()) if isinstance(d,dict) else type(d)}")
+                print(f"    [DEBUG {debug_name}] respuesta sin 'tests'. Raw: {str(d)[:200]}")
             break
         ts = d["tests"]
         if not ts:
@@ -91,14 +91,18 @@ def get_all_fd_tests(pid, debug_name=None):
         for t in nuevos:
             seen.add(t["testId"])
         allt += nuevos
-        # avanzar el cursor al modifiedDateUtc mas nuevo de esta pagina
+        # CORTE CONFIABLE: si esta pagina no aporto ningun test nuevo, terminamos.
+        if not nuevos:
+            break
+        # avanzar el cursor. Sumo 1 milisegundo al max para NO volver a pedir el mismo borde
+        # (evita quedarse pidiendo la misma pagina y evita saltear tests del mismo instante).
         last = max(t["modifiedDateUtc"] for t in ts)
-        # si no trajo ninguno nuevo Y el cursor no avanza, cortar
-        if not nuevos and last == frm:
-            break
-        if last == frm:
-            break
-        frm = last
+        try:
+            dt = datetime.datetime.fromisoformat(last.replace("Z", "+00:00"))
+            dt = dt + datetime.timedelta(milliseconds=1)
+            frm = dt.isoformat().replace("+00:00", "Z")
+        except Exception:
+            frm = last
     if debug_name:
         tipos = {}
         for t in allt:
