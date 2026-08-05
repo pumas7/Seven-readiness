@@ -73,27 +73,37 @@ def curl(url):
         return None
  
  
-def get_all_fd_tests(pid):
+def get_all_fd_tests(pid, debug_name=None):
     frm = DESDE
     allt = []
     seen = set()
     for _ in range(50):
-        d = curl(f"{FD}/tests?TenantId={TENANT}&ModifiedFromUtc={frm}&ProfileId={pid}")
+        url = f"{FD}/tests?TenantId={TENANT}&ModifiedFromUtc={frm}&ProfileId={pid}"
+        d = curl(url)
         if not d or "tests" not in d:
+            if debug_name:
+                print(f"    [DEBUG {debug_name}] respuesta sin 'tests'. Raw keys: {list(d.keys()) if isinstance(d,dict) else type(d)}")
             break
         ts = d["tests"]
         if not ts:
             break
         nuevos = [t for t in ts if t["testId"] not in seen]
-        if not nuevos:
-            break
         for t in nuevos:
             seen.add(t["testId"])
         allt += nuevos
+        # avanzar el cursor al modifiedDateUtc mas nuevo de esta pagina
         last = max(t["modifiedDateUtc"] for t in ts)
+        # si no trajo ninguno nuevo Y el cursor no avanza, cortar
+        if not nuevos and last == frm:
+            break
         if last == frm:
             break
         frm = last
+    if debug_name:
+        tipos = {}
+        for t in allt:
+            tipos[t.get("testType")] = tipos.get(t.get("testType"), 0) + 1
+        print(f"    [DEBUG {debug_name}] total tests FD: {len(allt)} | por tipo: {tipos}")
     return allt
  
  
@@ -131,15 +141,20 @@ out = {"generated": datetime.datetime.now().isoformat(), "players": {}}
 for name, pid in PLAYERS.items():
     print(f"Bajando {name}...")
     pdata = {"cmrj": [], "cmj": [], "nordic": []}
-    fd = get_all_fd_tests(pid)
+    _dbg = name
+    fd = get_all_fd_tests(pid, debug_name=_dbg)
     for t in fd:
         tt = t["testType"]
         if tt == "CMRJ":
             m = get_trial_metrics(t["testId"], WANT_CMRJ)
+            if _dbg and not m:
+                print(f"    [DEBUG {_dbg}] CMRJ {t['recordedDateUtc'][:10]} SIN metricas (trial vacio o codigos no coinciden)")
             if m:
                 pdata["cmrj"].append({"date": t["recordedDateUtc"][:10], **m})
         elif tt == "CMJ":
             m = get_trial_metrics(t["testId"], WANT_CMJ)
+            if _dbg and not m:
+                print(f"    [DEBUG {_dbg}] CMJ {t['recordedDateUtc'][:10]} SIN metricas")
             if m:
                 # RSI-mod a m/s (misma escala que VALD Hub)
                 if "RSI_MODIFIED" in m and m["RSI_MODIFIED"] and m["RSI_MODIFIED"] > 5:
