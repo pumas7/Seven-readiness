@@ -69,6 +69,11 @@ main{padding:22px 0 60px}
 .stat-box .sb-val.swc{color:#1a7a4a}
 .stat-box .sb-val.te{color:#5a4a9c}
 @media(max-width:640px){.stat-box{position:static;margin-bottom:10px;min-width:0}}
+.stat-box.nordic-dual{display:flex;gap:10px;min-width:0;padding:8px}
+.ndl-box{padding:4px 8px;min-width:118px}
+.ndl-box.ndl-asym{border-left:1px solid var(--line);padding-left:12px}
+.ndl-title{font-size:10px;color:var(--grey);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px;white-space:nowrap}
+@media(max-width:640px){.stat-box.nordic-dual{flex-direction:column}.ndl-box.ndl-asym{border-left:none;border-top:1px solid var(--line);padding-left:8px;padding-top:8px}}
 
 .chart-block h4{font-size:13px;font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:8px}
 .chart-block .desc{font-size:11px;color:var(--grey);margin-bottom:4px}
@@ -354,7 +359,17 @@ function statusOf(series,metric){
     const vals=series.map(s=>s[metric.k]).filter(v=>v!==null&&v!==undefined);
     if(!vals.length)return {status:'n'};
     const a=Math.abs(vals[vals.length-1]);
-    if(a>=15)return {status:'r'}; if(a>=10)return {status:'a'}; return {status:'g'};
+    // SWC/+-1 desvio de la asimetria en si (informativo, no reemplaza el limite de 15%)
+    let st=null;
+    const base=vals.slice(0,-1);
+    if(base.length>=1){
+      const mean=base.reduce((x,y)=>x+y,0)/base.length;
+      let sd;
+      if(base.length>=2){ sd=Math.sqrt(base.reduce((x,y)=>x+(y-mean)**2,0)/(base.length-1)); }
+      else { sd=Math.max(Math.abs(mean)*0.05,0.5); }
+      st={mean,sd,swc:0.2*sd,te:sd,current:vals[vals.length-1]};
+    }
+    if(a>=15)return {status:'r',st}; if(a>=10)return {status:'a',st}; return {status:'g',st};
   }
   const st=stats(series,metric);
   if(!st)return {status:'n'};
@@ -379,6 +394,18 @@ function statusLabel(s){return {g:'OK',a:'Vigilar',r:'Alerta',n:'Sin dato',i:'In
 function fmtV(v,m){ if(v===null||v===undefined||typeof v!=='number')return v; const sc=m.scale||1; return (v*sc).toFixed(m.dec); }
 function fmtU(v,m){ return fmtV(v,m)+(m.unit||''); }
 function cvar(v){return {g:'green',a:'amber',r:'red',n:'grey',i:'grey'}[v];}
+// Formatea fecha ISO (AAAA-MM-DD) a DD-MM-AAAA para mostrar en todo el tablero
+function fmtDate(iso){
+  if(!iso||typeof iso!=='string')return iso;
+  const p=iso.split('-'); if(p.length!==3)return iso;
+  return `${p[2]}-${p[1]}-${p[0]}`;
+}
+// Version corta para ejes de grafico: DD-MM
+function fmtDateShort(iso){
+  if(!iso||typeof iso!=='string')return iso;
+  const p=iso.split('-'); if(p.length!==3)return iso;
+  return `${p[2]}-${p[1]}`;
+}
 
 
 // ===== PESTAÑA PROMEDIOS: promedio del equipo por fecha =====
@@ -486,7 +513,7 @@ function renderPromedios(){
 function drawSpark(cid, serie, m, mean, sd, swc){
   const ctx = document.getElementById(cid); if(!ctx) return;
   const vals = serie.map(s=>s.avg);
-  const labels = serie.map(s=>s.date.slice(5));
+  const labels = serie.map(s=>fmtDateShort(s.date));
   const dmin=Math.min(...vals, mean-sd), dmax=Math.max(...vals, mean+sd);
   const pad=(dmax-dmin)*0.15||1;
   const ds=[
@@ -516,7 +543,7 @@ function renderTeam(){
         const disp=(typeof v==='number')?fmtV(v,r.m):v;
         mh+=`<div class="mrow"><span class="ml">${r.m.label}</span><span class="mv">${disp}${r.m.unit}<span class="flag" style="background:var(--${cvar(r.st.status)})"></span></span></div>`;}
     }
-    const ds=ps.last?ps.last.date:'sin registros';
+    const ds=ps.last?fmtDate(ps.last.date):'sin registros';
     card.innerHTML=`<div class="status-bar sb-${ps.status}"></div><h3>${player}</h3><div class="date">Ultimo: ${ds}</div>
       <span class="status-pill sp-${ps.status}"><span class="dot ${ps.status}"></span>${statusLabel(ps.status)}</span>
       <div class="metrics">${mh||'<div class="mrow"><span class="ml">Sin datos en esta evaluacion</span></div>'}</div>`;
@@ -546,7 +573,7 @@ function reboundComparisonHTML(series){
   const hInicial=Math.round(inicial/maxH*120), hRebote=Math.round(rebote/maxH*120);
   return `
     <div class="rebound-comp">
-      <div class="rc-head">&#9889; Altura: Salto inicial vs. Rebote (${last.date})</div>
+      <div class="rc-head">&#9889; Altura: Salto inicial vs. Rebote (${fmtDate(last.date)})</div>
       <div class="rc-body">
         <div class="rc-bars">
           <div class="rc-bar-group">
@@ -570,6 +597,8 @@ function renderDetail(player){
   let blocks='';
   if(series.length<2){
     blocks=`<div class="empty"><div class="big">Todavia no hay serie para graficar</div><div>Esta evaluacion tiene ${series.length} registro(s) para ${player}.</div></div>`;
+  }else if(tab==='nordic'){
+    blocks=nordicBlockHTML(series);
   }else{
     for(const m of METRICS[tab]){
       const s=statusOf(series,m);
@@ -586,8 +615,14 @@ function renderDetail(player){
       // calculo promedio y anchos de banda para el recuadro
       let statBox='';
       if(s.st && m.k!=='asym'){
+        // Maximo historico (todas las evaluaciones) y promedio de las ultimas 3
+        const allVals=series.map(x=>x[m.k]).filter(v=>v!=null);
+        const maxHist=allVals.length?Math.max(...allVals):null;
+        const last3=allVals.slice(-3);
+        const avgLast3=last3.length?last3.reduce((a,b)=>a+b,0)/last3.length:null;
         statBox=`<div class="stat-box">
-          <div class="sb-row"><span class="sb-lbl">Promedio</span><span class="sb-val">${fmtU(s.st.mean,m)}</span></div>
+          <div class="sb-row"><span class="sb-lbl">M&aacute;ximo hist&oacute;rico</span><span class="sb-val">${maxHist!=null?fmtU(maxHist,m):'-'}</span></div>
+          <div class="sb-row"><span class="sb-lbl">Promedio &uacute;lt. 3</span><span class="sb-val">${avgLast3!=null?fmtU(avgLast3,m):'-'}</span></div>
           <div class="sb-row"><span class="sb-lbl">SWC</span><span class="sb-val swc">&plusmn;${fmtBand(s.st.swc*(m.scale||1),m.dec)}</span></div>
           <div class="sb-row"><span class="sb-lbl">&plusmn;1 desvio</span><span class="sb-val te">&plusmn;${fmtBand(s.st.te*(m.scale||1),m.dec)}</span></div>
         </div>`;
@@ -634,7 +669,178 @@ function renderDetail(player){
       </details>
       ${tab==='cmrj'?reboundComparisonHTML(series):''}
       ${blocks}</div>`;
-  if(series.length>=2)for(const m of METRICS[tab]){try{drawChart('ch_'+m.k,series,m);}catch(e){console.warn('chart fail',m.k,e);}}
+  if(series.length>=2){
+    if(tab==='nordic'){
+      try{drawNordicChart('ch_nordic_torque',series);}catch(e){console.warn('chart fail nordic',e);}
+    }else{
+      for(const m of METRICS[tab]){try{drawChart('ch_'+m.k,series,m);}catch(e){console.warn('chart fail',m.k,e);}}
+    }
+  }
+}
+
+// ===== Bloque especial de Nordicos: un grafico con torque Izq/Der + 2 recuadros =====
+function nordicBlockHTML(series){
+  const mL={k:'torqueNormL',dec:2,unit:'',scale:1};
+  const mR={k:'torqueNormR',dec:2,unit:'',scale:1};
+  const valsL=series.map(x=>x.torqueNormL).filter(v=>v!=null);
+  const valsR=series.map(x=>x.torqueNormR).filter(v=>v!=null);
+  const maxL=valsL.length?Math.max(...valsL):null;
+  const maxR=valsR.length?Math.max(...valsR):null;
+  // asimetria: estado + bandas (calculadas en statusOf)
+  const asymMetric={k:'asym'};
+  const asymStatus=statusOf(series,asymMetric);
+  const asymVals=series.map(x=>x.asym).filter(v=>v!=null);
+  const asymCurrent=asymVals.length?asymVals[asymVals.length-1]:null;
+  const asymSt=asymStatus.st;
+
+  const verdictTorque='<span style="color:var(--ink)">Fuerza exc&eacute;ntrica de isquiotibiales por pierna, ajustada al peso corporal. Se lee mejor como tendencia larga (se toma post-carga semanal).</span>';
+  let asymVerdict='';
+  if(asymCurrent!=null){
+    const a=Math.abs(asymCurrent);
+    if(a>=15) asymVerdict='<span style="color:var(--red)">Asimetria &ge;15%: desequilibrio marcado, factor de riesgo de lesion de isquiotibiales</span>';
+    else if(a>=10) asymVerdict='<span style="color:var(--amber)">Asimetria entre 10-15%: vigilar</span>';
+    else asymVerdict='<span style="color:var(--green)">Asimetria dentro de lo normal (&lt;10%)</span>';
+  }
+
+  return `
+    <div class="chart-block">
+      <div class="stat-box nordic-dual">
+        <div class="ndl-box">
+          <div class="ndl-title">Fuerza m&aacute;xima registrada</div>
+          <div class="sb-row"><span class="sb-lbl" style="color:#144272">&#9679; Torque Izq</span><span class="sb-val">${maxL!=null?maxL.toFixed(2):'-'}</span></div>
+          <div class="sb-row"><span class="sb-lbl" style="color:#c0392b">&#9679; Torque Der</span><span class="sb-val">${maxR!=null?maxR.toFixed(2):'-'}</span></div>
+        </div>
+        <div class="ndl-box ndl-asym">
+          <div class="ndl-title">Asimetria I/D</div>
+          <div class="sb-row"><span class="sb-lbl">Actual</span><span class="sb-val">${asymCurrent!=null?asymCurrent.toFixed(1)+'%':'-'}</span></div>
+          ${asymSt?`<div class="sb-row"><span class="sb-lbl">SWC</span><span class="sb-val swc">&plusmn;${fmtBand(asymSt.swc,1)}%</span></div>
+          <div class="sb-row"><span class="sb-lbl">&plusmn;1 desvio</span><span class="sb-val te">&plusmn;${fmtBand(asymSt.te,1)}%</span></div>`:''}
+          <div class="sb-row"><span class="sb-lbl">L&iacute;mite</span><span class="sb-val" style="color:var(--red)">&plusmn;15%</span></div>
+        </div>
+      </div>
+      <h4><span class="flag" style="width:9px;height:9px;border-radius:50%;background:var(--${cvar(asymStatus.status)})"></span>Torque n&oacute;rdico Izquierda / Derecha &middot; principal</h4>
+      <div class="explain"><div><b>Qu&eacute; mide:</b> Fuerza exc&eacute;ntrica de cada pierna en el n&oacute;rdico, ajustada al peso corporal (para comparar entre jugadores).</div><div><b>Qu&eacute; buscamos:</b> Ca&iacute;das sostenidas en cualquiera de las dos piernas, o asimetr&iacute;a creciente entre ambas.</div></div>
+      <div class="verdict">${asymVerdict||verdictTorque}</div>
+      <div class="chart-legend">
+        <span><span class="ln" style="border-top-color:#144272;border-top-width:2.5px"></span>Torque Izquierda</span>
+        <span><span class="ln" style="border-top-color:#c0392b;border-top-width:2.5px"></span>Torque Derecha</span>
+        <span><span class="ln ln-te"></span>&plusmn;1 desvio</span><span><span class="ln ln-swc"></span>SWC</span>
+      </div>
+      <div class="chart-wrap"><canvas id="ch_nordic_torque"></canvas></div>
+    </div>`;
+}
+
+function drawNordicChart(cid,series){
+  const ctx=document.getElementById(cid);if(!ctx)return;
+  const ptsL=series.map(s=>({x:s.date,y:s.torqueNormL})).filter(p=>p.y!=null);
+  const ptsR=series.map(s=>({x:s.date,y:s.torqueNormR})).filter(p=>p.y!=null);
+  // eje X comun: todas las fechas que tengan al menos un valor
+  const dateSet=[...new Set(series.map(s=>s.date))].sort();
+  const labels=dateSet.map(d=>fmtDateShort(d));
+  const byDate={}; series.forEach(s=>byDate[s.date]=s);
+  const vL=dateSet.map(d=>byDate[d].torqueNormL??null);
+  const vR=dateSet.map(d=>byDate[d].torqueNormR??null);
+
+  // bandas: calculadas sobre historico previo al ultimo dato, por pierna
+  function bandFor(vals){
+    const nn=vals.filter(v=>v!=null);
+    const base=nn.slice(0,-1);
+    if(!base.length)return null;
+    const mean=base.reduce((a,b)=>a+b,0)/base.length;
+    let sd;
+    if(base.length>=2){ sd=Math.sqrt(base.reduce((a,b)=>a+(b-mean)**2,0)/(base.length-1)); }
+    else { sd=Math.abs(mean)*0.05; }
+    return {mean,sd,swc:0.2*sd};
+  }
+  const bL=bandFor(vL), bR=bandFor(vR);
+
+  const allVals=vL.concat(vR).filter(v=>v!=null);
+  const bandVals=[];
+  if(showTE||showSWC){
+    if(bL){bandVals.push(bL.mean+bL.sd,bL.mean-bL.sd);}
+    if(bR){bandVals.push(bR.mean+bR.sd,bR.mean-bR.sd);}
+  }
+  const scaleVals=allVals.concat(bandVals);
+  const dmin=Math.min(...scaleVals),dmax=Math.max(...scaleVals);
+  const range=dmax-dmin||1, pad=range*0.18;
+  const yMin=dmin-pad, yMax=dmax+pad;
+
+  const ds=[
+    {label:'Torque Izq',data:vL,borderColor:'#144272',backgroundColor:'#144272',borderWidth:2,tension:.3,order:0,spanGaps:true,
+     pointRadius:vL.map((v,i)=>i===lastIdx(vL)?5:2.5),
+     pointBackgroundColor:vL.map((v,i)=>i===lastIdx(vL)?'#144272':'rgba(20,66,114,.5)'),
+     pointBorderColor:'#fff',pointBorderWidth:1.5,fill:false},
+    {label:'Torque Der',data:vR,borderColor:'#c0392b',backgroundColor:'#c0392b',borderWidth:2,tension:.3,order:1,spanGaps:true,
+     pointRadius:vR.map((v,i)=>i===lastIdx(vR)?5:2.5),
+     pointBackgroundColor:vR.map((v,i)=>i===lastIdx(vR)?'#c0392b':'rgba(192,57,43,.5)'),
+     pointBorderColor:'#fff',pointBorderWidth:1.5,fill:false}
+  ];
+  function lastIdx(vals){for(let i=vals.length-1;i>=0;i--)if(vals[i]!=null)return i;return -1;}
+
+  // bandas por pierna (violeta=TE izq/der superpuestas, verde=SWC izq/der superpuestas)
+  if(showTE && bL){
+    const topIdx=ds.length;
+    ds.push({label:'teL-top',data:vL.map(()=>bL.mean+bL.sd),borderColor:'rgba(20,66,114,.35)',borderWidth:1,pointRadius:0,fill:false,order:6});
+    ds.push({label:'teL-bot',data:vL.map(()=>bL.mean-bL.sd),borderColor:'rgba(20,66,114,.35)',borderWidth:1,pointRadius:0,backgroundColor:'rgba(20,66,114,.08)',fill:topIdx,order:5});
+  }
+  if(showTE && bR){
+    const topIdx=ds.length;
+    ds.push({label:'teR-top',data:vR.map(()=>bR.mean+bR.sd),borderColor:'rgba(192,57,43,.30)',borderWidth:1,pointRadius:0,fill:false,order:6});
+    ds.push({label:'teR-bot',data:vR.map(()=>bR.mean-bR.sd),borderColor:'rgba(192,57,43,.30)',borderWidth:1,pointRadius:0,backgroundColor:'rgba(192,57,43,.08)',fill:topIdx,order:5});
+  }
+  if(showSWC && bL){
+    const topIdx=ds.length;
+    ds.push({label:'swcL-top',data:vL.map(()=>bL.mean+bL.swc),borderColor:'rgba(31,164,99,.6)',borderWidth:1,borderDash:[5,3],pointRadius:0,fill:false,order:4});
+    ds.push({label:'swcL-bot',data:vL.map(()=>bL.mean-bL.swc),borderColor:'rgba(31,164,99,.6)',borderWidth:1,borderDash:[5,3],pointRadius:0,backgroundColor:'rgba(31,164,99,.14)',fill:topIdx,order:3});
+  }
+  if(showSWC && bR){
+    const topIdx=ds.length;
+    ds.push({label:'swcR-top',data:vR.map(()=>bR.mean+bR.swc),borderColor:'rgba(31,164,99,.6)',borderWidth:1,borderDash:[3,3],pointRadius:0,fill:false,order:4});
+    ds.push({label:'swcR-bot',data:vR.map(()=>bR.mean-bR.swc),borderColor:'rgba(31,164,99,.6)',borderWidth:1,borderDash:[3,3],pointRadius:0,backgroundColor:'rgba(31,164,99,.14)',fill:topIdx,order:3});
+  }
+
+  const liL=lastIdx(vL), liR=lastIdx(vR);
+  const valueLabels={
+    id:'valueLabels_'+cid,
+    afterDatasetsDraw(chart){
+      const {ctx:cx}=chart;
+      const area=chart.chartArea;
+      cx.save();
+      function drawEndLabel(datasetIdx,idx,color,vals){
+        if(idx<0)return;
+        const meta=chart.getDatasetMeta(datasetIdx);
+        const pt=meta.data[idx]; if(!pt)return;
+        const txt=vals[idx].toFixed(2);
+        cx.font='700 12px Segoe UI, sans-serif';
+        const tw=cx.measureText(txt).width;
+        const padX=6,padY=4,boxW=tw+padX*2,boxH=15+padY;
+        let boxX=pt.x+8;
+        if(boxX+boxW>area.right) boxX=pt.x-boxW-8;
+        let boxY=pt.y-boxH/2;
+        if(boxY<area.top) boxY=area.top;
+        if(boxY+boxH>area.bottom) boxY=area.bottom-boxH;
+        cx.fillStyle=color;
+        cx.beginPath();
+        cx.roundRect?cx.roundRect(boxX,boxY,boxW,boxH,4):cx.rect(boxX,boxY,boxW,boxH);
+        cx.fill();
+        cx.fillStyle='#fff';
+        cx.textAlign='center';
+        cx.fillText(txt,boxX+boxW/2,boxY+boxH-6);
+      }
+      drawEndLabel(0,liL,'#144272',vL);
+      drawEndLabel(1,liR,'#c0392b',vR);
+      cx.restore();
+    }
+  };
+
+  const c=new Chart(ctx,{type:'line',data:{labels,datasets:ds},
+    plugins:[valueLabels],
+    options:{responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:16,right:56,left:8,bottom:4}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>(c.datasetIndex===0||c.datasetIndex===1)?`${c.dataset.label}: ${c.parsed.y!=null?c.parsed.y.toFixed(2):'-'}`:null,filter:(t)=>t.datasetIndex===0||t.datasetIndex===1}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:8}},
+              y:{min:yMin,max:yMax,grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:10}}}}}});
+  charts.push(c);
 }
 function dirText(m){
   if(m.k==='asym')return 'Diferencia entre piernas. Alerta si supera 15%.';
@@ -643,22 +849,35 @@ function dirText(m){
   return 'Se vigila el alejamiento respecto al promedio habitual.';
 }
 
+// Ventana de puntos a graficar en CMJ/CMRJ: evaluacion del dia + ultimas 3 previas = 4 puntos.
+// Las bandas (SWC / +-1 desvio) se siguen calculando sobre el historico completo (excluyendo el ultimo),
+// no solo sobre lo que se ve en pantalla, para que sean estadisticamente estables.
+const CHART_WINDOW = 4;
+
 function drawChart(cid,series,metric){
   const ctx=document.getElementById(cid);if(!ctx)return;
-  const pts=series.map(s=>({x:s.date,y:s[metric.k]})).filter(p=>p.y!==null&&p.y!==undefined);
-  const vals=pts.map(p=>p.y);
-  const base=vals.slice(0,-1);
+  const allPts=series.map(s=>({x:s.date,y:s[metric.k]})).filter(p=>p.y!==null&&p.y!==undefined);
+  const allVals=allPts.map(p=>p.y);
+  // banda calculada sobre TODO el historico previo al ultimo dato (igual que antes)
+  const base=allVals.slice(0,-1);
   const mean=base.reduce((a,b)=>a+b,0)/base.length;
   let sd;
   if(base.length>=2){ sd=Math.sqrt(base.reduce((a,b)=>a+(b-mean)**2,0)/(base.length-1)); }
   else { sd=Math.abs(mean)*0.05; } // 1 solo previo: banda minima provisoria = 5% de la media
   const swc=0.2*sd;
-  const labels=pts.map(p=>p.x.slice(5));
   const st=statusOf(series,metric).status;
   const lastColor={g:'#1FA463',a:'#E8A317',r:'#D64545',n:'#8595A6'}[st];
 
-  // ESCALA realista: min/max de los datos con padding, NO auto-zoom exagerado
-  const dmin=Math.min(...vals),dmax=Math.max(...vals);
+  // Recorte a los ultimos CHART_WINDOW puntos para el grafico (solo visualizacion)
+  const windowed = metric.k==='asym' ? allPts : allPts.slice(-CHART_WINDOW);
+  const pts = windowed;
+  const vals = pts.map(p=>p.y);
+  const labels=pts.map(p=>fmtDateShort(p.x));
+
+  // ESCALA realista: min/max de los datos visibles + bandas, con padding
+  const bandVals = (metric.k!=='asym') ? [mean+sd,mean-sd,mean+swc,mean-swc] : [];
+  const allForScale = vals.concat(showTE||showSWC ? bandVals : []);
+  const dmin=Math.min(...allForScale),dmax=Math.max(...allForScale);
   const range=dmax-dmin||1;
   const pad=range*0.15;
   let yMin=dmin-pad, yMax=dmax+pad;
@@ -670,22 +889,25 @@ function drawChart(cid,series,metric){
      pointBackgroundColor:pts.map((p,i)=>i===pts.length-1?lastColor:'rgba(44,116,179,.5)'),
      pointBorderColor:'#fff',pointBorderWidth:1.5,fill:false}
   ];
-  // Banda TE (+-1 SD) azul
+  // Banda TE (+-1 SD) violeta: dos series a nivel constante, la de abajo rellena HACIA la de arriba
+  // (se referencian por indice de dataset, no por 'order', para que el sombreado sea correcto siempre)
   if(showTE && metric.k!=='asym'){
-    ds.push({label:'te-top',data:vals.map(()=>mean+sd),borderColor:'rgba(124,77,196,.45)',borderWidth:1.5,pointRadius:0,fill:'+1',order:5});
-    ds.push({label:'te-bot',data:vals.map(()=>mean-sd),borderColor:'rgba(124,77,196,.45)',borderWidth:1.5,pointRadius:0,backgroundColor:'rgba(124,77,196,.10)',fill:false,order:6});
+    const teTopIdx = ds.length;
+    ds.push({label:'te-top',data:vals.map(()=>mean+sd),borderColor:'rgba(124,77,196,.45)',borderWidth:1.5,pointRadius:0,fill:false,order:6});
+    ds.push({label:'te-bot',data:vals.map(()=>mean-sd),borderColor:'rgba(124,77,196,.45)',borderWidth:1.5,pointRadius:0,backgroundColor:'rgba(124,77,196,.10)',fill:teTopIdx,order:5});
   }
-  // Banda SWC (0.2 SD) verde
+  // Banda SWC (0.2 SD) verde: idem, relleno explicito entre las dos series de la banda
   if(showSWC && metric.k!=='asym'){
-    ds.push({label:'swc-top',data:vals.map(()=>mean+swc),borderColor:'rgba(31,164,99,.7)',borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:'+1',order:3});
-    ds.push({label:'swc-bot',data:vals.map(()=>mean+swc-2*swc),borderColor:'rgba(31,164,99,.7)',borderWidth:1.5,borderDash:[5,3],pointRadius:0,backgroundColor:'rgba(31,164,99,.18)',fill:false,order:4});
+    const swcTopIdx = ds.length;
+    ds.push({label:'swc-top',data:vals.map(()=>mean+swc),borderColor:'rgba(31,164,99,.7)',borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:false,order:4});
+    ds.push({label:'swc-bot',data:vals.map(()=>mean-swc),borderColor:'rgba(31,164,99,.7)',borderWidth:1.5,borderDash:[5,3],pointRadius:0,backgroundColor:'rgba(31,164,99,.18)',fill:swcTopIdx,order:3});
   }
   if(metric.k==='asym'){
     ds.push({label:'lim+',data:vals.map(()=>15),borderColor:'rgba(214,69,69,.5)',borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false});
     ds.push({label:'lim-',data:vals.map(()=>-15),borderColor:'rgba(214,69,69,.5)',borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false});
     ds.push({label:'zero',data:vals.map(()=>0),borderColor:'rgba(0,0,0,.15)',borderWidth:1,pointRadius:0,fill:false});
   }
-  // plugin para mostrar el valor de cada punto
+  // plugin para mostrar el valor de cada punto (el ultimo mas grande y con fondo, para que se lea siempre)
   const valueLabels = {
     id:'valueLabels_'+cid,
     afterDatasetsDraw(chart){
@@ -693,28 +915,43 @@ function drawChart(cid,series,metric){
       const meta = chart.getDatasetMeta(0);
       if(!meta || !meta.data) return;
       cx.save();
-      cx.font='600 9px Segoe UI, sans-serif';
-      cx.textAlign='center';
       const n = meta.data.length;
       const area = chart.chartArea;
-      // si hay pocos puntos (<=8), muestro el valor en TODOS; si hay muchos, solo el ultimo
-      const showAll = n<=8;
       meta.data.forEach((pt,i)=>{
         const isLast = i===n-1;
-        if(!(isLast || showAll)) return;
         const val = vals[i];
         if(val===null||val===undefined) return;
         const txt = fmtU(val,metric);
-        cx.fillStyle = isLast ? lastColor : '#5a6b7d';
-        cx.font = isLast ? '700 11px Segoe UI, sans-serif' : '600 10px Segoe UI, sans-serif';
-        // alinear para no cortar contra los bordes: primero a la izq, ultimo a la der, resto centrado
-        let tx = pt.x, ty = pt.y-9;
-        if(i===0){ cx.textAlign='left'; tx = pt.x - 2; }
-        else if(isLast){ cx.textAlign='right'; tx = pt.x + 2; }
-        else { cx.textAlign='center'; }
-        // si el label se iria por arriba del area, lo bajo
-        if(ty < area.top+8){ ty = pt.y+16; }
-        cx.fillText(txt, tx, ty);
+        // posicion vertical: si se iria por arriba del area, lo bajo
+        let ty = pt.y-12;
+        if(ty < area.top+10){ ty = pt.y+20; }
+        let tx = pt.x;
+        cx.textAlign='center';
+        if(i===0 && !isLast){ cx.textAlign='left'; tx = pt.x - 2; }
+        else if(isLast){ tx = Math.min(pt.x, area.right-2); }
+
+        if(isLast){
+          // fondo solido + texto grande para que el ultimo valor SIEMPRE se lea bien
+          cx.font='700 13px Segoe UI, sans-serif';
+          const tw = cx.measureText(txt).width;
+          const padX=6, padY=4, boxW=tw+padX*2, boxH=16+padY;
+          let boxX = tx-boxW/2;
+          if(boxX+boxW > area.right) boxX = area.right-boxW;
+          if(boxX < area.left) boxX = area.left;
+          let boxY = ty-14;
+          if(boxY < area.top) boxY = pt.y+8;
+          cx.fillStyle = lastColor;
+          cx.beginPath();
+          cx.roundRect ? cx.roundRect(boxX,boxY,boxW,boxH,4) : cx.rect(boxX,boxY,boxW,boxH);
+          cx.fill();
+          cx.fillStyle = '#fff';
+          cx.textAlign='center';
+          cx.fillText(txt, boxX+boxW/2, boxY+boxH-6);
+        } else {
+          cx.font='600 10px Segoe UI, sans-serif';
+          cx.fillStyle = '#5a6b7d';
+          cx.fillText(txt, tx, ty);
+        }
       });
       cx.restore();
     }
@@ -722,7 +959,7 @@ function drawChart(cid,series,metric){
   const c=new Chart(ctx,{type:'line',data:{labels,datasets:ds},
     plugins:[valueLabels],
     options:{responsive:true,maintainAspectRatio:false,
-      layout:{padding:{top:16,right:44,left:8}},
+      layout:{padding:{top:20,right:44,left:8,bottom:4}},
       plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>c.datasetIndex===0?`${metric.label}: ${fmtU(c.parsed.y,metric)}`:null,filter:(t)=>t.datasetIndex===0}}},
       scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:8}},
               y:{min:yMin,max:yMax,grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:10}}}}}});
@@ -737,7 +974,7 @@ fetch('data.json?v=' + Date.now())
   .then(r => r.json())
   .then(d => {
     DATA = d;
-    document.getElementById('genDate').textContent = 'Actualizado ' + DATA.generated.slice(0,10);
+    document.getElementById('genDate').textContent = 'Actualizado ' + fmtDate(DATA.generated.slice(0,10));
     renderTeam();
   })
   .catch(err => {
