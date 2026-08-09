@@ -35,6 +35,9 @@ jobs:
           mkdir -p _site
           cp index.html _site/
           cp data.json _site/
+          cp -r carga _site/
+          cp -r readiness _site/
+          cp -r rtp _site/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
