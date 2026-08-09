@@ -970,7 +970,7 @@ document.querySelectorAll('.tab').forEach(t=>{t.onclick=()=>{document.querySelec
 document.getElementById('bSWC').onclick=function(){showSWC=!showSWC;this.classList.toggle('on');if(document.getElementById('detailView').classList.contains('show')){const p=document.querySelector('.detail-head h2').textContent;renderDetail(p);}};
 document.getElementById('bTE').onclick=function(){showTE=!showTE;this.classList.toggle('on');if(document.getElementById('detailView').classList.contains('show')){const p=document.querySelector('.detail-head h2').textContent;renderDetail(p);}};
 // Carga los datos desde data.json y arranca
-fetch('data.json?v=' + Date.now())
+fetch('../data.json?v=' + Date.now())
   .then(r => r.json())
   .then(d => {
     DATA = d;
