@@ -30,11 +30,17 @@ jobs:
           VALD_TENANT_ID: ${{ secrets.VALD_TENANT_ID }}
         run: python bajar.py
 
+      - name: Bajar datos de Catapult
+        env:
+          CATAPULT_TOKEN: ${{ secrets.CATAPULT_TOKEN }}
+        run: python bajar_catapult.py
+
       - name: Preparar sitio
         run: |
           mkdir -p _site
           cp index.html _site/
           cp data.json _site/
+          cp carga.json _site/
           cp -r carga _site/
           cp -r readiness _site/
           cp -r rtp _site/
