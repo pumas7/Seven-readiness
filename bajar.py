@@ -115,20 +115,32 @@ def get_groups():
 
 
 
+def _fetch_lista(url):
+    """GET a un endpoint que devuelve una lista de perfiles bajo varias claves posibles."""
+    d = curl(url)
+    if isinstance(d, dict):
+        return d.get("profiles") or d.get("items") or d.get("data")
+    if isinstance(d, list):
+        return d
+    return None
+
+
 def get_profiles():
-    """Detecta el plantel del grupo SEVENS de forma dinamica:
-    1. Lista los grupos del tenant y busca el que se llama como GRUPO_OBJETIVO.
-    2. Pide SOLO los perfiles de ese grupo (por GroupId).
-    Si en cualquier paso no puede identificar el grupo con certeza, cae al fallback fijo
-    (los 13 conocidos) -- NUNCA toma todo el tenant, para no traer jugadores de otras categorias."""
+    """Detecta el plantel del grupo SEVENS de forma dinamica y robusta:
+    1. Del endpoint de GRUPOS saca QUIENES estan en SEVENS (por nombre).
+    2. Del endpoint de PROFILES del tenant saca el profileId CORRECTO de cada jugador
+       (el que sirve para pedir tests en ForceDecks/NordBord).
+    3. Cruza por nombre: usa el nombre del grupo + el ID bueno de profiles.
+    Esto es necesario porque el ID que devuelve el servicio de grupos NO es el mismo
+    que usa ForceDecks para los tests (VALD maneja IDs distintos por servicio).
+    Si algo falla, cae al fallback fijo (nunca toma todo el tenant)."""
     objetivo = GRUPO_OBJETIVO.strip().lower()
 
+    # --- paso 1: nombres del grupo SEVENS ---
     grupos = get_groups()
     if not grupos:
-        print("  [PROFILES] sin lista de grupos -> usando fallback fijo (13 jugadores).")
+        print("  [PROFILES] sin lista de grupos -> fallback fijo.")
         return dict(PLAYERS_FALLBACK), False
-
-    # buscar el grupo SEVENS (match flexible: contiene o es contenido)
     grupo_sevens = None
     for g in grupos:
         gname = (g.get("name") or "").strip().lower()
@@ -136,38 +148,62 @@ def get_profiles():
             grupo_sevens = g
             break
     if not grupo_sevens:
-        print(f"  [PROFILES] no encontre un grupo que matchee '{GRUPO_OBJETIVO}'. "
-              f"Grupos disponibles: {[g['name'] for g in grupos]}")
-        print("  [PROFILES] usando fallback fijo (13 jugadores).")
+        print(f"  [PROFILES] no encontre grupo '{GRUPO_OBJETIVO}'. Disponibles: {[g['name'] for g in grupos]}")
         return dict(PLAYERS_FALLBACK), False
-
     gid = grupo_sevens["id"]
     print(f"  [PROFILES] grupo '{grupo_sevens['name']}' identificado (id={gid}).")
 
-    # pedir los perfiles SOLO de ese grupo. Probar variantes de parametro.
+    # perfiles del grupo -> nos quedamos SOLO con los nombres (su id no sirve para tests)
+    profs_grupo = None
     for url in (f"{PROFILE}/profiles?TenantId={TENANT}&GroupId={gid}",
                 f"{PROFILE}/profiles?TenantId={TENANT}&groupId={gid}",
                 f"{PROFILE}/groups/{gid}/profiles?TenantId={TENANT}"):
-        d = curl(url)
-        profs = None
-        if isinstance(d, dict):
-            profs = d.get("profiles") or d.get("items") or d.get("data")
-        elif isinstance(d, list):
-            profs = d
-        if profs:
-            players = {}
-            for p in profs:
-                pid = p.get("profileId") or p.get("id")
-                nombre = _nombre_de(p)
-                if pid and nombre:
-                    players[nombre] = pid
-            if players:
-                print(f"  [PROFILES] {len(players)} jugadores en grupo "
-                      f"'{grupo_sevens['name']}' (dinamico): {list(players.keys())}")
-                return players, True
+        profs_grupo = _fetch_lista(url)
+        if profs_grupo:
+            break
+    if not profs_grupo:
+        print("  [PROFILES] el grupo no devolvio perfiles. Fallback fijo.")
+        return dict(PLAYERS_FALLBACK), False
+    nombres_sevens = {}  # nombre_normalizado -> nombre_display
+    for p in profs_grupo:
+        n = _nombre_de(p)
+        if n:
+            nombres_sevens[n.lower()] = n
+    print(f"  [PROFILES] {len(nombres_sevens)} jugadores en SEVENS: {list(nombres_sevens.values())}")
 
-    print("  [PROFILES] el grupo existe pero no devolvio perfiles. Usando fallback fijo.")
+    # --- paso 2: profiles del tenant con el ID para tests ---
+    profs_all = _fetch_lista(f"{PROFILE}/profiles?TenantId={TENANT}")
+    id_por_nombre = {}
+    if profs_all:
+        for p in profs_all:
+            n = _nombre_de(p)
+            pid = p.get("profileId") or p.get("id")
+            if n and pid:
+                id_por_nombre[n.lower()] = pid
+    # tambien indexo la lista fija conocida por nombre (IDs ya probados que funcionan para tests)
+    fijo_por_nombre = {k.lower(): v for k, v in PLAYERS_FALLBACK.items()}
+
+    # --- paso 3: cruzar. Prioridad: ID de la lista fija conocida > ID del endpoint profiles ---
+    players = {}
+    faltantes = []
+    for nlow, ndisp in nombres_sevens.items():
+        pid = fijo_por_nombre.get(nlow) or id_por_nombre.get(nlow)
+        if pid:
+            players[ndisp] = pid
+        else:
+            faltantes.append(ndisp)
+    if faltantes:
+        print(f"  [PROFILES] OJO: {len(faltantes)} de SEVENS sin ID para tests: {faltantes}")
+
+    if players:
+        print(f"  [PROFILES] {len(players)} jugadores listos (dinamico, IDs cruzados).")
+        return players, True
+
+    print("  [PROFILES] no se pudo cruzar ningun jugador. Fallback fijo.")
     return dict(PLAYERS_FALLBACK), False
+
+ 
+ 
 
  
  
