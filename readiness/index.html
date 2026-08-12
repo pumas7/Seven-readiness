@@ -188,16 +188,11 @@ main{padding:22px 0 60px}
 </header>
 <main>
   <div class="wrap">
-    <div class="bandtoggle">
-      <span class="lbl">Bandas de referencia:</span>
-      <button class="btn-band on" id="bSWC"><span class="swatch sw-swc"></span>SWC (cambio minimo que importa)</button>
-      <button class="btn-band on" id="bTE"><span class="swatch sw-te"></span>&plusmn;1 desvio (variacion normal)</button>
-    </div>
     <div class="legend">
-      <span><b>Semaforo:</b></span>
-      <span><span class="dot g"></span>Normal</span>
-      <span><span class="dot a"></span>Vigilar</span>
-      <span><span class="dot r"></span>Alerta (fuera de banda + tendencia)</span>
+      <span><b>Semaforo</b> (% de ca&iacute;da vs. promedio de las &uacute;ltimas 3):</span>
+      <span><span class="dot g"></span>0-10% Normal</span>
+      <span><span class="dot a"></span>11-20% Vigilar</span>
+      <span><span class="dot r"></span>21%+ Alerta</span>
       <span><span class="dot n"></span>Sin dato suficiente</span>
     </div>
     <div id="teamView" class="grid"></div>
@@ -288,7 +283,7 @@ const EXPLAIN={
 
 let currentTab='cmj';
 let charts=[];
-let showSWC=true, showTE=true;
+
 
 const METRICS={
   cmj:[
@@ -301,7 +296,7 @@ const METRICS={
     {k:'CMRJ_REBOUND_RSI',label:'RSI reactivo (vuelo/contacto)',unit:'',dir:'down',dec:2,primary:true},
     {k:'CMRJ_REBOUND_JUMP_HEIGHT',label:'Altura rebote',unit:'cm',dir:'down',dec:1},
     {k:'CMRJ_REBOUND_CONTACT_TIME',label:'Tiempo de contacto',unit:'s',dir:'up',dec:3},
-    {k:'CMRJ_REBOUND_ECC_DURATION',label:'Duracion excentrica',unit:'ms',dir:'up',dec:0,scale:1000,noStatus:true}
+    {k:'CMRJ_REBOUND_ECC_DURATION',label:'Duracion excentrica',unit:'ms',dir:'up',dec:0,scale:1000}
   ],
   nordic:[
     {k:'asym',label:'Asimetria I/D',unit:'%',dir:'absup',dec:1,primary:true},
@@ -310,9 +305,9 @@ const METRICS={
   ]
 };
 const NOTES={
-  cmj:'CMJ com&uacute;n (jueves). Dos bandas: &plusmn;1 desv&iacute;o (la variaci&oacute;n normal del jugador) y SWC (el cambio m&iacute;nimo que importa). Un test fuera de &plusmn;1 desv&iacute;o super&oacute; el ruido normal; s&oacute;lo dispara ALERTA (rojo) si adem&aacute;s viene con tendencia (2-3 tests seguidos cayendo).',
-  cmrj:'CMRJ rebote (martes). Con 2 tests ya empieza a mostrar sem&aacute;foro y bandas, pero con base a&uacute;n pobre (banda provisoria): tomarlo como orientativo hasta juntar 4+ evaluaciones. La <b>Duraci&oacute;n exc&eacute;ntrica</b> es informativa (no dispara sem&aacute;foro).',
-  nordic:'N&oacute;rdicos (viernes). Foco en la asimetr&iacute;a izquierda/derecha (alerta si supera 15%). El torque se ajusta al peso corporal. Como se toma despu&eacute;s de la carga semanal, la fuerza conviene leerla como tendencia larga, no d&iacute;a a d&iacute;a.'
+  cmj:'CMJ com&uacute;n (jueves). El sem&aacute;foro compara el valor del d&iacute;a contra el promedio de las &uacute;ltimas 3 evaluaciones: 0-10% verde, 11-20% amarillo, 21%+ rojo (solo cuenta la ca&iacute;da hacia el lado malo de cada m&eacute;trica).',
+  cmrj:'CMRJ rebote (martes). Mismo criterio: % de ca&iacute;da vs. promedio de las &uacute;ltimas 3 evaluaciones (0-10 / 11-20 / 21+). Necesita al menos 2 evaluaciones para empezar a semaforizar.',
+  nordic:'N&oacute;rdicos (viernes). La asimetr&iacute;a izquierda/derecha se semaforiza por el valor del d&iacute;a (0-10% verde, 11-20% amarillo, 21%+ rojo). El torque de cada pierna, por % de ca&iacute;da vs. sus &uacute;ltimas 3. Se ajusta al peso corporal.'
 };
 
 function getSeries(player,tab){
@@ -328,58 +323,48 @@ function stats(series,metric){
   const vals=series.map(s=>s[metric.k]).filter(v=>v!==null&&v!==undefined);
   if(vals.length<2)return null;
   const current=vals[vals.length-1];
-  const base=vals.slice(Math.max(0,vals.length-9),vals.length-1); // ventana ~8 previos
+  // PROMEDIO DE LOS ULTIMOS 3 REGISTROS PREVIOS (ventana movil).
+  // A medida que entran datos nuevos, "current" es el mas reciente y el promedio se recalcula solo.
+  const base=vals.slice(Math.max(0,vals.length-4),vals.length-1); // hasta 3 previos
   if(base.length<1)return null;
   const mean=base.reduce((a,b)=>a+b,0)/base.length;
-  // con >=2 previos: sd muestral normal. Con 1 solo previo no hay dispersion real:
-  // usamos un sd proxy = 5% de la media como banda minima provisoria hasta juntar mas tests.
-  let sd;
-  if(base.length>=2){ sd=Math.sqrt(base.reduce((a,b)=>a+(b-mean)**2,0)/(base.length-1)); }
-  else { sd=Math.abs(mean)*0.05; }
-  const swc=0.2*sd;
-  const te=sd; // banda variabilidad = 1 SD
-  // desviacion en la direccion "mala"
-  let diff;
-  if(metric.dir==='down')diff=mean-current;
-  else if(metric.dir==='up')diff=current-mean;
-  else if(metric.dir==='absup')diff=Math.abs(current)-Math.abs(mean);
-  else diff=Math.abs(mean)-Math.abs(current);
-  // tendencia: ultimos 2 diffs consecutivos en direccion mala
-  let trend=false;
-  if(vals.length>=3){
-    const v=vals.slice(-3);
-    if(metric.dir==='down') trend = v[2]<v[1] && v[1]<v[0];
-    else if(metric.dir==='up') trend = v[2]>v[1] && v[1]>v[0];
-  }
-  return {current,mean,sd,swc,te,diff,trend,vals};
+  // desviacion (con signo) en la direccion "mala" de la metrica.
+  // Positivo = se movio para el lado malo; negativo = se movio para el lado bueno.
+  let diffAbs;
+  if(metric.dir==='down')diffAbs=mean-current;              // malo si baja
+  else if(metric.dir==='up')diffAbs=current-mean;           // malo si sube
+  else if(metric.dir==='absup')diffAbs=Math.abs(current)-Math.abs(mean); // malo si sube en magnitud
+  else diffAbs=Math.abs(mean)-Math.abs(current);            // absdown: malo si baja en magnitud
+  // % de cambio respecto al promedio de las ultimas 3 (en la direccion mala).
+  const denom=Math.abs(mean);
+  const pct = denom>0 ? (diffAbs/denom)*100 : 0;
+  return {current,mean,diff:diffAbs,pct,vals};
+}
+
+// Semaforo por % de desviacion vs promedio de las ultimas 3 evaluaciones.
+// Bandas (unicas para todo VALD): 0-10 verde | 11-20 amarillo | 21+ rojo.
+// Solo cuenta el movimiento hacia el lado MALO de la metrica; si mejora, siempre verde.
+function bandaPorPct(pct){
+  if(pct<=10) return 'g';
+  if(pct<=20) return 'a';
+  return 'r';
 }
 
 function statusOf(series,metric){
-  if(metric.noStatus){ return {status:'i'}; } // informativa: se muestra, no dispara semaforo
+  if(metric.noStatus){ return {status:'i'}; }
   if(metric.k==='asym'){
+    // Asimetria: se semaforiza por el VALOR ABSOLUTO de la evaluacion del dia (no por cambio).
     const vals=series.map(s=>s[metric.k]).filter(v=>v!==null&&v!==undefined);
     if(!vals.length)return {status:'n'};
     const a=Math.abs(vals[vals.length-1]);
-    // SWC/+-1 desvio de la asimetria en si (informativo, no reemplaza el limite de 15%)
-    let st=null;
-    const base=vals.slice(0,-1);
-    if(base.length>=1){
-      const mean=base.reduce((x,y)=>x+y,0)/base.length;
-      let sd;
-      if(base.length>=2){ sd=Math.sqrt(base.reduce((x,y)=>x+(y-mean)**2,0)/(base.length-1)); }
-      else { sd=Math.max(Math.abs(mean)*0.05,0.5); }
-      st={mean,sd,swc:0.2*sd,te:sd,current:vals[vals.length-1]};
-    }
-    if(a>=15)return {status:'r',st}; if(a>=10)return {status:'a',st}; return {status:'g',st};
+    const status=bandaPorPct(a); // 0-10 verde, 11-20 amarillo, 21+ rojo
+    return {status, st:{current:vals[vals.length-1], pct:a}};
   }
   const st=stats(series,metric);
   if(!st)return {status:'n'};
-  // usa la banda de variabilidad (1 SD) como umbral principal (especifica)
-  // amarillo: supera SWC pero no TE; rojo: supera TE + tendencia; sino verde
-  if(st.diff>st.te && st.trend) return {status:'r',st};
-  if(st.diff>st.te) return {status:'a',st};
-  if(st.diff>st.swc) return {status:'a',st};
-  return {status:'g',st};
+  // si el movimiento es hacia el lado bueno (pct<=0), verde directo
+  const status = st.pct<=0 ? 'g' : bandaPorPct(st.pct);
+  return {status, st};
 }
 
 function playerStatus(player,tab){
@@ -605,40 +590,39 @@ function renderDetail(player){
       const s=statusOf(series,m);
       let verdict='';
       if(s.st){
-        const outTE=s.st.diff>s.st.te, outSWC=s.st.diff>s.st.swc;
-        if(m.k==='asym'){verdict=`<span style="color:var(--${cvar(s.status)})">Asimetria actual: ${Math.abs(s.st?s.st.current:0).toFixed(1)}%</span>`;}
-        else if(outTE&&s.st.trend)verdict='<span style="color:var(--red)">Fuera de lo normal + tendencia sostenida &rarr; alerta real</span>';
-        else if(outTE)verdict='<span style="color:var(--amber)">Se sali&oacute; de lo normal (no es ruido), pero sin tendencia todav&iacute;a</span>';
-        else if(outSWC)verdict='<span style="color:var(--amber)">Se movi&oacute; un poco, pero dentro de lo normal del jugador</span>';
-        else verdict='<span style="color:var(--green)">Dentro de lo normal</span>';
+        if(m.k==='asym'){
+          verdict=`<span style="color:var(--${cvar(s.status)})">Asimetria actual: ${Math.abs(s.st.current).toFixed(1)}%</span>`;
+        }else{
+          const p=s.st.pct;
+          if(p<=0) verdict='<span style="color:var(--green)">Por encima o igual al promedio de sus &uacute;ltimas 3 &rarr; sin ca&iacute;da</span>';
+          else if(p<=10) verdict=`<span style="color:var(--green)">${p.toFixed(1)}% por debajo del promedio de sus &uacute;ltimas 3 (dentro de lo normal)</span>`;
+          else if(p<=20) verdict=`<span style="color:var(--amber)">${p.toFixed(1)}% por debajo del promedio de sus &uacute;ltimas 3 &rarr; vigilar</span>`;
+          else verdict=`<span style="color:var(--red)">${p.toFixed(1)}% por debajo del promedio de sus &uacute;ltimas 3 &rarr; alerta</span>`;
+        }
       }
       const ex=EXPLAIN[m.k]||{que:'',fatiga:''};
-      // calculo promedio y anchos de banda para el recuadro
+      // Recuadro: maximo historico + promedio ultimas 3 + % de cambio actual.
       let statBox='';
       if(s.st && m.k!=='asym'){
-        // Maximo historico (todas las evaluaciones) y promedio de las ultimas 3
         const allVals=series.map(x=>x[m.k]).filter(v=>v!=null);
         const maxHist=allVals.length?Math.max(...allVals):null;
         const last3=allVals.slice(-3);
         const avgLast3=last3.length?last3.reduce((a,b)=>a+b,0)/last3.length:null;
+        const pct=s.st.pct;
+        const pctTxt = pct<=0 ? `+${Math.abs(pct).toFixed(1)}%` : `-${pct.toFixed(1)}%`;
         statBox=`<div class="stat-box">
           <div class="sb-row"><span class="sb-lbl">M&aacute;ximo hist&oacute;rico</span><span class="sb-val">${maxHist!=null?fmtU(maxHist,m):'-'}</span></div>
           <div class="sb-row"><span class="sb-lbl">Promedio &uacute;lt. 3</span><span class="sb-val">${avgLast3!=null?fmtU(avgLast3,m):'-'}</span></div>
-          <div class="sb-row"><span class="sb-lbl">SWC</span><span class="sb-val swc">&plusmn;${fmtBand(s.st.swc*(m.scale||1),m.dec)}</span></div>
-          <div class="sb-row"><span class="sb-lbl">&plusmn;1 desvio</span><span class="sb-val te">&plusmn;${fmtBand(s.st.te*(m.scale||1),m.dec)}</span></div>
+          <div class="sb-row"><span class="sb-lbl">Cambio vs prom.</span><span class="sb-val" style="color:var(--${cvar(s.status)})">${pctTxt}</span></div>
         </div>`;
       } else if(m.k==='asym'){
-        // para asimetria muestro el promedio de |asim|
-        const vals=series.map(x=>x[m.k]).filter(v=>v!=null);
-        if(vals.length){
-          const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
-          statBox=`<div class="stat-box"><div class="sb-row"><span class="sb-lbl">Promedio</span><span class="sb-val">${mean.toFixed(1)}%</span></div><div class="sb-row"><span class="sb-lbl">Limite</span><span class="sb-val te">&plusmn;15%</span></div></div>`;
-        }
+        const cur=s.st?Math.abs(s.st.current):0;
+        statBox=`<div class="stat-box"><div class="sb-row"><span class="sb-lbl">Asimetr&iacute;a actual</span><span class="sb-val" style="color:var(--${cvar(s.status)})">${cur.toFixed(1)}%</span></div><div class="sb-row"><span class="sb-lbl">Bandas</span><span class="sb-val" style="font-size:10px">0-10 / 11-20 / 21+</span></div></div>`;
       }
       blocks+=`<div class="chart-block">${statBox}<h4><span class="flag" style="width:9px;height:9px;border-radius:50%;background:var(--${cvar(s.status)})"></span>${m.label} ${m.primary?'&middot; principal':''}</h4>
         <div class="explain"><div><b>Qu&eacute; mide:</b> ${ex.que}</div><div><b>Qu&eacute; buscamos:</b> ${ex.fatiga}</div></div>
         <div class="verdict">${verdict}</div>
-        <div class="chart-legend">${(m.k!=='asym')?'<span><span class="ln ln-te"></span>&plusmn;1 desvio</span><span><span class="ln ln-swc"></span>SWC</span><span><span class="ln ln-data"></span>Sus evaluaciones</span>':'<span><span class="ln ln-red"></span>Limite 15%</span><span><span class="ln ln-data"></span>Sus evaluaciones</span>'}</div>
+        <div class="chart-legend"><span><span class="ln ln-data"></span>Sus evaluaciones</span></div>
         <div class="chart-wrap"><canvas id="ch_${m.k}"></canvas></div></div>`;
     }
   }
@@ -649,23 +633,13 @@ function renderDetail(player){
       <details class="bands-help" open>
         <summary>C&oacute;mo leer este tablero (tocar para ocultar)</summary>
         <div class="bands-help-body">
-          <p>Cada punto es una evaluaci&oacute;n. La l&iacute;nea muestra c&oacute;mo viene el jugador en el tiempo. El &uacute;ltimo punto es el m&aacute;s reciente, y su color indica el estado actual.</p>
-          <div class="band-cards">
-            <div class="band-card sw-a">
-              <div class="bc-head"><span class="swatch" style="background:rgba(124,77,196,.4)"></span>Banda ancha (violeta) = lo NORMAL del jugador</div>
-              <p>Es cu&aacute;nto var&iacute;a habitualmente esta persona. Todo lo que cae DENTRO de esta banda es normal, aunque suba o baje un poco. Salir de aqu&iacute; significa un cambio que NO es simple ruido.</p>
-            </div>
-            <div class="band-card sw-b">
-              <div class="bc-head"><span class="swatch" style="background:rgba(31,164,99,.55)"></span>Banda fina (verde punteada) = zona chica alrededor del promedio</div>
-              <p>Es mucho m&aacute;s exigente. Sirve para detectar cambios peque&ntilde;os apenas empiezan. Es m&aacute;s quisquillosa: avisa antes, pero tambi&eacute;n se equivoca m&aacute;s seguido.</p>
-            </div>
-          </div>
+          <p>Cada punto es una evaluaci&oacute;n. El color del &uacute;ltimo punto indica el estado actual, comparando el valor de hoy contra el <b>promedio de sus &uacute;ltimas 3 evaluaciones</b>. Solo cuenta si el valor se mueve para el lado malo de esa m&eacute;trica (por ejemplo, si baja el RSI o sube el tiempo de contacto).</p>
           <div class="traffic">
-            <span><span class="dot g"></span><b>Verde:</b> dentro de lo normal, todo bien.</span>
-            <span><span class="dot a"></span><b>Amarillo:</b> se movi&oacute; m&aacute;s de lo habitual, pero es un dato aislado. Vigilar.</span>
-            <span><span class="dot r"></span><b>Rojo:</b> se movi&oacute; m&aacute;s de lo habitual Y viene cayendo 2-3 veces seguidas. Se&ntilde;al real, actuar.</span>
+            <span><span class="dot g"></span><b>Verde (0-10%):</b> dentro de lo normal, todo bien.</span>
+            <span><span class="dot a"></span><b>Amarillo (11-20%):</b> ca&iacute;da moderada respecto a sus &uacute;ltimas 3. Vigilar.</span>
+            <span><span class="dot r"></span><b>Rojo (21%+):</b> ca&iacute;da marcada respecto a sus &uacute;ltimas 3. Se&ntilde;al real, actuar.</span>
           </div>
-          <p class="tip">Regla simple: un mal dato aislado = amarillo (puede ser cualquier cosa). Varios malos seguidos = rojo (ah&iacute; s&iacute; hay algo). Pod&eacute;s prender o apagar cada banda con los botones de arriba.</p>
+          <p class="tip">La referencia (promedio de las &uacute;ltimas 3) se recalcula sola con cada evaluaci&oacute;n nueva. En N&oacute;rdicos, la asimetr&iacute;a se sema&oacute;foriza por el valor del d&iacute;a con las mismas bandas (0-10 / 11-20 / 21+).</p>
         </div>
       </details>
       ${tab==='cmrj'?reboundComparisonHTML(series):''}
@@ -698,9 +672,9 @@ function nordicBlockHTML(series){
   let asymVerdict='';
   if(asymCurrent!=null){
     const a=Math.abs(asymCurrent);
-    if(a>=15) asymVerdict='<span style="color:var(--red)">Asimetria &ge;15%: desequilibrio marcado, factor de riesgo de lesion de isquiotibiales</span>';
-    else if(a>=10) asymVerdict='<span style="color:var(--amber)">Asimetria entre 10-15%: vigilar</span>';
-    else asymVerdict='<span style="color:var(--green)">Asimetria dentro de lo normal (&lt;10%)</span>';
+    if(a>=21) asymVerdict='<span style="color:var(--red)">Asimetria &ge;21%: desequilibrio marcado, factor de riesgo de lesion de isquiotibiales</span>';
+    else if(a>=11) asymVerdict='<span style="color:var(--amber)">Asimetria entre 11-20%: vigilar</span>';
+    else asymVerdict='<span style="color:var(--green)">Asimetria dentro de lo normal (0-10%)</span>';
   }
 
   return `
@@ -713,10 +687,8 @@ function nordicBlockHTML(series){
         </div>
         <div class="ndl-box ndl-asym">
           <div class="ndl-title">Asimetria I/D</div>
-          <div class="sb-row"><span class="sb-lbl">Actual</span><span class="sb-val">${asymCurrent!=null?asymCurrent.toFixed(1)+'%':'-'}</span></div>
-          ${asymSt?`<div class="sb-row"><span class="sb-lbl">SWC</span><span class="sb-val swc">&plusmn;${fmtBand(asymSt.swc,1)}%</span></div>
-          <div class="sb-row"><span class="sb-lbl">&plusmn;1 desvio</span><span class="sb-val te">&plusmn;${fmtBand(asymSt.te,1)}%</span></div>`:''}
-          <div class="sb-row"><span class="sb-lbl">L&iacute;mite</span><span class="sb-val" style="color:var(--red)">&plusmn;15%</span></div>
+          <div class="sb-row"><span class="sb-lbl">Actual</span><span class="sb-val" style="color:var(--${cvar(asymStatus.status)})">${asymCurrent!=null?Math.abs(asymCurrent).toFixed(1)+'%':'-'}</span></div>
+          <div class="sb-row"><span class="sb-lbl">Bandas</span><span class="sb-val" style="font-size:10px">0-10 / 11-20 / 21+</span></div>
         </div>
       </div>
       <h4><span class="flag" style="width:9px;height:9px;border-radius:50%;background:var(--${cvar(asymStatus.status)})"></span>Torque n&oacute;rdico Izquierda / Derecha &middot; principal</h4>
@@ -725,7 +697,6 @@ function nordicBlockHTML(series){
       <div class="chart-legend">
         <span><span class="ln" style="border-top-color:#144272;border-top-width:2.5px"></span>Torque Izquierda</span>
         <span><span class="ln" style="border-top-color:#c0392b;border-top-width:2.5px"></span>Torque Derecha</span>
-        <span><span class="ln ln-te"></span>&plusmn;1 desvio</span><span><span class="ln ln-swc"></span>SWC</span>
       </div>
       <div class="chart-wrap"><canvas id="ch_nordic_torque"></canvas></div>
     </div>`;
@@ -742,27 +713,10 @@ function drawNordicChart(cid,series){
   const vL=dateSet.map(d=>byDate[d].torqueNormL??null);
   const vR=dateSet.map(d=>byDate[d].torqueNormR??null);
 
-  // bandas: calculadas sobre historico previo al ultimo dato, por pierna
-  function bandFor(vals){
-    const nn=vals.filter(v=>v!=null);
-    const base=nn.slice(0,-1);
-    if(!base.length)return null;
-    const mean=base.reduce((a,b)=>a+b,0)/base.length;
-    let sd;
-    if(base.length>=2){ sd=Math.sqrt(base.reduce((a,b)=>a+(b-mean)**2,0)/(base.length-1)); }
-    else { sd=Math.abs(mean)*0.05; }
-    return {mean,sd,swc:0.2*sd};
-  }
-  const bL=bandFor(vL), bR=bandFor(vR);
+  function lastIdx(vals){for(let i=vals.length-1;i>=0;i--)if(vals[i]!=null)return i;return -1;}
 
   const allVals=vL.concat(vR).filter(v=>v!=null);
-  const bandVals=[];
-  if(showTE||showSWC){
-    if(bL){bandVals.push(bL.mean+bL.sd,bL.mean-bL.sd);}
-    if(bR){bandVals.push(bR.mean+bR.sd,bR.mean-bR.sd);}
-  }
-  const scaleVals=allVals.concat(bandVals);
-  const dmin=Math.min(...scaleVals),dmax=Math.max(...scaleVals);
+  const dmin=Math.min(...allVals),dmax=Math.max(...allVals);
   const range=dmax-dmin||1, pad=range*0.18;
   const yMin=dmin-pad, yMax=dmax+pad;
 
@@ -776,29 +730,6 @@ function drawNordicChart(cid,series){
      pointBackgroundColor:vR.map((v,i)=>i===lastIdx(vR)?'#c0392b':'rgba(192,57,43,.5)'),
      pointBorderColor:'#fff',pointBorderWidth:1.5,fill:false}
   ];
-  function lastIdx(vals){for(let i=vals.length-1;i>=0;i--)if(vals[i]!=null)return i;return -1;}
-
-  // bandas por pierna (violeta=TE izq/der superpuestas, verde=SWC izq/der superpuestas)
-  if(showTE && bL){
-    const topIdx=ds.length;
-    ds.push({label:'teL-top',data:vL.map(()=>bL.mean+bL.sd),borderColor:'rgba(20,66,114,.35)',borderWidth:1,pointRadius:0,fill:false,order:6});
-    ds.push({label:'teL-bot',data:vL.map(()=>bL.mean-bL.sd),borderColor:'rgba(20,66,114,.35)',borderWidth:1,pointRadius:0,backgroundColor:'rgba(20,66,114,.08)',fill:topIdx,order:5});
-  }
-  if(showTE && bR){
-    const topIdx=ds.length;
-    ds.push({label:'teR-top',data:vR.map(()=>bR.mean+bR.sd),borderColor:'rgba(192,57,43,.30)',borderWidth:1,pointRadius:0,fill:false,order:6});
-    ds.push({label:'teR-bot',data:vR.map(()=>bR.mean-bR.sd),borderColor:'rgba(192,57,43,.30)',borderWidth:1,pointRadius:0,backgroundColor:'rgba(192,57,43,.08)',fill:topIdx,order:5});
-  }
-  if(showSWC && bL){
-    const topIdx=ds.length;
-    ds.push({label:'swcL-top',data:vL.map(()=>bL.mean+bL.swc),borderColor:'rgba(31,164,99,.6)',borderWidth:1,borderDash:[5,3],pointRadius:0,fill:false,order:4});
-    ds.push({label:'swcL-bot',data:vL.map(()=>bL.mean-bL.swc),borderColor:'rgba(31,164,99,.6)',borderWidth:1,borderDash:[5,3],pointRadius:0,backgroundColor:'rgba(31,164,99,.14)',fill:topIdx,order:3});
-  }
-  if(showSWC && bR){
-    const topIdx=ds.length;
-    ds.push({label:'swcR-top',data:vR.map(()=>bR.mean+bR.swc),borderColor:'rgba(31,164,99,.6)',borderWidth:1,borderDash:[3,3],pointRadius:0,fill:false,order:4});
-    ds.push({label:'swcR-bot',data:vR.map(()=>bR.mean-bR.swc),borderColor:'rgba(31,164,99,.6)',borderWidth:1,borderDash:[3,3],pointRadius:0,backgroundColor:'rgba(31,164,99,.14)',fill:topIdx,order:3});
-  }
 
   const liL=lastIdx(vL), liR=lastIdx(vR);
   const valueLabels={
@@ -858,14 +789,6 @@ const CHART_WINDOW = 4;
 function drawChart(cid,series,metric){
   const ctx=document.getElementById(cid);if(!ctx)return;
   const allPts=series.map(s=>({x:s.date,y:s[metric.k]})).filter(p=>p.y!==null&&p.y!==undefined);
-  const allVals=allPts.map(p=>p.y);
-  // banda calculada sobre TODO el historico previo al ultimo dato (igual que antes)
-  const base=allVals.slice(0,-1);
-  const mean=base.reduce((a,b)=>a+b,0)/base.length;
-  let sd;
-  if(base.length>=2){ sd=Math.sqrt(base.reduce((a,b)=>a+(b-mean)**2,0)/(base.length-1)); }
-  else { sd=Math.abs(mean)*0.05; } // 1 solo previo: banda minima provisoria = 5% de la media
-  const swc=0.2*sd;
   const st=statusOf(series,metric).status;
   const lastColor={g:'#1FA463',a:'#E8A317',r:'#D64545',n:'#8595A6'}[st];
 
@@ -875,14 +798,12 @@ function drawChart(cid,series,metric){
   const vals = pts.map(p=>p.y);
   const labels=pts.map(p=>fmtDateShort(p.x));
 
-  // ESCALA realista: min/max de los datos visibles + bandas, con padding
-  const bandVals = (metric.k!=='asym') ? [mean+sd,mean-sd,mean+swc,mean-swc] : [];
-  const allForScale = vals.concat(showTE||showSWC ? bandVals : []);
-  const dmin=Math.min(...allForScale),dmax=Math.max(...allForScale);
+  // ESCALA realista: min/max de los datos visibles con padding (sin bandas)
+  const dmin=Math.min(...vals),dmax=Math.max(...vals);
   const range=dmax-dmin||1;
   const pad=range*0.15;
   let yMin=dmin-pad, yMax=dmax+pad;
-  if(metric.k==='asym'){yMin=Math.min(-20,dmin-3);yMax=Math.max(20,dmax+3);}
+  if(metric.k==='asym'){yMin=Math.min(-25,dmin-3);yMax=Math.max(25,dmax+3);}
 
   const ds=[
     {label:metric.label,data:vals,borderColor:'#144272',borderWidth:2,tension:.3,order:0,
@@ -890,22 +811,12 @@ function drawChart(cid,series,metric){
      pointBackgroundColor:pts.map((p,i)=>i===pts.length-1?lastColor:'rgba(44,116,179,.5)'),
      pointBorderColor:'#fff',pointBorderWidth:1.5,fill:false}
   ];
-  // Banda TE (+-1 SD) violeta: dos series a nivel constante, la de abajo rellena HACIA la de arriba
-  // (se referencian por indice de dataset, no por 'order', para que el sombreado sea correcto siempre)
-  if(showTE && metric.k!=='asym'){
-    const teTopIdx = ds.length;
-    ds.push({label:'te-top',data:vals.map(()=>mean+sd),borderColor:'rgba(124,77,196,.45)',borderWidth:1.5,pointRadius:0,fill:false,order:6});
-    ds.push({label:'te-bot',data:vals.map(()=>mean-sd),borderColor:'rgba(124,77,196,.45)',borderWidth:1.5,pointRadius:0,backgroundColor:'rgba(124,77,196,.10)',fill:teTopIdx,order:5});
-  }
-  // Banda SWC (0.2 SD) verde: idem, relleno explicito entre las dos series de la banda
-  if(showSWC && metric.k!=='asym'){
-    const swcTopIdx = ds.length;
-    ds.push({label:'swc-top',data:vals.map(()=>mean+swc),borderColor:'rgba(31,164,99,.7)',borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:false,order:4});
-    ds.push({label:'swc-bot',data:vals.map(()=>mean-swc),borderColor:'rgba(31,164,99,.7)',borderWidth:1.5,borderDash:[5,3],pointRadius:0,backgroundColor:'rgba(31,164,99,.18)',fill:swcTopIdx,order:3});
-  }
+  // Asimetria: lineas de referencia en los cortes 10 y 20 (bandas del semaforo), y el cero.
   if(metric.k==='asym'){
-    ds.push({label:'lim+',data:vals.map(()=>15),borderColor:'rgba(214,69,69,.5)',borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false});
-    ds.push({label:'lim-',data:vals.map(()=>-15),borderColor:'rgba(214,69,69,.5)',borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false});
+    ds.push({label:'lim20+',data:vals.map(()=>20),borderColor:'rgba(214,69,69,.5)',borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false});
+    ds.push({label:'lim20-',data:vals.map(()=>-20),borderColor:'rgba(214,69,69,.5)',borderWidth:1,borderDash:[5,4],pointRadius:0,fill:false});
+    ds.push({label:'lim10+',data:vals.map(()=>10),borderColor:'rgba(232,163,23,.5)',borderWidth:1,borderDash:[3,3],pointRadius:0,fill:false});
+    ds.push({label:'lim10-',data:vals.map(()=>-10),borderColor:'rgba(232,163,23,.5)',borderWidth:1,borderDash:[3,3],pointRadius:0,fill:false});
     ds.push({label:'zero',data:vals.map(()=>0),borderColor:'rgba(0,0,0,.15)',borderWidth:1,pointRadius:0,fill:false});
   }
   // plugin para mostrar el valor de cada punto (el ultimo mas grande y con fondo, para que se lea siempre)
@@ -968,8 +879,7 @@ function drawChart(cid,series,metric){
 }
 
 document.querySelectorAll('.tab').forEach(t=>{t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');currentTab=t.dataset.tab;document.getElementById('promediosView').style.display='none';if(currentTab==='promedios'){renderPromedios();}else{renderTeam();}};});
-document.getElementById('bSWC').onclick=function(){showSWC=!showSWC;this.classList.toggle('on');if(document.getElementById('detailView').classList.contains('show')){const p=document.querySelector('.detail-head h2').textContent;renderDetail(p);}};
-document.getElementById('bTE').onclick=function(){showTE=!showTE;this.classList.toggle('on');if(document.getElementById('detailView').classList.contains('show')){const p=document.querySelector('.detail-head h2').textContent;renderDetail(p);}};
+
 // Carga los datos desde data.json y arranca
 fetch('../data.json?v=' + Date.now())
   .then(r => r.json())
