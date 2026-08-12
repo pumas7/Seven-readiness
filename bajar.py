@@ -17,10 +17,16 @@ if not CLIENT_ID or not CLIENT_SECRET:
  
 FD = "https://prd-use-api-extforcedecks.valdperformance.com"
 NB = "https://prd-use-api-externalnordbord.valdperformance.com"
+PROFILE = "https://prd-use-api-externalprofile.valdperformance.com"
 DESDE = "2024-01-01T00:00:00.000Z"
- 
-# Grupo SEVENS: nombre -> profileId
-PLAYERS = {
+
+# Grupo del que queremos traer TODOS los jugadores automaticamente (igual que Catapult -> SEVEN).
+# Se compara sin distinguir mayus/minus y contra varios campos posibles de la API de profiles.
+GRUPO_OBJETIVO = os.environ.get("VALD_GRUPO", "SEVENS")
+
+# Lista fija de respaldo (fallback): si la API de profiles falla o no devuelve nada,
+# usamos estos IDs para no quedarnos sin datos. El plantel real se detecta dinamicamente.
+PLAYERS_FALLBACK = {
     "Santiago Alvarez Fourcade": "5f5fd3cb-baa4-4989-bdce-b306a6bd471b",
     "Martiniano Arrieta": "435762d5-58b0-48a1-903d-712f9620ec2f",
     "Juan Patricio Batac": "730f56a7-a250-4d2c-bc86-35443b02b22f",
@@ -71,6 +77,88 @@ def curl(url):
         return json.loads(r.stdout)
     except Exception:
         return None
+
+
+def _grupos_de(prof):
+    """Devuelve una lista de nombres de grupo posibles de un perfil, mirando varios campos
+    porque la API de VALD no siempre usa el mismo nombre. Todo en minusculas para comparar."""
+    vals = []
+    for key in ("groupNames", "groups", "groupName", "group", "syncId"):
+        v = prof.get(key)
+        if isinstance(v, list):
+            for item in v:
+                if isinstance(item, str):
+                    vals.append(item)
+                elif isinstance(item, dict):
+                    vals.append(item.get("name") or item.get("groupName") or "")
+        elif isinstance(v, str):
+            vals.append(v)
+        elif isinstance(v, dict):
+            vals.append(v.get("name") or v.get("groupName") or "")
+    return [x.strip().lower() for x in vals if x]
+
+
+def get_profiles():
+    """Trae TODOS los perfiles del tenant desde la API de profiles de VALD y arma
+    {nombre: profileId} para los que pertenecen al grupo objetivo (SEVENS).
+    Si la API falla o no encuentra nada, cae al fallback fijo."""
+    d = curl(f"{PROFILE}/profiles?TenantId={TENANT}")
+    # la API puede devolver {"profiles":[...]} o directamente una lista
+    profs = None
+    if isinstance(d, dict):
+        profs = d.get("profiles") or d.get("items") or d.get("data")
+    elif isinstance(d, list):
+        profs = d
+    if not profs:
+        print(f"  [PROFILES] la API no devolvio perfiles utiles. Raw: {str(d)[:300]}")
+        print("  [PROFILES] usando lista de respaldo (fallback).")
+        return dict(PLAYERS_FALLBACK), False
+
+    # DIAGNOSTICO: mostrar la estructura del primer perfil para saber que campos trae
+    ejemplo = profs[0] if profs else {}
+    print(f"  [PROFILES] total perfiles en tenant: {len(profs)}")
+    print(f"  [PROFILES] campos del primer perfil: {list(ejemplo.keys())}")
+    print(f"  [PROFILES] ejemplo grupos detectados en primer perfil: {_grupos_de(ejemplo)}")
+
+    objetivo = GRUPO_OBJETIVO.strip().lower()
+    players = {}
+    sin_grupo = 0
+    for p in profs:
+        pid = p.get("profileId") or p.get("id")
+        nombre = (f"{p.get('givenName','')} {p.get('familyName','')}".strip()
+                  or p.get("fullName") or p.get("name") or "")
+        nombre = " ".join(w.capitalize() for w in nombre.split())
+        if not pid or not nombre:
+            continue
+        grupos = _grupos_de(p)
+        if not grupos:
+            sin_grupo += 1
+        # match: el grupo objetivo aparece en alguno de los grupos del perfil
+        if any(objetivo in g or g in objetivo for g in grupos):
+            players[nombre] = pid
+
+    if players:
+        print(f"  [PROFILES] {len(players)} jugadores detectados en grupo '{GRUPO_OBJETIVO}' (dinamico).")
+        return players, True
+
+    # Si NINGUN perfil tenia grupo (la API no expone grupos en este tenant),
+    # asumimos que todo el tenant es SEVENS y tomamos todos.
+    if sin_grupo == len(profs):
+        print(f"  [PROFILES] ningun perfil expone grupo; asumo tenant=SEVENS y tomo los {len(profs)}.")
+        todos = {}
+        for p in profs:
+            pid = p.get("profileId") or p.get("id")
+            nombre = (f"{p.get('givenName','')} {p.get('familyName','')}".strip()
+                      or p.get("fullName") or p.get("name") or "")
+            nombre = " ".join(w.capitalize() for w in nombre.split())
+            if pid and nombre:
+                todos[nombre] = pid
+        if todos:
+            return todos, True
+
+    print(f"  [PROFILES] no se encontraron jugadores del grupo '{GRUPO_OBJETIVO}'. Usando fallback.")
+    return dict(PLAYERS_FALLBACK), False
+
  
  
 def get_all_fd_tests(pid, debug_name=None):
@@ -140,6 +228,11 @@ def get_trial_metrics(testid, wanted):
     return out
  
  
+print("Detectando plantel del grupo SEVENS desde VALD...")
+PLAYERS, dinamico = get_profiles()
+print(f"Plantel a procesar: {len(PLAYERS)} jugadores "
+      f"({'dinamico' if dinamico else 'fallback fijo'})\n")
+
 out = {"generated": datetime.datetime.now().isoformat(), "players": {}}
 
 for name, pid in PLAYERS.items():
