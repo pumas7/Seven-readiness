@@ -85,33 +85,76 @@ def _nombre_de(p):
     return " ".join(w.capitalize() for w in n.split())
 
 
+def curl_raw(url):
+    """Como curl() pero devuelve (status_http, texto_crudo) para diagnostico."""
+    r = subprocess.run(
+        ["curl", "-s", "-w", "\n__HTTP__%{http_code}", url,
+         "-H", f"Authorization: Bearer {TOKEN}"],
+        capture_output=True, text=True)
+    out = r.stdout
+    status = "?"
+    body = out
+    if "__HTTP__" in out:
+        body, _, status = out.rpartition("__HTTP__")
+    return status.strip(), body.strip()
+
+
 def get_groups():
-    """Lista los grupos del tenant en VALD. Prueba varios endpoints posibles y
-    devuelve una lista de dicts {id, name}. Imprime lo que encuentra (diagnostico)."""
-    endpoints = [
-        f"{PROFILE}/groups?TenantId={TENANT}",
-        f"{PROFILE}/tenants/{TENANT}/groups",
-        f"{PROFILE}/v2/groups?TenantId={TENANT}",
+    """Lista los grupos del tenant en VALD. Prueba MUCHAS variantes de endpoint e imprime
+    el status HTTP y un fragmento de cada respuesta (diagnostico), para descubrir cual funciona."""
+    # variantes de dominio: profile, ademas de otros servicios donde VALD suele exponer grupos
+    bases = [
+        PROFILE,
+        "https://prd-use-api-externalprofile.valdperformance.com",
+        "https://prd-use-api-externaltenants.valdperformance.com",
     ]
-    for url in endpoints:
-        d = curl(url)
-        grupos = None
-        if isinstance(d, dict):
-            grupos = d.get("groups") or d.get("items") or d.get("data")
-        elif isinstance(d, list):
-            grupos = d
-        if grupos:
-            out = []
-            for g in grupos:
-                gid = g.get("id") or g.get("groupId")
-                gname = g.get("name") or g.get("groupName") or ""
-                if gid:
-                    out.append({"id": gid, "name": gname})
-            print(f"  [GROUPS] endpoint OK: {url.split('?')[0]}")
-            print(f"  [GROUPS] grupos encontrados ({len(out)}): {[x['name'] for x in out]}")
-            return out
-    print("  [GROUPS] ningun endpoint de grupos respondio. No se puede filtrar por grupo.")
+    paths = [
+        f"/groups?TenantId={TENANT}",
+        f"/tenants/{TENANT}/groups",
+        f"/v2/groups?TenantId={TENANT}",
+        f"/profiles/groups?TenantId={TENANT}",
+        f"/categories?TenantId={TENANT}",
+        f"/tags?TenantId={TENANT}",
+        f"/groups/{TENANT}",
+    ]
+    tried = set()
+    print("  [GROUPS] === diagnostico de endpoints de grupos ===")
+    for base in bases:
+        for path in paths:
+            url = base + path
+            if url in tried:
+                continue
+            tried.add(url)
+            status, body = curl_raw(url)
+            frag = body[:120].replace("\n", " ")
+            print(f"  [GROUPS] HTTP {status} <- {base.split('//')[1].split('.')[0]}{path[:40]} :: {frag}")
+            # si respondio 200 y parece JSON con grupos, lo usamos
+            if status == "200":
+                try:
+                    d = json.loads(body)
+                except Exception:
+                    continue
+                grupos = None
+                if isinstance(d, dict):
+                    grupos = d.get("groups") or d.get("items") or d.get("data")
+                elif isinstance(d, list):
+                    grupos = d
+                if grupos:
+                    out = []
+                    for g in grupos:
+                        if isinstance(g, dict):
+                            gid = g.get("id") or g.get("groupId")
+                            gname = g.get("name") or g.get("groupName") or ""
+                            if gid:
+                                out.append({"id": gid, "name": gname})
+                    if out:
+                        print(f"  [GROUPS] >>> endpoint OK: {url}")
+                        print(f"  [GROUPS] >>> grupos ({len(out)}): {[x['name'] for x in out]}")
+                        return out
+    print("  [GROUPS] ningun endpoint de grupos devolvio grupos utiles.")
     return []
+
+
 
 
 def get_profiles():
@@ -121,6 +164,19 @@ def get_profiles():
     Si en cualquier paso no puede identificar el grupo con certeza, cae al fallback fijo
     (los 13 conocidos) -- NUNCA toma todo el tenant, para no traer jugadores de otras categorias."""
     objetivo = GRUPO_OBJETIVO.strip().lower()
+
+    # DIAGNOSTICO: cuantos perfiles devuelve el endpoint de profiles del tenant y quienes son.
+    dprof = curl(f"{PROFILE}/profiles?TenantId={TENANT}")
+    profs_all = None
+    if isinstance(dprof, dict):
+        profs_all = dprof.get("profiles") or dprof.get("items") or dprof.get("data")
+    elif isinstance(dprof, list):
+        profs_all = dprof
+    if profs_all:
+        nombres = [_nombre_de(p) for p in profs_all]
+        print(f"  [PROFILES-DIAG] /profiles del tenant devolvio {len(profs_all)} perfiles.")
+        print(f"  [PROFILES-DIAG] nombres: {nombres}")
+        print(f"  [PROFILES-DIAG] campos del 1er perfil: {list(profs_all[0].keys()) if profs_all else []}")
 
     grupos = get_groups()
     if not grupos:
