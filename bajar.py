@@ -241,17 +241,34 @@ def get_all_fd_tests(pid, debug_name=None):
     return allt
  
  
-def get_trial_metrics(testid, wanted):
+# --- Diagnostico (temporal): permite marcar un jugador para volcar la estructura
+# cruda de sus trials fallidos en el log del workflow. Se activa con la variable de
+# entorno VALD_DEBUG_PLAYER (ej. "Luciano" alcanza, es substring case-insensitive).
+DEBUG_PLAYER = os.environ.get("VALD_DEBUG_PLAYER", "").strip().lower()
+_DEBUG_DUMPS = {"n": 0}
+_DEBUG_MAX = int(os.environ.get("VALD_DEBUG_MAX_DUMPS", "3"))
+
+
+def get_trial_metrics(testid, wanted, ctx=None):
+    """ctx: dict opcional {"player":..., "test_type":..., "date":...} solo para diagnostico,
+    no afecta la logica de extraccion."""
     d = curl(f"{FD}/v2019q3/teams/{TENANT}/tests/{testid}/trials")
     if not d:
+        if ctx:
+            print(f"    [DIAG {ctx['player']}] {ctx['test_type']} {ctx['date']}: "
+                  f"GET /trials devolvio vacio/None para testId={testid}.")
         return {}
     trials = d if isinstance(d, list) else [d]
     # acumulo los valores de cada metrica a lo largo de TODAS las reps y promedio
     acc = {}
+    codes_vistos = set()
     for trial in trials:
         for r in trial.get("results", []):
-            code = r["definition"]["result"]
-            if code in wanted and r.get("limb") == "Trial":
+            defin = r.get("definition") or {}
+            code = defin.get("result")
+            limb = r.get("limb")
+            codes_vistos.add((code, limb))
+            if code in wanted and limb == "Trial":
                 v = r.get("value")
                 if v is not None:
                     acc.setdefault(code, []).append(v)
@@ -267,6 +284,22 @@ def get_trial_metrics(testid, wanted):
     for old, new in RENAME.items():
         if old in out:
             out[new] = out.pop(old)
+
+    if not out and ctx:
+        # Diagnostico liviano (siempre que falla): que (code, limb) trajo realmente el trial,
+        # para comparar contra `wanted` + limb=='Trial' sin volcar el JSON entero cada vez.
+        print(f"    [DIAG {ctx['player']}] {ctx['test_type']} {ctx['date']} testId={testid}: "
+              f"esperaba codigos {wanted} con limb=='Trial'. Encontrado (code, limb) -> "
+              f"{sorted((c or '(sin code)', l or '(sin limb)') for c, l in codes_vistos)}")
+        # Dump crudo completo, limitado a VALD_DEBUG_MAX_DUMPS veces, solo si VALD_DEBUG_PLAYER
+        # matchea el nombre del jugador (para no inundar el log en cada corrida normal).
+        if DEBUG_PLAYER and DEBUG_PLAYER in ctx['player'].lower() and _DEBUG_DUMPS["n"] < _DEBUG_MAX:
+            _DEBUG_DUMPS["n"] += 1
+            raw = json.dumps(trials, indent=2, ensure_ascii=False)
+            if len(raw) > 6000:
+                raw = raw[:6000] + "\n... [truncado, raw completo mas largo]"
+            print(f"    [DIAG-RAW {ctx['player']}] {ctx['test_type']} {ctx['date']} "
+                  f"testId={testid}:\n{raw}")
     return out
  
  
@@ -284,21 +317,20 @@ for name, pid in PLAYERS.items():
     fd = get_all_fd_tests(pid, debug_name=_dbg)
     for t in fd:
         tt = t["testType"]
+        fecha = t["recordedDateUtc"][:10]
         if tt == "CMRJ":
-            m = get_trial_metrics(t["testId"], WANT_CMRJ)
-            if _dbg and not m:
-                print(f"    [DEBUG {_dbg}] CMRJ {t['recordedDateUtc'][:10]} SIN metricas (trial vacio o codigos no coinciden)")
+            m = get_trial_metrics(t["testId"], WANT_CMRJ,
+                                   ctx={"player": name, "test_type": "CMRJ", "date": fecha})
             if m:
-                pdata["cmrj"].append({"date": t["recordedDateUtc"][:10], **m})
+                pdata["cmrj"].append({"date": fecha, **m})
         elif tt == "CMJ":
-            m = get_trial_metrics(t["testId"], WANT_CMJ)
-            if _dbg and not m:
-                print(f"    [DEBUG {_dbg}] CMJ {t['recordedDateUtc'][:10]} SIN metricas")
+            m = get_trial_metrics(t["testId"], WANT_CMJ,
+                                   ctx={"player": name, "test_type": "CMJ", "date": fecha})
             if m:
                 # RSI-mod a m/s (misma escala que VALD Hub)
                 if "RSI_MODIFIED" in m and m["RSI_MODIFIED"] and m["RSI_MODIFIED"] > 5:
                     m["RSI_MODIFIED"] = round(m["RSI_MODIFIED"] / 100, 3)
-                pdata["cmj"].append({"date": t["recordedDateUtc"][:10], **m})
+                pdata["cmj"].append({"date": fecha, **m})
     nb = curl(f"{NB}/tests/v2?TenantId={TENANT}&ModifiedFromUtc={DESDE}&ProfileId={pid}")
     if nb and "tests" in nb:
         for t in nb["tests"]:
