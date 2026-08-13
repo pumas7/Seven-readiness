@@ -28,10 +28,6 @@ jobs:
           VALD_CLIENT_ID: ${{ secrets.VALD_CLIENT_ID }}
           VALD_CLIENT_SECRET: ${{ secrets.VALD_CLIENT_SECRET }}
           VALD_TENANT_ID: ${{ secrets.VALD_TENANT_ID }}
-          # --- DIAGNOSTICO TEMPORAL: volcar estructura cruda de trials que fallan.
-          # Borrar estas 2 lineas cuando termine el debug.
-          VALD_DEBUG_PLAYER: "Luciano"
-          VALD_DEBUG_MAX_DUMPS: "3"
         run: python bajar.py
 
       - name: Bajar datos de Catapult
