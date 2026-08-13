@@ -289,7 +289,7 @@ const METRICS={
   cmj:[
     {k:'RSI_MODIFIED',label:'RSI modificado',unit:'m/s',dir:'down',dec:2,primary:true},
     {k:'JUMP_HEIGHT',label:'Altura de salto',unit:'cm',dir:'down',dec:1},
-    {k:'CONTRACTION_TIME',label:'Tiempo de contraccion',unit:'s',dir:'up',dec:3},
+    {k:'CONTRACTION_TIME',label:'Tiempo de contraccion',unit:'ms',dir:'up',dec:0,scale:1000},
     {k:'ECCENTRIC_PEAK_VELOCITY',label:'Vel. pico excentrica',unit:'m/s',dir:'absdown',dec:2}
   ],
   cmrj:[
@@ -379,6 +379,18 @@ function statusLabel(s){return {g:'OK',a:'Vigilar',r:'Alerta',n:'Sin dato',i:'In
 // formatea un valor aplicando escala opcional (ej. s->ms x1000), decimales y unidad
 function fmtV(v,m){ if(v===null||v===undefined||typeof v!=='number')return v; const sc=m.scale||1; return (v*sc).toFixed(m.dec); }
 function fmtU(v,m){ return fmtV(v,m)+(m.unit||''); }
+// Mejor registro historico SEGUN LA DIRECCION de la metrica (no el maximo numerico).
+// down  = malo si baja  -> mejor es el MAXIMO   (RSI, altura)
+// up    = malo si sube  -> mejor es el MINIMO   (tiempo de contraccion, tiempo de contacto)
+// absup = malo si sube en magnitud -> mejor es el de MENOR magnitud (asimetria)
+// absdown = malo si baja en magnitud -> mejor es el de MAYOR magnitud (vel. pico excentrica)
+function mejorRegistro(vals,dir){
+  if(!vals.length)return null;
+  if(dir==='up')return Math.min(...vals);
+  if(dir==='absup')return vals.reduce((a,b)=>Math.abs(b)<Math.abs(a)?b:a);
+  if(dir==='absdown')return vals.reduce((a,b)=>Math.abs(b)>Math.abs(a)?b:a);
+  return Math.max(...vals);
+}
 function cvar(v){return {g:'green',a:'amber',r:'red',n:'grey',i:'grey'}[v];}
 // Formatea fecha ISO (AAAA-MM-DD) a DD-MM-AAAA para mostrar en todo el tablero
 function fmtDate(iso){
@@ -399,14 +411,14 @@ const AVG_METRICS = {
   cmj: {title:'CMJ (jueves)', tag:'Fuerza', metrics:[
     {k:'RSI_MODIFIED',label:'RSI modificado',unit:'m/s',dec:2,dir:'up'},
     {k:'JUMP_HEIGHT',label:'Altura de salto',unit:'cm',dec:1,dir:'up'},
-    {k:'CONTRACTION_TIME',label:'Tiempo contraccion',unit:'s',dec:3,dir:'down'},
-    {k:'ECCENTRIC_PEAK_VELOCITY',label:'Vel. pico excentrica',unit:'m/s',dec:2,dir:'flat'}
+    {k:'CONTRACTION_TIME',label:'Tiempo contraccion',unit:'ms',dec:0,dir:'down',scale:1000},
+    {k:'ECCENTRIC_PEAK_VELOCITY',label:'Vel. pico excentrica',unit:'m/s',dec:2,dir:'down'}
   ]},
   cmrj: {title:'CMRJ (martes)', tag:'Rebote', metrics:[
-    {k:'CMRJ_REBOUND_RSI',label:'RSI reactivo',unit:'',dec:2,dir:'down'},
-    {k:'CMRJ_REBOUND_JUMP_HEIGHT',label:'Altura rebote',unit:'cm',dec:1,dir:'down'},
-    {k:'CMRJ_REBOUND_CONTACT_TIME',label:'Tiempo contacto',unit:'s',dec:3,dir:'up'},
-    {k:'CMRJ_REBOUND_ECC_DURATION',label:'Duracion excentrica',unit:'ms',dec:0,dir:'up',scale:1000,noStatus:true}
+    {k:'CMRJ_REBOUND_RSI',label:'RSI reactivo',unit:'',dec:2,dir:'up'},
+    {k:'CMRJ_REBOUND_JUMP_HEIGHT',label:'Altura rebote',unit:'cm',dec:1,dir:'up'},
+    {k:'CMRJ_REBOUND_CONTACT_TIME',label:'Tiempo contacto',unit:'s',dec:3,dir:'down'},
+    {k:'CMRJ_REBOUND_ECC_DURATION',label:'Duracion excentrica',unit:'ms',dec:0,dir:'down',scale:1000,noStatus:true}
   ]},
   nordic: {title:'Nordicos (viernes)', tag:'Isquios', metrics:[
     {k:'asym',label:'Asimetria I/D',unit:'%',dec:1,dir:'flat'},
@@ -605,15 +617,16 @@ function renderDetail(player){
       let statBox='';
       if(s.st && m.k!=='asym'){
         const allVals=series.map(x=>x[m.k]).filter(v=>v!=null);
-        const maxHist=allVals.length?Math.max(...allVals):null;
-        const last3=allVals.slice(-3);
-        const avgLast3=last3.length?last3.reduce((a,b)=>a+b,0)/last3.length:null;
+        const mejorHist=mejorRegistro(allVals,m.dir);
+        // OJO: el promedio que se muestra tiene que ser EL MISMO que se usa para el %,
+        // o sea las 3 evaluaciones PREVIAS (sin la de hoy). s.st.mean ya es ese valor.
+        const avgPrev=s.st.mean;
         const pct=s.st.pct;
         const pctTxt = pct<=0 ? `+${Math.abs(pct).toFixed(1)}%` : `-${pct.toFixed(1)}%`;
         statBox=`<div class="stat-box">
-          <div class="sb-row"><span class="sb-lbl">M&aacute;ximo hist&oacute;rico</span><span class="sb-val">${maxHist!=null?fmtU(maxHist,m):'-'}</span></div>
-          <div class="sb-row"><span class="sb-lbl">Promedio &uacute;lt. 3</span><span class="sb-val">${avgLast3!=null?fmtU(avgLast3,m):'-'}</span></div>
-          <div class="sb-row"><span class="sb-lbl">Cambio vs prom.</span><span class="sb-val" style="color:var(--${cvar(s.status)})">${pctTxt}</span></div>
+          <div class="sb-row"><span class="sb-lbl">Mejor registro</span><span class="sb-val">${mejorHist!=null?fmtU(mejorHist,m):'-'}</span></div>
+          <div class="sb-row"><span class="sb-lbl">Promedio 3 previas</span><span class="sb-val">${avgPrev!=null?fmtU(avgPrev,m):'-'}</span></div>
+          <div class="sb-row"><span class="sb-lbl">Cambio vs prom. <span style="opacity:.6">(+ = mejor)</span></span><span class="sb-val" style="color:var(--${cvar(s.status)})">${pctTxt}</span></div>
         </div>`;
       } else if(m.k==='asym'){
         const cur=s.st?Math.abs(s.st.current):0;
@@ -795,7 +808,8 @@ function drawChart(cid,series,metric){
   // Recorte a los ultimos CHART_WINDOW puntos para el grafico (solo visualizacion)
   const windowed = metric.k==='asym' ? allPts : allPts.slice(-CHART_WINDOW);
   const pts = windowed;
-  const vals = pts.map(p=>p.y);
+  const sc = metric.scale||1;
+  const vals = pts.map(p=>p.y*sc);
   const labels=pts.map(p=>fmtDateShort(p.x));
 
   // ESCALA realista: min/max de los datos visibles con padding (sin bandas)
@@ -833,7 +847,7 @@ function drawChart(cid,series,metric){
         const isLast = i===n-1;
         const val = vals[i];
         if(val===null||val===undefined) return;
-        const txt = fmtU(val,metric);
+        const txt = val.toFixed(metric.dec)+(metric.unit||''); // val ya viene escalado
         // posicion vertical: si se iria por arriba del area, lo bajo
         let ty = pt.y-12;
         if(ty < area.top+10){ ty = pt.y+20; }
