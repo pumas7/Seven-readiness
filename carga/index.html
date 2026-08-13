@@ -263,6 +263,53 @@ table.sesiones-tbl td.col-manual{background:#FBF9FF}
   border-radius:6px;text-align:right;font-family:inherit}
 .aviso-integridad{background:#FFF4F4;border:1px solid #F3C6C6;color:#8A2B2B;border-radius:9px;
   padding:11px 14px;font-size:12.5px;line-height:1.5;margin-bottom:14px}
+
+/* --- Fase 3: informes imprimibles --- */
+.btn-print{background:#fff;border:1px solid var(--line);color:var(--navy);border-radius:7px;
+  padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;
+  display:inline-flex;align-items:center;gap:5px}
+.btn-print:hover{border-color:var(--navy);background:var(--paper)}
+.btn-print.mini{padding:3px 8px;font-size:11px}
+.print-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.print-toolbar .pt-label{font-size:11px;font-weight:700;color:var(--grey);
+  text-transform:uppercase;letter-spacing:.3px;margin-right:2px}
+#printArea{display:none}
+.inf-head{border-bottom:3px solid #002e4b;padding-bottom:10px;margin-bottom:16px}
+.inf-head h1{margin:0;font-size:19px;color:#002e4b;letter-spacing:-.3px}
+.inf-head .inf-sub{font-size:12.5px;color:#0a4368;margin-top:3px}
+.inf-head .inf-meta{font-size:10.5px;color:#8595A6;margin-top:5px}
+.inf-sec{margin-bottom:16px}
+.inf-sec h2{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#0a4368;
+  margin:0 0 7px;padding-bottom:3px;border-bottom:1px solid #DDE7F0}
+table.inf-tbl{border-collapse:collapse;width:100%;font-size:10.5px}
+table.inf-tbl th,table.inf-tbl td{border:1px solid #DDE7F0;padding:4px 6px;text-align:right;
+  font-variant-numeric:tabular-nums}
+table.inf-tbl th{background:#F4F7FB;color:#0a4368;font-size:9.5px;text-transform:uppercase;
+  letter-spacing:.2px}
+table.inf-tbl th:first-child,table.inf-tbl td:first-child{text-align:left}
+table.inf-tbl tr.fila-manual td{background:#FBF9FF}
+table.inf-tbl td.f-bajo{background:#FFF3F3;color:#B03030;font-weight:700}
+table.inf-tbl td.f-alto{background:#FFF8E8;color:#8A6200;font-weight:700}
+table.inf-tbl td.f-ok{color:#1FA463}
+.inf-nota{background:#FFF8E1;border-left:3px solid #ffce00;padding:8px 11px;font-size:11.5px;
+  color:#5B4A00;margin-bottom:14px}
+.inf-aviso{border:1px solid #F3C6C6;background:#FFF4F4;color:#8A2B2B;padding:8px 11px;
+  font-size:11px;margin-bottom:14px;border-radius:4px}
+.inf-kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.inf-kv .kv{border:1px solid #DDE7F0;border-radius:5px;padding:7px 9px}
+.inf-kv .kv .k{font-size:9px;text-transform:uppercase;letter-spacing:.3px;color:#8595A6}
+.inf-kv .kv .v{font-size:15px;font-weight:700;color:#002e4b;margin-top:1px}
+.inf-kv .kv .b{font-size:9px;color:#8595A6;margin-top:2px}
+.inf-foot{border-top:1px solid #DDE7F0;padding-top:7px;margin-top:18px;font-size:9.5px;
+  color:#8595A6;line-height:1.5}
+.inf-leyenda{font-size:9.5px;color:#8595A6;margin-top:6px}
+@media print {
+  body > *:not(#printArea){display:none !important}
+  #printArea{display:block}
+  .inf-sec,table.inf-tbl{page-break-inside:auto}
+  table.inf-tbl tr{page-break-inside:avoid}
+  .inf-head{page-break-after:avoid}
+}
 </style>
 </head>
 <body>
@@ -315,6 +362,10 @@ table.sesiones-tbl td.col-manual{background:#FBF9FF}
       ⚠️ Semana 3 en curso — lleva 2 de las ~4 sesiones habituales (faltan jueves/viernes). Las bandas de Sem 2 y Sem 3 usan las semanas reales previas disponibles (1 y 2) — todavía no hay ventana completa de 3 semanas. Roster auto-detectado desde Catapult, sin tipeo manual.
     </div>
 
+    <div class="print-toolbar" id="printToolbarGrid">
+      <span class="pt-label">Informes</span>
+      <button class="btn-print" onclick="window.__informes.equipoSemana()">🖨 Equipo · semana en curso</button>
+    </div>
     <div id="viewGrid">
       <div class="grid" id="cardsGrid"></div>
     </div>
@@ -627,6 +678,7 @@ function abrirDetalle(nombre) {
       <div class="semana-block-header">
         <h3>Semana ${s.semana}</h3>
         <span class="semana-tag">${datosDe(s).sesiones} ${datosDe(s).sesiones!==1?'sesiones':'sesión'}${bandaDe(s) ? ' · banda con ' + bandaDe(s).n_semanas + ' semana' + (bandaDe(s).n_semanas!==1?'s':'') + ' previa' + (bandaDe(s).n_semanas!==1?'s':'') : ''}${s.tiene_manual ? '<span class="badge-manual">incluye manual</span>' : ''}</span>
+        <button class="btn-print mini" onclick="window.__informes.jugadorSemana('${nombre.replace(/'/g, "\\'")}', ${s.semana})">🖨 Informe</button>
       </div>
       ${notaPfHtml(s.semana)}
       <div class="metric-grid">${metricsHtml}</div>
@@ -645,7 +697,7 @@ function sesionesDeJugadorHtml(nombre, semana){
   if(!ses.length) return '';
 
   let thead = '<tr><th class="jug-col">Sesión</th>'
-    + METRIC_ORDER.map(m => `<th>${METRIC_LABELS[m]}</th>`).join('') + '</tr>';
+    + METRIC_ORDER.map(m => `<th>${METRIC_LABELS[m]}</th>`).join('') + '<th></th></tr>';
 
   let tbody = '';
   ses.forEach(s => {
@@ -655,6 +707,7 @@ function sesionesDeJugadorHtml(nombre, semana){
           const v = d[m];
           return `<td>${(v === undefined || v === null) ? '<span class="sin-dato">–</span>' : fmt(v, decOf(m))}</td>`;
         }).join('')
+      + `<td><button class="btn-print mini" onclick="window.__informes.sesionJugador('${nombre.replace(/'/g, "\\'")}', ${semana}, ${todas.indexOf(s)})">🖨</button></td>`
       + '</tr>';
   });
 
@@ -972,6 +1025,15 @@ function sesTablaMetrica(semNum, sesiones, jugArr, m){
     </div>`;
 }
 
+function printToolbarSemana(semNum, sesiones){
+  const botones = sesiones.map((s, i) =>
+    `<button class="btn-print mini" onclick="event.stopPropagation();window.__informes.sesionEquipo(${semNum},${i})">`
+    + `🖨 ${s.nombre.replace(/Svn Sem \\d+ ?[Dd]ia ?/i,'D')}${s.origen === 'manual' ? ' (manual)' : ''}</button>`).join('');
+  return `<div class="print-toolbar"><span class="pt-label">Informes</span>`
+    + `<button class="btn-print" onclick="event.stopPropagation();window.__informes.equipoSemana(${semNum})">🖨 Equipo · Semana ${semNum}</button>`
+    + botones + `</div>`;
+}
+
 function buildSesiones(){
   const cont = document.getElementById('sesionesAccordion');
   cont.innerHTML = '';
@@ -1012,7 +1074,7 @@ function buildSesiones(){
         </div>
         <div class="meta">${jugArr.length} jugadores · ${etiqMetricas}</div>
       </div>
-      <div class="sem-accordion-body">${notaPfHtml(semNum)}${tablas}</div>`;
+      <div class="sem-accordion-body">${notaPfHtml(semNum)}${printToolbarSemana(semNum, sesiones)}${tablas}</div>`;
     cont.appendChild(acc);
   });
 }
@@ -1320,6 +1382,263 @@ function toggleExcluirManual(v){
     if(n) window.__semanal.abrirDetalle(n);
   }
 }
+</script>
+<div id="printArea"></div>
+<style id="pageStyle"></style>
+<script>
+// ===== Informes imprimibles =====
+// Arma el HTML en #printArea y llama a window.print(). El usuario elige
+// "Guardar como PDF" en el dialogo del navegador. No se genera el PDF a mano:
+// asi el texto queda seleccionable y las tablas se cortan bien entre paginas.
+window.__informes = (function(){
+  const AREA = () => document.getElementById('printArea');
+  const PAGE = () => document.getElementById('pageStyle');
+
+  const LBL = {
+    distancia:'Distancia (m)', hsr:'HSR (m)', hsr_entr:'HSR Entr (#)', ds:'DS/Sprint (m)',
+    ds_entr:'DS Entr (#)', vmax:'Vmax (km/h)', pct:'% Vmax', accel:'Aceleraciones',
+    deccel:'Desaceleraciones', accmax:'Acc. Máx.'
+  };
+  const ORDEN = ['distancia','hsr','hsr_entr','ds','ds_entr','vmax','pct','accel','deccel','accmax'];
+  const MOTIVOS = {
+    sin_gps:'entrenó sin GPS', falla_unidad:'falla de la unidad',
+    estimada:'carga estimada', completar_semana:'completar la semana'
+  };
+
+  function dec(m){ return (m==='accmax') ? 2 : (m==='vmax'||m==='pct') ? 1 : 0; }
+  function num(v, m){
+    if(v === undefined || v === null) return '–';
+    return Number(v).toLocaleString('es-AR', {minimumFractionDigits:dec(m), maximumFractionDigits:dec(m)});
+  }
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"]/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  }
+  function datos(f){ return (window.EXCLUIR_MANUAL && f.datos_real) ? f.datos_real : f.datos; }
+  function banda(f){ return window.EXCLUIR_MANUAL ? (f.banda_real || null) : (f.banda || null); }
+  function flag(valor, bm){
+    if(!bm || valor === undefined || valor === null) return '';
+    if(valor < bm.low) return 'f-bajo';
+    if(valor > bm.high) return 'f-alto';
+    return 'f-ok';
+  }
+  function filaDe(nombre, sem){
+    return (window.ROSTER[nombre] || []).find(f => f.semana === sem) || null;
+  }
+  function sesionesDe(sem){ return (window.SESIONES || {})[String(sem)] || []; }
+  function semanaActual(){
+    const s = Object.keys(window.SESIONES || {}).map(Number);
+    return s.length ? Math.max(...s) : 1;
+  }
+  function fechaHoy(){
+    const d = new Date();
+    const p = n => String(n).padStart(2,'0');
+    return p(d.getDate()) + '-' + p(d.getMonth()+1) + '-' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  function cabecera(titulo, sub, extra){
+    return `<div class="inf-head">
+      <h1>${esc(titulo)}</h1>
+      <div class="inf-sub">${esc(sub)}</div>
+      <div class="inf-meta">Pumas 7s · Carga externa (Catapult) · Emitido ${fechaHoy()}${extra ? ' · ' + esc(extra) : ''}</div>
+    </div>`;
+  }
+
+  function notaHtml(sem){
+    const n = (window.NOTAS || {})[String(sem)];
+    if(!n || !n.texto) return '';
+    return `<div class="inf-nota"><b>Qué se trabajó en la semana${n.autor ? ' (' + esc(n.autor) + ')' : ''}:</b> ${esc(n.texto)}</div>`;
+  }
+
+  function avisoManual(sesiones){
+    const man = (sesiones || []).filter(s => s.origen === 'manual');
+    if(!man.length) return '';
+    const det = man.map(s =>
+      esc(s.nombre) + ' (' + (MOTIVOS[s.motivo] || esc(s.motivo) || 'sin motivo') +
+      ', cargada por ' + esc(s.autor || '?') + ')').join('; ');
+    return `<div class="inf-aviso"><b>Atención:</b> este informe incluye ${man.length}
+      ${man.length === 1 ? 'sesión cargada manualmente' : 'sesiones cargadas manualmente'}, no medidas por GPS: ${det}.
+      Los totales y las bandas de referencia los incluyen.
+      ${window.EXCLUIR_MANUAL ? ' El informe está calculado EXCLUYENDO las sesiones manuales.' : ''}</div>`;
+  }
+
+  function pie(extra){
+    return `<div class="inf-foot">
+      Banda de referencia = promedio de las semanas previas con datos, x0.8 (piso) y x1.3 (techo).
+      Volumen (distancia, HSR, DS, aceleraciones, desaceleraciones) se suma; picos (Vmax, %Vmax, Acc. máx.) se toman al máximo.
+      <span class="inf-leyenda">Rojo = por debajo del piso · Ámbar = por encima del techo · Verde = dentro de banda.</span>
+      ${extra ? '<div class="inf-leyenda">' + esc(extra) + '</div>' : ''}
+    </div>`;
+  }
+
+  function imprimir(html, orientacion){
+    PAGE().textContent = '@media print{@page{size:A4 ' + (orientacion || 'portrait') + ';margin:11mm}}';
+    AREA().innerHTML = html;
+    window.print();
+  }
+
+  function equipoSemana(sem){
+    sem = sem || semanaActual();
+    const ses = sesionesDe(sem);
+    const jug = Object.keys(window.ROSTER || {})
+      .filter(j => { const f = filaDe(j, sem); return f && f.jugo; })
+      .sort((a,b) => a.localeCompare(b,'es'));
+
+    if(!jug.length){ alert('No hay datos para la semana ' + sem + '.'); return; }
+
+    let thead = '<tr><th>Jugador</th><th>Ses.</th>' +
+      ORDEN.map(m => '<th>' + LBL[m] + '</th>').join('') + '</tr>';
+    let tbody = '';
+    jug.forEach(j => {
+      const f = filaDe(j, sem), d = datos(f), b = banda(f);
+      tbody += '<tr><td>' + esc(j) + '</td><td>' + d.sesiones + '</td>' +
+        ORDEN.map(m => '<td class="' + flag(d[m], b ? b.metrics[m] : null) + '">' + num(d[m], m) + '</td>').join('') +
+        '</tr>';
+    });
+
+    const fueraBanda = jug.filter(j => {
+      const f = filaDe(j, sem), b = banda(f);
+      return b && flag(datos(f).distancia, b.metrics.distancia) !== 'f-ok';
+    });
+
+    const html = cabecera('Informe de carga externa — Equipo',
+      'Semana ' + sem + ' · ' + jug.length + ' jugadores · ' + ses.length + ' sesiones',
+      window.EXCLUIR_MANUAL ? 'solo datos Catapult' : null)
+      + notaHtml(sem)
+      + avisoManual(ses)
+      + '<div class="inf-sec"><h2>Totales de la semana por jugador</h2>'
+      + '<table class="inf-tbl"><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table></div>'
+      + (fueraBanda.length
+          ? '<div class="inf-sec"><h2>Fuera de banda en distancia</h2><p style="font-size:11px;margin:0">'
+            + fueraBanda.map(j => {
+                const f = filaDe(j, sem), b = banda(f);
+                const st = flag(datos(f).distancia, b.metrics.distancia);
+                return esc(j) + ' (' + (st === 'f-bajo' ? 'por debajo' : 'por encima') + ')';
+              }).join(' · ')
+            + '</p></div>'
+          : '<div class="inf-sec"><h2>Fuera de banda en distancia</h2><p style="font-size:11px;margin:0">Ninguno.</p></div>')
+      + pie(ses.length < (window.SESIONES_NORMALES || 4)
+            ? 'Semana incompleta: ' + ses.length + ' sesiones sobre una referencia de 4.' : '');
+
+    imprimir(html, 'landscape');
+  }
+
+  function jugadorSemana(nombre, sem){
+    const f = filaDe(nombre, sem);
+    if(!f || !f.jugo){ alert('Sin datos de ' + nombre + ' en la semana ' + sem + '.'); return; }
+    const d = datos(f), b = banda(f);
+    const misSes = sesionesDe(sem).filter(s => s.jugadores && s.jugadores[nombre]);
+
+    const kv = ORDEN.map(m => {
+      const bm = b ? b.metrics[m] : null;
+      return '<div class="kv"><div class="k">' + LBL[m] + '</div>' +
+        '<div class="v">' + num(d[m], m) + '</div>' +
+        '<div class="b">' + (bm ? 'banda ' + num(bm.low, m) + ' – ' + num(bm.high, m) : 'sin banda') + '</div></div>';
+    }).join('');
+
+    let detalle = '';
+    if(misSes.length){
+      const th = '<tr><th>Sesión</th>' + ORDEN.map(m => '<th>' + LBL[m] + '</th>').join('') + '</tr>';
+      const tb = misSes.map(s =>
+        '<tr class="' + (s.origen === 'manual' ? 'fila-manual' : '') + '"><td>' + esc(s.nombre) +
+        (s.origen === 'manual' ? ' [manual]' : '') + '<br><span style="color:#8595A6">' + esc(s.fecha) + '</span></td>' +
+        ORDEN.map(m => '<td>' + num(s.jugadores[nombre][m], m) + '</td>').join('') + '</tr>').join('');
+      detalle = '<div class="inf-sec"><h2>Sesión por sesión</h2>'
+        + '<table class="inf-tbl"><thead>' + th + '</thead><tbody>' + tb + '</tbody></table></div>';
+    }
+
+    const fuera = ORDEN.filter(m => b && flag(d[m], b.metrics[m]) !== 'f-ok');
+
+    const html = cabecera('Informe de carga externa — ' + nombre,
+      'Semana ' + sem + ' · ' + d.sesiones + (d.sesiones === 1 ? ' sesión' : ' sesiones'),
+      window.EXCLUIR_MANUAL ? 'solo datos Catapult' : null)
+      + notaHtml(sem)
+      + avisoManual(misSes)
+      + '<div class="inf-sec"><h2>Totales de la semana</h2><div class="inf-kv">' + kv + '</div></div>'
+      + detalle
+      + '<div class="inf-sec"><h2>Lectura</h2><p style="font-size:11px;margin:0">'
+      + (!b
+          ? 'Primera semana con datos: todavía no hay banda de referencia. Los valores se leen en absoluto, no contra su propio histórico.'
+          : (fuera.length
+              ? 'Fuera de banda en: ' + fuera.map(m => esc(LBL[m]) + ' (' +
+                  (flag(d[m], b.metrics[m]) === 'f-bajo' ? 'por debajo' : 'por encima') + ')').join(' · ') +
+                '. Banda construida sobre ' + b.n_semanas + (b.n_semanas === 1 ? ' semana previa' : ' semanas previas') +
+                (b.n_semanas < 3 ? ' — con tan pocas semanas la banda es frágil, tomarla como orientativa.' : '.')
+              : 'Todas las métricas dentro de banda. Banda construida sobre ' + b.n_semanas +
+                (b.n_semanas === 1 ? ' semana previa' : ' semanas previas') +
+                (b.n_semanas < 3 ? ' — con tan pocas semanas la banda es frágil.' : '.')))
+      + '</p></div>'
+      + pie('');
+
+    imprimir(html, 'portrait');
+  }
+
+  function sesionEquipo(sem, idx){
+    const s = sesionesDe(sem)[idx];
+    if(!s){ alert('No encuentro esa sesión.'); return; }
+    const jug = Object.keys(s.jugadores || {}).sort((a,b) => a.localeCompare(b,'es'));
+
+    let thead = '<tr><th>#</th><th>Jugador</th>' + ORDEN.map(m => '<th>' + LBL[m] + '</th>').join('') + '</tr>';
+    const orden = [...jug].sort((a,b) => (s.jugadores[b].distancia || 0) - (s.jugadores[a].distancia || 0));
+    let tbody = orden.map((j, i) =>
+      '<tr><td>' + (i+1) + '</td><td>' + esc(j) + '</td>' +
+      ORDEN.map(m => '<td>' + num(s.jugadores[j][m], m) + '</td>').join('') + '</tr>').join('');
+
+    const prom = {};
+    ORDEN.forEach(m => {
+      const v = jug.map(j => s.jugadores[j][m]).filter(x => x !== undefined && x !== null);
+      prom[m] = v.length ? v.reduce((a,b) => a+b, 0) / v.length : null;
+    });
+    const filaProm = '<tr><td></td><td><b>Promedio</b></td>' +
+      ORDEN.map(m => '<td><b>' + num(prom[m], m) + '</b></td>').join('') + '</tr>';
+
+    const html = cabecera('Informe de sesión — Equipo',
+      esc(s.nombre) + ' · ' + esc(s.fecha) + ' · Semana ' + sem + ' · ' + jug.length + ' jugadores',
+      s.origen === 'manual' ? 'SESIÓN MANUAL' : null)
+      + notaHtml(sem)
+      + (s.origen === 'manual'
+          ? '<div class="inf-aviso"><b>Sesión cargada manualmente</b>, no medida por GPS. Motivo: ' +
+            (MOTIVOS[s.motivo] || esc(s.motivo) || 'sin especificar') + '. Cargada por ' + esc(s.autor || '?') +
+            (s.creado ? ' el ' + esc(String(s.creado).slice(0,10)) : '') + '.</div>'
+          : '')
+      + '<div class="inf-sec"><h2>Métricas por jugador (ordenado por distancia)</h2>'
+      + '<table class="inf-tbl"><thead>' + thead + '</thead><tbody>' + tbody + filaProm + '</tbody></table></div>'
+      + pie('');
+
+    imprimir(html, 'landscape');
+  }
+
+  function sesionJugador(nombre, sem, idx){
+    const s = sesionesDe(sem)[idx];
+    if(!s || !s.jugadores || !s.jugadores[nombre]){ alert('Sin datos de ' + nombre + ' en esa sesión.'); return; }
+    const d = s.jugadores[nombre];
+    const jug = Object.keys(s.jugadores);
+
+    const kv = ORDEN.map(m => {
+      const vals = jug.map(j => s.jugadores[j][m]).filter(x => x !== undefined && x !== null);
+      const media = vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : null;
+      const pos = [...jug].sort((a,b) => (s.jugadores[b][m] || 0) - (s.jugadores[a][m] || 0)).indexOf(nombre) + 1;
+      return '<div class="kv"><div class="k">' + LBL[m] + '</div>' +
+        '<div class="v">' + num(d[m], m) + '</div>' +
+        '<div class="b">plantel ' + num(media, m) + ' · puesto ' + pos + '/' + jug.length + '</div></div>';
+    }).join('');
+
+    const html = cabecera('Informe de sesión — ' + nombre,
+      esc(s.nombre) + ' · ' + esc(s.fecha) + ' · Semana ' + sem,
+      s.origen === 'manual' ? 'SESIÓN MANUAL' : null)
+      + (s.origen === 'manual'
+          ? '<div class="inf-aviso"><b>Sesión cargada manualmente</b>, no medida por GPS. Motivo: ' +
+            (MOTIVOS[s.motivo] || esc(s.motivo) || 'sin especificar') + '. Cargada por ' + esc(s.autor || '?') + '.</div>'
+          : '')
+      + '<div class="inf-sec"><h2>Métricas de la sesión</h2><div class="inf-kv">' + kv + '</div></div>'
+      + '<div class="inf-foot">Comparación contra el promedio del plantel en esa misma sesión (' + jug.length +
+        ' jugadores). El puesto es 1 = valor más alto.</div>';
+
+    imprimir(html, 'portrait');
+  }
+
+  return {equipoSemana, jugadorSemana, sesionEquipo, sesionJugador};
+})();
 </script>
 <div class="update-msg" id="updateMsg"><button class="um-close" onclick="document.getElementById('updateMsg').classList.remove('show')">&times;</button><span id="updateMsgText"></span></div>
 
