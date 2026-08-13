@@ -4,7 +4,7 @@ Baja datos de VALD (ForceDecks + NordBord) para el tablero de readiness Pumas 7s
 Diseñado para correr en GitHub Actions: las credenciales vienen de variables de entorno.
 Genera data.json que el tablero (index.html) lee al abrirse.
 """
-import json, subprocess, datetime, os, sys
+import json, subprocess, datetime, os, sys, time
  
 # --- Credenciales desde variables de entorno (GitHub Secrets) ---
 CLIENT_ID = os.environ.get("VALD_CLIENT_ID")
@@ -71,13 +71,57 @@ if not TOKEN:
 print("Token OK\n")
  
  
-def curl(url):
-    r = subprocess.run(["curl", "-s", url, "-H", f"Authorization: Bearer {TOKEN}"],
-                       capture_output=True, text=True)
-    try:
-        return json.loads(r.stdout)
-    except Exception:
-        return None
+# --- Estadisticas de la API (para saber si la corrida fue limpia) ---
+_API = {"llamadas": 0, "reintentos": 0, "fallos": 0}
+# Pausa minima entre llamadas: con ~350 requests seguidos VALD puede empezar a
+# rechazar por rate limiting. Ajustable con VALD_PAUSA.
+PAUSA = float(os.environ.get("VALD_PAUSA", "0.05"))
+REINTENTOS = int(os.environ.get("VALD_REINTENTOS", "4"))
+
+
+def curl(url, intentos=None):
+    """GET a la API de VALD con reintentos y backoff exponencial.
+
+    IMPORTANTE: antes esta funcion devolvia None ante cualquier problema (timeout,
+    429, 5xx, JSON cortado) y el resto del script lo interpretaba como "el test no
+    tiene metricas". Eso hacia que fallos transitorios de red se disfrazaran de
+    datos faltantes en el tablero. Ahora reintenta y, si igual falla, lo grita en
+    el log con [ERROR-API] en vez de tragarselo."""
+    intentos = intentos or REINTENTOS
+    delay = 1.0
+    ultimo = ""
+    for i in range(intentos):
+        if PAUSA:
+            time.sleep(PAUSA)
+        _API["llamadas"] += 1
+        r = subprocess.run(
+            ["curl", "-s", "--max-time", "45", "-w", "\n%{http_code}", url,
+             "-H", f"Authorization: Bearer {TOKEN}"],
+            capture_output=True, text=True)
+        body, _, code = r.stdout.rpartition("\n")
+        code = code.strip()
+        if code == "200":
+            try:
+                return json.loads(body)
+            except Exception:
+                # 200 con cuerpo cortado/invalido: vale la pena reintentar
+                ultimo = f"HTTP 200 con JSON invalido ({len(body)} chars)"
+        elif code in ("400", "404"):
+            # Respuesta definitiva del servidor. Es esperable en get_profiles(),
+            # que prueba varias URLs hasta dar con la que anda. No se reintenta.
+            return None
+        elif code in ("401", "403"):
+            print(f"    [ERROR-API] {code} (credenciales/permisos) -> {url[:110]}")
+            return None
+        else:
+            ultimo = f"HTTP {code or 'sin respuesta (timeout o red)'}"
+        if i < intentos - 1:
+            _API["reintentos"] += 1
+            time.sleep(delay)
+            delay *= 2
+    _API["fallos"] += 1
+    print(f"    [ERROR-API] sin exito tras {intentos} intentos ({ultimo}) -> {url[:110]}")
+    return None
 
 
 def _nombre_de(p):
@@ -309,6 +353,7 @@ print(f"Plantel a procesar: {len(PLAYERS)} jugadores "
       f"({'dinamico' if dinamico else 'fallback fijo'})\n")
 
 out = {"generated": datetime.datetime.now().isoformat(), "players": {}}
+_FALTANTES = []
 
 for name, pid in PLAYERS.items():
     print(f"Bajando {name}...")
@@ -346,7 +391,28 @@ for name, pid in PLAYERS.items():
     for k in pdata:
         pdata[k].sort(key=lambda x: x["date"])
     out["players"][name] = pdata
-    print(f"  CMRJ:{len(pdata['cmrj'])} CMJ:{len(pdata['cmj'])} Nordic:{len(pdata['nordic'])}")
+    # Chequeo de integridad: cuantos tests EXISTEN en VALD vs cuantos pudimos leer.
+    esp_cmrj = sum(1 for t in fd if t["testType"] == "CMRJ")
+    esp_cmj = sum(1 for t in fd if t["testType"] == "CMJ")
+    falt = (esp_cmrj - len(pdata["cmrj"])) + (esp_cmj - len(pdata["cmj"]))
+    aviso = ""
+    if falt > 0:
+        aviso = f"   <-- FALTAN {falt} test(s): esperados CMRJ:{esp_cmrj} CMJ:{esp_cmj}"
+        _FALTANTES.append((name, falt))
+    print(f"  CMRJ:{len(pdata['cmrj'])} CMJ:{len(pdata['cmj'])} "
+          f"Nordic:{len(pdata['nordic'])}{aviso}")
+ 
+print("\n--- Resumen de la corrida ---")
+print(f"Llamadas a la API VALD: {_API['llamadas']} | "
+      f"reintentos: {_API['reintentos']} | fallos definitivos: {_API['fallos']}")
+if _FALTANTES:
+    print("ATENCION: hay tests en VALD que no se pudieron leer:")
+    for n, c in _FALTANTES:
+        print(f"  - {n}: faltan {c}")
+    print("Estos jugadores van a mostrar datos incompletos en el tablero. "
+          "Volver a correr el workflow suele resolverlo si fue un problema de red.")
+else:
+    print("OK: se extrajeron las metricas de TODOS los tests encontrados en VALD.")
  
 with open("data.json", "w") as f:
     json.dump(out, f, indent=2)
