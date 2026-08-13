@@ -4,7 +4,7 @@ Baja datos de VALD (ForceDecks + NordBord) para el tablero de readiness Pumas 7s
 Diseñado para correr en GitHub Actions: las credenciales vienen de variables de entorno.
 Genera data.json que el tablero (index.html) lee al abrirse.
 """
-import json, subprocess, datetime, os, sys, time
+import json, subprocess, datetime, os, sys, time, re
  
 # --- Credenciales desde variables de entorno (GitHub Secrets) ---
 CLIENT_ID = os.environ.get("VALD_CLIENT_ID")
@@ -285,6 +285,32 @@ def get_all_fd_tests(pid, debug_name=None):
     return allt
  
  
+# --- Resolucion de la altura de salto del CMJ ---
+# El Hub muestra "Jump Height (Imp-Mom)". El codigo "JUMP_HEIGHT" a secas de la API
+# es el metodo de tiempo de vuelo, que sobreestima. Como el nombre exacto del codigo
+# Imp-Mom puede variar, lo busco por patron entre los codigos que trae el trial.
+_JH_USADO = set()
+_JH_PATRONES = [
+    re.compile(r"^JUMP_HEIGHT.*IMP.*MOM", re.I),
+    re.compile(r"IMP.*MOM.*JUMP_HEIGHT", re.I),
+    re.compile(r"^CONCENTRIC_IMPULSE.*JUMP_HEIGHT", re.I),
+    re.compile(r"JUMP_HEIGHT.*IMPULSE", re.I),
+]
+
+
+def resolver_altura(prom):
+    """Devuelve el codigo de altura por impulso-momento presente en el trial, o None.
+    Ignora cualquier variante de tiempo de vuelo (FLIGHT_TIME)."""
+    candidatos = [c for c in prom if "JUMP_HEIGHT" in c.upper()
+                  and "FLIGHT" not in c.upper()
+                  and not c.upper().startswith("CMRJ_")]
+    for rx in _JH_PATRONES:
+        for c in candidatos:
+            if rx.search(c):
+                return c
+    return None
+
+
 # --- Diagnostico (temporal): permite marcar un jugador para volcar la estructura
 # cruda de sus trials fallidos en el log del workflow. Se activa con la variable de
 # entorno VALD_DEBUG_PLAYER (ej. "Luciano" alcanza, es substring case-insensitive).
@@ -293,7 +319,7 @@ _DEBUG_DUMPS = {"n": 0}
 _DEBUG_MAX = int(os.environ.get("VALD_DEBUG_MAX_DUMPS", "3"))
 
 
-def get_trial_metrics(testid, wanted, ctx=None):
+def get_trial_metrics(testid, wanted, ctx=None, resolver_jh=False):
     """ctx: dict opcional {"player":..., "test_type":..., "date":...} solo para diagnostico,
     no afecta la logica de extraccion."""
     d = curl(f"{FD}/v2019q3/teams/{TENANT}/tests/{testid}/trials")
@@ -303,7 +329,9 @@ def get_trial_metrics(testid, wanted, ctx=None):
                   f"GET /trials devolvio vacio/None para testId={testid}.")
         return {}
     trials = d if isinstance(d, list) else [d]
-    # acumulo los valores de cada metrica a lo largo de TODAS las reps y promedio
+    # acumulo los valores de cada metrica a lo largo de TODAS las reps y promedio.
+    # Guardo TODOS los codigos (no solo los de `wanted`) porque algunos hay que
+    # resolverlos por patron, ver resolver_altura() mas abajo.
     acc = {}
     codes_vistos = set()
     for trial in trials:
@@ -312,14 +340,26 @@ def get_trial_metrics(testid, wanted, ctx=None):
             code = defin.get("result")
             limb = r.get("limb")
             codes_vistos.add((code, limb))
-            if code in wanted and limb == "Trial":
+            if code and limb == "Trial":
                 v = r.get("value")
                 if v is not None:
                     acc.setdefault(code, []).append(v)
-    out = {}
+    prom = {}
     for code, vals in acc.items():
         if vals:
-            out[code] = round(sum(vals) / len(vals), 4)
+            prom[code] = round(sum(vals) / len(vals), 4)
+    out = {c: v for c, v in prom.items() if c in wanted}
+    # Altura de salto del CMJ: el Hub de VALD reporta impulso-momento y el CMRJ ya
+    # usa esa variante. El codigo "JUMP_HEIGHT" a secas es tiempo de vuelo, que
+    # sobreestima ~10%. Busco la variante Imp-Mom entre lo que el trial realmente
+    # trajo, sin depender del nombre exacto que use la API.
+    if resolver_jh:
+        elegido = resolver_altura(prom)
+        if elegido:
+            out["JUMP_HEIGHT"] = prom[elegido]
+            _JH_USADO.add(elegido)
+        elif "JUMP_HEIGHT" in prom:
+            _JH_USADO.add("JUMP_HEIGHT (tiempo de vuelo - NO se encontro Imp-Mom)")
     # renombrar las claves Imp-Mom a las que espera el index.html (sin sufijo)
     RENAME = {
         "CMRJ_REBOUND_JUMP_HEIGHT_IMP_MOM": "CMRJ_REBOUND_JUMP_HEIGHT",
@@ -370,7 +410,8 @@ for name, pid in PLAYERS.items():
                 pdata["cmrj"].append({"date": fecha, **m})
         elif tt == "CMJ":
             m = get_trial_metrics(t["testId"], WANT_CMJ,
-                                   ctx={"player": name, "test_type": "CMJ", "date": fecha})
+                                   ctx={"player": name, "test_type": "CMJ", "date": fecha},
+                                   resolver_jh=True)
             if m:
                 # RSI-mod a m/s (misma escala que VALD Hub)
                 if "RSI_MODIFIED" in m and m["RSI_MODIFIED"] and m["RSI_MODIFIED"] > 5:
@@ -403,6 +444,7 @@ for name, pid in PLAYERS.items():
           f"Nordic:{len(pdata['nordic'])}{aviso}")
  
 print("\n--- Resumen de la corrida ---")
+print(f"Altura CMJ tomada de: {sorted(_JH_USADO) or '(ningun CMJ procesado)'}")
 print(f"Llamadas a la API VALD: {_API['llamadas']} | "
       f"reintentos: {_API['reintentos']} | fallos definitivos: {_API['fallos']}")
 if _FALTANTES:
