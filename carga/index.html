@@ -179,6 +179,43 @@ table.sesiones-tbl .sin-dato{color:#C4CDD8}
 .update-msg.err{border-left-color:var(--red)}
 .update-msg b{color:var(--navy)}
 .update-msg .um-close{position:absolute;top:8px;right:10px;cursor:pointer;color:var(--grey);font-size:16px;border:none;background:none}
+
+/* --- Fase 1: chips de metricas, orden, sesiones en detalle jugador --- */
+.metric-chips{display:flex;flex-wrap:wrap;gap:6px}
+.mchip{border:1px solid var(--line);background:#fff;color:var(--steel);border-radius:999px;
+  padding:5px 11px;font-size:11.5px;font-weight:600;cursor:pointer;transition:all .15s;
+  font-family:inherit;letter-spacing:.2px}
+.mchip:hover{border-color:var(--navy);color:var(--navy)}
+.mchip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.sesiones-controls{flex-wrap:wrap}
+.sesiones-controls .ctrl-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.metric-caption{display:flex;align-items:center;gap:8px;margin:16px 0 6px;padding-top:12px;
+  border-top:1px solid var(--line)}
+.metric-caption:first-child{border-top:0;padding-top:0;margin-top:0}
+.metric-caption h4{margin:0;font-size:12.5px;font-weight:700;color:var(--navy);
+  text-transform:uppercase;letter-spacing:.4px}
+.metric-caption .agg{font-size:10.5px;color:var(--grey);font-weight:500}
+table.sesiones-tbl thead th.sortable{cursor:pointer;user-select:none}
+table.sesiones-tbl thead th.sortable:hover{background:#DCEAF7}
+table.sesiones-tbl thead th .sarrow{font-size:9px;margin-left:3px;color:var(--navy)}
+table.sesiones-tbl td.rankcol,table.sesiones-tbl th.rankcol{text-align:center;width:34px;
+  color:var(--grey);font-size:11px;padding-left:6px;padding-right:6px}
+table.sesiones-tbl tbody tr.top1 td.rankcol{color:#B8860B;font-weight:700}
+table.sesiones-tbl th:first-child,table.sesiones-tbl td:first-child{position:static}
+table.sesiones-tbl td.jug-col,table.sesiones-tbl th.jug-col{text-align:left;position:sticky;
+  left:0;background:#fff;font-weight:500}
+table.sesiones-tbl thead th.jug-col{background:var(--paper)}
+table.sesiones-tbl tbody tr:hover td.jug-col{background:#F7FAFD}
+.ses-detalle{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.ses-toggle{background:none;border:0;color:var(--navy);font-weight:600;font-size:12.5px;
+  cursor:pointer;font-family:inherit;padding:4px 0;display:flex;align-items:center;gap:6px}
+.ses-toggle:hover{text-decoration:underline}
+.ses-toggle .chev{display:inline-block;transition:transform .2s;font-size:10px}
+.ses-detalle.open .ses-toggle .chev{transform:rotate(90deg)}
+.ses-detalle-body{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.ses-detalle.open .ses-detalle-body{max-height:2000px;margin-top:10px}
+table.sesiones-tbl td.ses-nom{min-width:150px}
+table.sesiones-tbl td.ses-nom .fecha{display:block;font-size:10px;color:var(--grey);font-weight:400}
 </style>
 </head>
 <body>
@@ -246,11 +283,18 @@ table.sesiones-tbl .sin-dato{color:#C4CDD8}
 </div>
 <div id="section-sesiones"><main><div class="wrap">
   <div class="sesiones-intro">
-    Cada semana muestra su total. <b>Tocá una semana</b> para desplegar las sesiones que la componen (entrenamientos y partidos), con cada jugador y sus métricas por sesión. Elegí la métrica a mostrar.
+    Cada semana muestra su total. <b>Tocá una semana</b> para desplegar las sesiones que la componen (entrenamientos y partidos), con cada jugador y sus métricas por sesión. Elegí una o más métricas. Los jugadores se ordenan por total de mayor a menor; tocá cualquier columna para reordenar por esa sesión.
   </div>
   <div class="sesiones-controls">
-    <label>Métrica:</label>
-    <select id="selMetricaSesiones"></select>
+    <label>Métricas:</label>
+    <div class="metric-chips" id="metricChips"></div>
+    <div class="ctrl-right">
+      <label>Orden:</label>
+      <select id="selOrdenSesiones">
+        <option value="total">Total (mayor → menor)</option>
+        <option value="alfa">Alfabético</option>
+      </select>
+    </div>
   </div>
   <div id="sesionesAccordion"></div>
 </div></main></div>
@@ -462,14 +506,49 @@ function abrirDetalle(nombre) {
     block.innerHTML = `
       <div class="semana-block-header">
         <h3>Semana ${s.semana}</h3>
-        <span class="semana-tag">${s.datos.sesiones} sesión${s.datos.sesiones!==1?'es':''}${s.banda ? ' · banda con ' + s.banda.n_semanas + ' semana' + (s.banda.n_semanas!==1?'s':'') + ' previa' + (s.banda.n_semanas!==1?'s':'') : ''}</span>
+        <span class="semana-tag">${s.datos.sesiones} ${s.datos.sesiones!==1?'sesiones':'sesión'}${s.banda ? ' · banda con ' + s.banda.n_semanas + ' semana' + (s.banda.n_semanas!==1?'s':'') + ' previa' + (s.banda.n_semanas!==1?'s':'') : ''}</span>
       </div>
       <div class="metric-grid">${metricsHtml}</div>
+      ${sesionesDeJugadorHtml(nombre, s.semana)}
     `;
     container.appendChild(block);
   });
 }
 
+function decOf(m){ return (m === 'accmax') ? 2 : (m === 'vmax' || m === 'pct') ? 1 : 0; }
+
+// Sesiones individuales del jugador dentro de una semana (desplegable)
+function sesionesDeJugadorHtml(nombre, semana){
+  const todas = (window.SESIONES && window.SESIONES[String(semana)]) || [];
+  const ses = todas.filter(s => s.jugadores && s.jugadores[nombre]);
+  if(!ses.length) return '';
+
+  let thead = '<tr><th class="jug-col">Sesión</th>'
+    + METRIC_ORDER.map(m => `<th>${METRIC_LABELS[m]}</th>`).join('') + '</tr>';
+
+  let tbody = '';
+  ses.forEach(s => {
+    const d = s.jugadores[nombre];
+    tbody += `<tr><td class="jug-col ses-nom">${s.nombre}<span class="fecha">${s.fecha}</span></td>`
+      + METRIC_ORDER.map(m => {
+          const v = d[m];
+          return `<td>${(v === undefined || v === null) ? '<span class="sin-dato">–</span>' : fmt(v, decOf(m))}</td>`;
+        }).join('')
+      + '</tr>';
+  });
+
+  return `
+    <div class="ses-detalle">
+      <button class="ses-toggle" onclick="this.parentElement.classList.toggle('open')">
+        <span class="chev">▸</span> Ver las ${ses.length} ${ses.length!==1?'sesiones':'sesión'} de la semana
+      </button>
+      <div class="ses-detalle-body">
+        <div class="sesiones-table-wrap">
+          <table class="sesiones-tbl"><thead>${thead}</thead><tbody>${tbody}</tbody></table>
+        </div>
+      </div>
+    </div>`;
+}
 function volverAGrid() {
   currentPlayer = null;
   const maxSem = Math.max(...Object.values(ROSTER).flatMap(a => a.map(e => e.semana)));
@@ -682,80 +761,161 @@ function sesFmt(v, m){
   return Number(v).toLocaleString('es-AR',{minimumFractionDigits:dec,maximumFractionDigits:dec});
 }
 
+let SES_SELECTED = ['distancia'];
+let SES_ORDEN = 'total';
+const SES_SORT = {};        // "semana|metrica" -> {col:'total'|idx, dir:-1|1}
+const SES_OPEN = new Set(); // semanas desplegadas
+
+function sesAggLabel(m){ return SES_MAX_METRICS.has(m) ? 'máximo' : 'suma'; }
+
+function sesTotalJugador(sesiones, j, m){
+  const vals = sesiones.map(s => s.jugadores[j]?.[m]).filter(v => v !== undefined && v !== null);
+  if(!vals.length) return null;
+  return SES_MAX_METRICS.has(m) ? Math.max(...vals) : vals.reduce((a,b)=>a+b,0);
+}
+
+function sesSortKey(sem, m){ return sem + '|' + m; }
+
+function sesToggleSort(sem, m, col){
+  const k = sesSortKey(sem, m);
+  const cur = SES_SORT[k];
+  if(cur && String(cur.col) === String(col)) cur.dir = -cur.dir;
+  else SES_SORT[k] = {col: col, dir: -1};
+  buildSesiones();
+}
+
+function sesToggleWeek(sem){
+  if(SES_OPEN.has(sem)) SES_OPEN.delete(sem); else SES_OPEN.add(sem);
+  buildSesiones();
+}
+
+function sesTablaMetrica(semNum, sesiones, jugArr, m){
+  const k = sesSortKey(semNum, m);
+  const sort = SES_SORT[k] || {col: (SES_ORDEN === 'alfa' ? 'alfa' : 'total'), dir: -1};
+
+  // valor por el que se ordena la tabla
+  const valorOrden = j => {
+    if(sort.col === 'total') return sesTotalJugador(sesiones, j, m);
+    if(sort.col === 'alfa') return null;
+    const v = sesiones[sort.col]?.jugadores[j]?.[m];
+    return (v === undefined) ? null : v;
+  };
+
+  const filas = [...jugArr];
+  if(sort.col === 'alfa'){
+    filas.sort((a,b) => a.localeCompare(b,'es'));
+  } else {
+    filas.sort((a,b) => {
+      const va = valorOrden(a), vb = valorOrden(b);
+      if(va === null && vb === null) return a.localeCompare(b,'es');
+      if(va === null) return 1;   // sin dato siempre al final
+      if(vb === null) return -1;
+      if(va === vb) return a.localeCompare(b,'es');
+      return (va - vb) * sort.dir;
+    });
+  }
+
+  const arrow = col => (String(sort.col) === String(col))
+    ? `<span class="sarrow">${sort.dir === -1 ? '▼' : '▲'}</span>` : '';
+
+  let thead = `<tr><th class="rankcol"></th>`
+    + `<th class="jug-col sortable" onclick="sesToggleSort(${semNum},'${m}','alfa')">Jugador${arrow('alfa')}</th>`;
+  sesiones.forEach((s, i) => {
+    const dia = s.nombre.replace(/Svn Sem \d+ ?[Dd]ia ?/i,'D');
+    thead += `<th class="sortable" onclick="sesToggleSort(${semNum},'${m}',${i})">${dia}${arrow(i)}`
+           + `<span class="fecha">${s.fecha}</span></th>`;
+  });
+  thead += `<th class="total-col sortable" onclick="sesToggleSort(${semNum},'${m}','total')">`
+        + `TOTAL${arrow('total')}<span class="fecha">${sesAggLabel(m)}</span></th></tr>`;
+
+  let tbody = '';
+  filas.forEach((j, idx) => {
+    const esTop = (sort.col !== 'alfa' && sort.dir === -1 && idx === 0 && valorOrden(j) !== null);
+    tbody += `<tr class="${esTop ? 'top1' : ''}"><td class="rankcol">${sort.col === 'alfa' ? '' : (idx+1)}</td>`
+          + `<td class="jug-col">${j}</td>`;
+    sesiones.forEach(s => {
+      tbody += `<td>${sesFmt(s.jugadores[j]?.[m], m)}</td>`;
+    });
+    tbody += `<td class="total-col">${sesFmt(sesTotalJugador(sesiones, j, m), m)}</td></tr>`;
+  });
+
+  return `
+    <div class="metric-caption">
+      <h4>${SES_METRIC_LABELS[m]}</h4>
+      <span class="agg">total = ${sesAggLabel(m)}</span>
+    </div>
+    <div class="sesiones-table-wrap">
+      <table class="sesiones-tbl"><thead>${thead}</thead><tbody>${tbody}</tbody></table>
+    </div>`;
+}
+
 function buildSesiones(){
   const cont = document.getElementById('sesionesAccordion');
-  const metrica = document.getElementById('selMetricaSesiones').value;
   cont.innerHTML = '';
 
-  // semanas de mayor a menor
+  const metricas = SES_SELECTED.length ? SES_SELECTED : ['distancia'];
   const semanas = Object.keys(SESIONES).map(Number).sort((a,b)=>b-a);
+
+  // por defecto se abre la semana mas reciente
+  if(!SES_OPEN.size && semanas.length) SES_OPEN.add(semanas[0]);
+
   semanas.forEach(semNum => {
     const sesiones = SESIONES[semNum];
     const nSes = sesiones.length;
     const incompleta = nSes < 4;
 
-    // roster: todos los jugadores que aparecen en alguna sesión de la semana
     const jugadores = new Set();
     sesiones.forEach(s => Object.keys(s.jugadores).forEach(j => jugadores.add(j)));
-    const jugArr = [...jugadores].sort();
-
-    // calcular total por jugador (suma o máximo según métrica)
-    function totalJugador(j){
-      const vals = sesiones.map(s => s.jugadores[j]?.[metrica]).filter(v=>v!==undefined&&v!==null);
-      if(!vals.length) return null;
-      return SES_MAX_METRICS.has(metrica) ? Math.max(...vals) : vals.reduce((a,b)=>a+b,0);
-    }
+    const jugArr = [...jugadores].sort((a,b)=>a.localeCompare(b,'es'));
 
     const acc = document.createElement('div');
-    acc.className = 'sem-accordion';
+    acc.className = 'sem-accordion' + (SES_OPEN.has(semNum) ? ' open' : '');
 
-    // header
-    const badge = incompleta ? `<span class="sem-incompleta-badge">⚠ ${nSes}/4 sesiones</span>` : `<span class="meta">${nSes}/4 sesiones</span>`;
-    // tabla
-    let thead = '<tr><th>Jugador</th>';
-    sesiones.forEach(s => {
-      const dia = s.nombre.replace(/Svn Sem \d+ ?[Dd]ia ?/i,'D');
-      thead += `<th>${dia}<span class="fecha">${s.fecha}</span></th>`;
-    });
-    thead += `<th class="total-col">TOTAL<span class="fecha">${SES_MAX_METRICS.has(metrica)?'máximo':'suma'}</span></th></tr>`;
+    const badge = incompleta
+      ? `<span class="sem-incompleta-badge">⚠ ${nSes}/4 sesiones</span>`
+      : `<span class="meta">${nSes}/4 sesiones</span>`;
 
-    let tbody = '';
-    jugArr.forEach(j => {
-      tbody += `<tr><td>${j}</td>`;
-      sesiones.forEach(s => {
-        const v = s.jugadores[j]?.[metrica];
-        tbody += `<td>${sesFmt(v, metrica)}</td>`;
-      });
-      tbody += `<td class="total-col">${sesFmt(totalJugador(j), metrica)}</td></tr>`;
-    });
+    const tablas = metricas.map(m => sesTablaMetrica(semNum, sesiones, jugArr, m)).join('');
+    const etiqMetricas = metricas.length === 1
+      ? SES_METRIC_LABELS[metricas[0]]
+      : metricas.length + ' métricas';
 
     acc.innerHTML = `
-      <div class="sem-accordion-head" onclick="this.parentElement.classList.toggle('open')">
+      <div class="sem-accordion-head" onclick="sesToggleWeek(${semNum})">
         <div class="left">
           <span class="chev">▾</span>
           <h3>Semana ${semNum}</h3>
           ${badge}
         </div>
-        <div class="meta">${jugArr.length} jugadores · ${SES_METRIC_LABELS[metrica]}</div>
+        <div class="meta">${jugArr.length} jugadores · ${etiqMetricas}</div>
       </div>
-      <div class="sem-accordion-body">
-        <div class="sesiones-table-wrap">
-          <table class="sesiones-tbl"><thead>${thead}</thead><tbody>${tbody}</tbody></table>
-        </div>
-      </div>`;
+      <div class="sem-accordion-body">${tablas}</div>`;
     cont.appendChild(acc);
   });
-
-  // abrir la primera semana (más reciente) por defecto
-  const first = cont.querySelector('.sem-accordion');
-  if(first) first.classList.add('open');
 }
 
-// poblar selector de métrica
+// chips de metricas + selector de orden
+function sesToggleMetrica(m){
+  const i = SES_SELECTED.indexOf(m);
+  if(i >= 0){ if(SES_SELECTED.length > 1) SES_SELECTED.splice(i,1); }
+  else SES_SELECTED.push(m);
+  SES_SELECTED.sort((a,b)=>SES_METRICS.indexOf(a)-SES_METRICS.indexOf(b));
+  pintarChips();
+  buildSesiones();
+}
+function pintarChips(){
+  const cont = document.getElementById('metricChips');
+  cont.innerHTML = SES_METRICS.map(m =>
+    `<button class="mchip${SES_SELECTED.includes(m)?' on':''}" onclick="sesToggleMetrica('${m}')">`
+    + `${SES_METRIC_LABELS[m]}</button>`).join('');
+}
 (function(){
-  const sel = document.getElementById('selMetricaSesiones');
-  sel.innerHTML = SES_METRICS.map(m=>`<option value="${m}">${SES_METRIC_LABELS[m]}</option>`).join('');
-  sel.addEventListener('change', buildSesiones);
+  pintarChips();
+  document.getElementById('selOrdenSesiones').addEventListener('change', function(){
+    SES_ORDEN = this.value;
+    Object.keys(SES_SORT).forEach(k => delete SES_SORT[k]);
+    buildSesiones();
+  });
 })();
 
 </script>
