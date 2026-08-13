@@ -112,6 +112,61 @@ def fila_metrica(row):
     }
 
 
+MANUAL_PATH = 'manual.json'
+
+
+def leer_manual():
+    """Lee manual.json (notas del PF + sesiones cargadas a mano).
+    Si no existe o esta roto, devuelve una estructura vacia y sigue."""
+    vacio = {'notas': {}, 'sesiones': []}
+    if not os.path.exists(MANUAL_PATH):
+        print('  manual.json no existe todavia, sigo solo con Catapult')
+        return vacio
+    try:
+        with open(MANUAL_PATH, encoding='utf-8') as f:
+            m = json.load(f)
+    except Exception as e:
+        print('  ATENCION: manual.json ilegible (%s), lo ignoro' % e)
+        return vacio
+    m.setdefault('notas', {})
+    m.setdefault('sesiones', [])
+    print('  manual.json: %d notas, %d sesiones manuales'
+          % (len(m['notas']), len(m['sesiones'])))
+    return m
+
+
+def fila_manual(d):
+    """Normaliza las metricas de una sesion manual al mismo shape que Catapult."""
+    out = {}
+    for k in METRICS:
+        v = d.get(k, 0) or 0
+        out[k] = round(float(v), 2) if k in MAX_METRICS else round(float(v), 1)
+    return out
+
+
+def totalizar(by_ath):
+    """{jugador: [filas]} -> {jugador: {metrica: total, sesiones: n}}"""
+    total = {}
+    for j, rows in by_ath.items():
+        total[j] = {}
+        for k in METRICS:
+            vals = [r[k] for r in rows]
+            total[j][k] = round(max(vals), 2) if k in MAX_METRICS else round(sum(vals), 1)
+        total[j]['sesiones'] = len(rows)
+    return total
+
+
+def bandas_de(historial):
+    """Banda de referencia = promedio de semanas reales previas x0.8 / x1.3."""
+    if len(historial) < 1:
+        return None
+    metrics_banda = {}
+    for k in METRICS:
+        avg = mean(h[k] for h in historial)
+        metrics_banda[k] = {'low': round(avg * 0.8, 1), 'high': round(avg * 1.3, 1)}
+    return {'metrics': metrics_banda, 'n_semanas': len(historial)}
+
+
 def main():
     hoy = datetime.now()
     print(f"Bajando datos SEVEN desde {INICIO_TEMPORADA.date()} hasta {hoy.date()}...")
@@ -134,18 +189,30 @@ def main():
         dt = datetime.fromtimestamp(a['start_time'])
         acts_por_semana[semana_de(dt)].append(a)
 
+    # 2b. Sesiones manuales del PF, agrupadas por semana
+    manual = leer_manual()
+    man_por_semana = defaultdict(list)
+    for ms in manual['sesiones']:
+        try:
+            man_por_semana[int(ms['semana'])].append(ms)
+        except (KeyError, ValueError, TypeError):
+            print('  ATENCION: sesion manual sin semana valida, la salteo')
+
     # 3. Para cada semana: traer stats, armar detalle por sesión y TOTAL por jugador
-    semanas_data = {}      # {num: {jugador: {total}}}
-    sesiones_data = {}     # {num: [ {nombre, fecha, jugadores:{...}} ]}
-    for num in sorted(acts_por_semana.keys()):
-        acts = sorted(acts_por_semana[num], key=lambda x: x['start_time'])
+    semanas_data = {}       # {num: {jugador: total}}  <- incluye manuales
+    semanas_real = {}       # {num: {jugador: total}}  <- solo Catapult
+    sesiones_data = {}      # {num: [ {nombre, fecha, origen, jugadores:{...}} ]}
+    semanas_todas = sorted(set(acts_por_semana.keys()) | set(man_por_semana.keys()))
+    for num in semanas_todas:
+        acts = sorted(acts_por_semana.get(num, []), key=lambda x: x['start_time'])
         act_ids = [a['id'] for a in acts]
-        raw = post_stats(act_ids, group_by=["activity", "athlete"])
+        raw = post_stats(act_ids, group_by=["activity", "athlete"]) if act_ids else []
 
         # detalle por sesión
         sesiones = {a['id']: {
             'nombre': a['name'],
             'fecha': datetime.fromtimestamp(a['start_time']).strftime('%a %d/%m'),
+            'origen': 'catapult',
             'jugadores': {}
         } for a in acts}
         # acumulador por jugador para el TOTAL
@@ -173,40 +240,65 @@ def main():
         for j, ms in sueltos.items():
             by_ath[j].extend(ms)
 
-        # TOTAL semanal por jugador
-        total = {}
-        for j, rows in by_ath.items():
-            total[j] = {}
-            for k in METRICS:
-                vals = [r[k] for r in rows]
-                total[j][k] = round(max(vals), 2) if k in MAX_METRICS else round(sum(vals), 1)
-            total[j]['sesiones'] = len(rows)
+        # TOTAL semanal contando SOLO lo medido por Catapult
+        semanas_real[num] = totalizar(by_ath)
 
-        semanas_data[num] = total
-        sesiones_data[num] = [sesiones[a['id']] for a in acts]
-        print(f"  Semana {num}: {len(acts)} sesiones, {len(total)} jugadores")
+        # sumar las sesiones manuales de esta semana
+        lista_ses = [sesiones[a['id']] for a in acts]
+        n_man = 0
+        for ms in sorted(man_por_semana.get(num, []), key=lambda x: x.get('fecha', '')):
+            jugadores_ms = {}
+            for jn, met in (ms.get('jugadores') or {}).items():
+                fila = fila_manual(met)
+                jugadores_ms[norm(jn)] = fila
+                by_ath[norm(jn)].append(fila)
+            lista_ses.append({
+                'nombre': ms.get('nombre', 'Sesión manual'),
+                'fecha': ms.get('fecha', ''),
+                'origen': 'manual',
+                'motivo': ms.get('motivo', ''),
+                'autor': ms.get('autor', ''),
+                'creado': ms.get('creado', ''),
+                'id_manual': ms.get('id', ''),
+                'jugadores': jugadores_ms,
+            })
+            n_man += 1
 
-    # 4. Roster unificado con bandas (promedio de semanas reales previas x 0.8 / x 1.3)
+        semanas_data[num] = totalizar(by_ath)
+        sesiones_data[num] = lista_ses
+        extra = f" (+{n_man} manual{'es' if n_man != 1 else ''})" if n_man else ''
+        print(f"  Semana {num}: {len(acts)} sesiones{extra}, {len(semanas_data[num])} jugadores")
+
+    # 4. Roster unificado. Se calculan DOS series en paralelo:
+    #    - datos/banda           -> incluye sesiones manuales (lo que se ve por defecto)
+    #    - datos_real/banda_real -> solo Catapult (para auditar una decision)
     todos = sorted({j for tot in semanas_data.values() for j in tot})
     nums_ordenados = sorted(semanas_data.keys())
+    semanas_con_manual = {num for num, l in sesiones_data.items()
+                          if any(s.get('origen') == 'manual' for s in l)}
     roster = {}
     for j in todos:
-        historial = []
+        historial, historial_real = [], []
         filas = []
         for num in nums_ordenados:
             datos = semanas_data[num].get(j)
-            banda = None
-            if datos is not None:
-                if len(historial) >= 1:
-                    metrics_banda = {}
-                    for k in METRICS:
-                        avg = mean(h[k] for h in historial)
-                        metrics_banda[k] = {'low': round(avg * 0.8, 1), 'high': round(avg * 1.3, 1)}
-                    banda = {'metrics': metrics_banda, 'n_semanas': len(historial)}
-                filas.append({'semana': num, 'datos': datos, 'banda': banda, 'jugo': True})
-                historial.append(datos)
-            else:
-                filas.append({'semana': num, 'datos': None, 'banda': None, 'jugo': False})
+            datos_real = semanas_real.get(num, {}).get(j)
+            if datos is None:
+                filas.append({'semana': num, 'datos': None, 'banda': None,
+                              'datos_real': None, 'banda_real': None,
+                              'jugo': False, 'tiene_manual': False})
+                continue
+            banda = bandas_de(historial)
+            banda_real = bandas_de(historial_real)
+            tiene_manual = (num in semanas_con_manual
+                            and datos_real is not None
+                            and datos.get('sesiones') != datos_real.get('sesiones'))
+            filas.append({'semana': num, 'datos': datos, 'banda': banda,
+                          'datos_real': datos_real, 'banda_real': banda_real,
+                          'jugo': True, 'tiene_manual': tiene_manual})
+            historial.append(datos)
+            if datos_real is not None:
+                historial_real.append(datos_real)
         roster[j] = filas
 
     # 5. Salida
@@ -216,6 +308,9 @@ def main():
         'sesiones': {str(k): v for k, v in sesiones_data.items()},
         'semanas': nums_ordenados,
         'sesiones_normales': SESIONES_NORMALES,
+        'notas': manual.get('notas', {}),
+        'n_manuales': sum(1 for l in sesiones_data.values()
+                          for s in l if s.get('origen') == 'manual'),
     }
     with open('carga.json', 'w', encoding='utf-8') as f:
         json.dump(salida, f, ensure_ascii=False)
