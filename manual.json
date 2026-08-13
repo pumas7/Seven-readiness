@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "notas": {
+    "1": {
+      "texto": "Solo físico, sin rugby.",
+      "autor": "PF",
+      "actualizado": "2026-08-13"
+    },
+    "2": {
+      "texto": "Se agregó manejo.",
+      "autor": "PF",
+      "actualizado": "2026-08-13"
+    },
+    "3": {
+      "texto": "Mismas distancias, más intenso.",
+      "autor": "PF",
+      "actualizado": "2026-08-13"
+    },
+    "4": {
+      "texto": "Se agregan estructuras y tocatas. Baja distancia total y HSR, suben entradas.",
+      "autor": "PF",
+      "actualizado": "2026-08-13"
+    }
+  },
+  "sesiones": []
+}
+
