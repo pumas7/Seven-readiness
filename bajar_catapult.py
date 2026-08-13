@@ -61,8 +61,31 @@ def post_stats(activity_ids, group_by):
         return json.loads(r.read())
 
 
+# --- Alias de perfiles Catapult ---
+# Jugadores que entrenaron con un GPS/perfil generico antes de tener su perfil real
+# creado. La clave es el nombre generico como viene de Catapult (normalizado);
+# el valor, el nombre real al que se fusionan sus sesiones.
+# Para agregar uno nuevo: 'Nombre Generico': 'Nombre Real'.
+ALIAS = {
+    'Jugador Uno':  'Ignacio Diaz',
+    'Jugador Dos':  'Francisco Calello',
+    'Jugador Tres': 'Juan Cruz Massun',
+}
+
+
 def norm(name):
-    return ' '.join(w.capitalize() for w in name.strip().split())
+    n = ' '.join(w.capitalize() for w in name.strip().split())
+    return ALIAS.get(n, n)
+
+
+def combinar(a, b):
+    """Fusiona dos filas de metricas de la MISMA sesion (mismo jugador, dos perfiles).
+    Volumen se suma, picos se toman al maximo. Evita contar sesiones duplicadas."""
+    out = {}
+    for k in METRICS:
+        va, vb = a.get(k, 0), b.get(k, 0)
+        out[k] = round(max(va, vb), 2) if k in MAX_METRICS else round(va + vb, 1)
+    return out
 
 
 def semana_de(fecha):
@@ -127,13 +150,28 @@ def main():
         } for a in acts}
         # acumulador por jugador para el TOTAL
         by_ath = defaultdict(list)
+        sueltos = defaultdict(list)
         for row in raw:
             aid = row.get('activity_id')
             m = fila_metrica(row)
             j = norm(row['athlete_name'])
             if aid in sesiones:
+                previo = sesiones[aid]['jugadores'].get(j)
+                if previo is not None:
+                    # mismo jugador con dos perfiles en la MISMA sesion: fusionar,
+                    # no contar dos sesiones
+                    print(f"  ! {j}: dos perfiles en '{sesiones[aid]['nombre']}', fusionados")
+                    m = combinar(previo, m)
                 sesiones[aid]['jugadores'][j] = m
-            by_ath[j].append(m)
+            else:
+                sueltos[j].append(m)
+
+        # el TOTAL se arma desde el detalle ya fusionado -> 1 sesion = 1 fila
+        for s in sesiones.values():
+            for j, m in s['jugadores'].items():
+                by_ath[j].append(m)
+        for j, ms in sueltos.items():
+            by_ath[j].extend(ms)
 
         # TOTAL semanal por jugador
         total = {}
