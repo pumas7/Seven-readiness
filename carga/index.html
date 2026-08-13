@@ -216,6 +216,53 @@ table.sesiones-tbl tbody tr:hover td.jug-col{background:#F7FAFD}
 .ses-detalle.open .ses-detalle-body{max-height:2000px;margin-top:10px}
 table.sesiones-tbl td.ses-nom{min-width:150px}
 table.sesiones-tbl td.ses-nom .fecha{display:block;font-size:10px;color:var(--grey);font-weight:400}
+
+/* --- Fase 2: notas del PF, sesiones manuales --- */
+.nota-pf{background:#FFF8E1;border-left:4px solid var(--gold);padding:11px 14px;
+  border-radius:0 8px 8px 0;margin-bottom:14px;font-size:13.5px;line-height:1.5;color:#5B4A00}
+.nota-pf .np-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+  color:#8A7300;display:block;margin-bottom:3px}
+.nota-pf.vacia{background:var(--paper);border-left-color:var(--line);color:var(--grey);font-style:italic}
+.badge-manual{display:inline-block;background:#EDE7FF;color:#4B2FA8;border:1px solid #C9B8FF;
+  border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;letter-spacing:.3px;
+  text-transform:uppercase;vertical-align:middle;margin-left:6px}
+table.sesiones-tbl th.col-manual{background:#F3EFFF;color:#4B2FA8}
+table.sesiones-tbl td.col-manual{background:#FBF9FF}
+.excl-switch{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--steel);
+  background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 12px}
+.excl-switch input{width:15px;height:15px;cursor:pointer}
+.excl-switch b{color:var(--navy)}
+#section-registro{display:none}
+.reg-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px;
+  margin-bottom:16px}
+.reg-card h3{margin:0 0 4px;font-size:15px;color:var(--navy)}
+.reg-card .sub{font-size:12px;color:var(--grey);margin-bottom:14px}
+.reg-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px}
+.reg-f{display:flex;flex-direction:column;gap:4px}
+.reg-f label{font-size:10.5px;font-weight:700;color:var(--grey);text-transform:uppercase;
+  letter-spacing:.3px}
+.reg-f input,.reg-f select,.reg-f textarea{font-family:inherit;font-size:13px;padding:7px 9px;
+  border:1px solid var(--line);border-radius:7px;color:var(--ink);background:#fff}
+.reg-f textarea{min-width:420px;min-height:64px;resize:vertical}
+.reg-f input[type=number]{width:96px;text-align:right}
+.btn-reg{background:var(--navy);color:#fff;border:0;border-radius:8px;padding:9px 16px;
+  font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-reg:hover{background:var(--steel)}
+.btn-reg.ghost{background:#fff;color:var(--navy);border:1px solid var(--line)}
+.btn-reg.danger{background:#fff;color:var(--red);border:1px solid #F3C6C6}
+.btn-reg:disabled{opacity:.5;cursor:not-allowed}
+.man-item{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  border:1px solid var(--line);border-radius:9px;padding:10px 13px;margin-bottom:8px;font-size:13px}
+.man-item .mi-meta{font-size:11px;color:var(--grey);margin-top:2px}
+.jug-metric-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;
+  max-height:340px;overflow-y:auto;border:1px solid var(--line);border-radius:9px;padding:12px;
+  background:var(--paper)}
+.jmg-row{display:flex;flex-direction:column;gap:3px}
+.jmg-row span{font-size:11px;color:var(--steel);font-weight:600}
+.jmg-row input{width:100%;font-size:12.5px;padding:5px 7px;border:1px solid var(--line);
+  border-radius:6px;text-align:right;font-family:inherit}
+.aviso-integridad{background:#FFF4F4;border:1px solid #F3C6C6;color:#8A2B2B;border-radius:9px;
+  padding:11px 14px;font-size:12.5px;line-height:1.5;margin-bottom:14px}
 </style>
 </head>
 <body>
@@ -238,6 +285,7 @@ table.sesiones-tbl td.ses-nom .fecha{display:block;font-size:10px;color:var(--gr
       <button class="section-btn active" id="secBtnSemanal" onclick="switchSection('semanal')">📊 Vista semanal</button>
       <button class="section-btn" id="secBtnSesiones" onclick="switchSection('sesiones')">📋 Sesiones</button>
       <button class="section-btn" id="secBtnGraficos" onclick="switchSection('graficos')">📈 Tendencias / Gráficos</button>
+      <button class="section-btn" id="secBtnRegistro" onclick="switchSection('registro')">✍️ Registro PF</button>
     </div>
     <div id="weekTabsWrap"><div class="tabs" id="tabsBar">
       <button class="tab active" data-week="3">Semana 3 <span class="sub">en curso</span></button>
@@ -259,6 +307,10 @@ table.sesiones-tbl td.ses-nom .fecha{display:block;font-size:10px;color:var(--gr
       <span><span class="dot n"></span>Sin banda / sin dato</span>
     </div>
 
+    <label class="excl-switch" id="exclSwitch" style="display:none;margin-bottom:14px">
+      <input type="checkbox" id="chkExcluirManual" onchange="toggleExcluirManual(this.checked)">
+      <span>Calcular <b>solo con datos de Catapult</b> (excluir sesiones manuales)</span>
+    </label>
     <div class="banner-note" id="bannerNote">
       ⚠️ Semana 3 en curso — lleva 2 de las ~4 sesiones habituales (faltan jueves/viernes). Las bandas de Sem 2 y Sem 3 usan las semanas reales previas disponibles (1 y 2) — todavía no hay ventana completa de 3 semanas. Roster auto-detectado desde Catapult, sin tipeo manual.
     </div>
@@ -297,6 +349,55 @@ table.sesiones-tbl td.ses-nom .fecha{display:block;font-size:10px;color:var(--gr
     </div>
   </div>
   <div id="sesionesAccordion"></div>
+</div></main></div>
+<div id="section-registro"><main><div class="wrap">
+  <div class="aviso-integridad">
+    Todo lo que se carga acá queda marcado como <b>manual</b> en el tablero y en los informes, con autor y motivo.
+    Las sesiones manuales entran en el total y en la banda de referencia; el switch de la vista semanal
+    permite recalcular sin ellas para auditar cualquier decisión.
+  </div>
+  <div class="reg-card">
+    <h3>Notas de la semana</h3>
+    <div class="sub">Qué se trabajó. Se muestra en la vista de jugador y en el detalle de sesiones.</div>
+    <div class="reg-row">
+      <div class="reg-f"><label>Semana</label><select id="regNotaSemana"></select></div>
+      <div class="reg-f"><label>Autor</label><input id="regNotaAutor" placeholder="PF" value="PF"></div>
+    </div>
+    <div class="reg-row"><div class="reg-f"><label>Texto</label><textarea id="regNotaTexto"></textarea></div></div>
+    <button class="btn-reg" id="btnGuardarNota" onclick="window.__registro.guardarNota()">Guardar nota</button>
+  </div>
+
+  <div class="reg-card">
+    <h3>Agregar sesión manual</h3>
+    <div class="sub">Para sesiones sin GPS o carga estimada. Dejá en 0 las métricas que no correspondan.</div>
+    <div class="reg-row">
+      <div class="reg-f"><label>Semana</label><select id="regSesSemana"></select></div>
+      <div class="reg-f"><label>Fecha</label><input id="regSesFecha" placeholder="Fri 15/08"></div>
+      <div class="reg-f"><label>Nombre</label><input id="regSesNombre" placeholder="Sem 4 Dia 4 (estimada)"></div>
+      <div class="reg-f"><label>Motivo</label><select id="regSesMotivo">
+        <option value="sin_gps">Entrenó sin GPS</option>
+        <option value="falla_unidad">Falla de la unidad</option>
+        <option value="estimada">Carga estimada</option>
+        <option value="completar_semana">Completar la semana</option>
+      </select></div>
+      <div class="reg-f"><label>Autor</label><input id="regSesAutor" placeholder="Tu nombre"></div>
+    </div>
+    <div class="reg-row">
+      <div class="reg-f"><label>Métrica a cargar</label><select id="regSesMetrica"></select></div>
+      <div class="reg-f"><label>Aplicar a todos</label><input type="number" id="regSesBulk" placeholder="valor"></div>
+      <button class="btn-reg ghost" onclick="window.__registro.aplicarATodos()">Aplicar</button>
+    </div>
+    <div class="jug-metric-grid" id="regJugGrid"></div>
+    <div style="margin-top:14px">
+      <button class="btn-reg" id="btnGuardarSesion" onclick="window.__registro.guardarSesion()">Guardar sesión manual</button>
+    </div>
+  </div>
+
+  <div class="reg-card">
+    <h3>Sesiones manuales cargadas</h3>
+    <div class="sub" id="regManualSub"></div>
+    <div id="regManualLista"></div>
+  </div>
 </div></main></div>
 <div id="section-graficos"><main>
   <div class="wrap">
@@ -382,6 +483,23 @@ function fmt(v, decimals=0) {
   return Number(v).toLocaleString('es-AR', {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
 }
 
+// --- Fase 2: sesiones manuales incluidas o excluidas ---
+// window.EXCLUIR_MANUAL lo togglea el switch de la vista semanal.
+function datosDe(s){
+  if(window.EXCLUIR_MANUAL && s.datos_real) return s.datos_real;
+  return s.datos;
+}
+function bandaDe(s){
+  if(window.EXCLUIR_MANUAL) return s.banda_real || null;
+  return s.banda || null;
+}
+window.notaPfHtml = function notaPfHtml(semana){
+  const n = (window.NOTAS || {})[String(semana)];
+  if(!n || !n.texto) return '';
+  const autor = n.autor ? ' · ' + n.autor : '';
+  return `<div class="nota-pf"><span class="np-label">Qué se hizo esta semana${autor}</span>${n.texto}</div>`;
+};
+
 function estadoDeMetrica(valor, bandaMetrica) {
   if (!bandaMetrica) return 'nodata';
   if (valor < bandaMetrica.low) return 'bajo';
@@ -391,8 +509,9 @@ function estadoDeMetrica(valor, bandaMetrica) {
 
 function estadoGeneralJugador(semanaData) {
   if (!semanaData || !semanaData.jugo) return 'nodata';
-  if (!semanaData.banda) return 'nodata';
-  return estadoDeMetrica(semanaData.datos.distancia, semanaData.banda.metrics.distancia);
+  const b = bandaDe(semanaData);
+  if (!b) return 'nodata';
+  return estadoDeMetrica(datosDe(semanaData).distancia, b.metrics.distancia);
 }
 
 const SB_CLASS = { ok: 'sb-g', bajo: 'sb-a', alto: 'sb-r', nodata: 'sb-n' };
@@ -476,9 +595,10 @@ function abrirDetalle(nombre) {
 
     let metricsHtml = '';
     METRIC_ORDER.forEach(m => {
-      const valor = s.datos[m];
+      const valor = datosDe(s)[m];
       const decimals = (m === 'vmax' || m === 'accmax') ? (m === 'accmax' ? 2 : 1) : (m === 'pct' ? 1 : 0);
-      const bandaMetrica = s.banda ? s.banda.metrics[m] : null;
+      const bandaAct = bandaDe(s);
+      const bandaMetrica = bandaAct ? bandaAct.metrics[m] : null;
       const estado = estadoDeMetrica(valor, bandaMetrica);
       const flagClass = bandaMetrica ? `flag-${estado}` : '';
 
@@ -506,8 +626,9 @@ function abrirDetalle(nombre) {
     block.innerHTML = `
       <div class="semana-block-header">
         <h3>Semana ${s.semana}</h3>
-        <span class="semana-tag">${s.datos.sesiones} ${s.datos.sesiones!==1?'sesiones':'sesión'}${s.banda ? ' · banda con ' + s.banda.n_semanas + ' semana' + (s.banda.n_semanas!==1?'s':'') + ' previa' + (s.banda.n_semanas!==1?'s':'') : ''}</span>
+        <span class="semana-tag">${datosDe(s).sesiones} ${datosDe(s).sesiones!==1?'sesiones':'sesión'}${bandaDe(s) ? ' · banda con ' + bandaDe(s).n_semanas + ' semana' + (bandaDe(s).n_semanas!==1?'s':'') + ' previa' + (bandaDe(s).n_semanas!==1?'s':'') : ''}${s.tiene_manual ? '<span class="badge-manual">incluye manual</span>' : ''}</span>
       </div>
+      ${notaPfHtml(s.semana)}
       <div class="metric-grid">${metricsHtml}</div>
       ${sesionesDeJugadorHtml(nombre, s.semana)}
     `;
@@ -822,8 +943,9 @@ function sesTablaMetrica(semNum, sesiones, jugArr, m){
     + `<th class="jug-col sortable" onclick="sesToggleSort(${semNum},'${m}','alfa')">Jugador${arrow('alfa')}</th>`;
   sesiones.forEach((s, i) => {
     const dia = s.nombre.replace(/Svn Sem \d+ ?[Dd]ia ?/i,'D');
-    thead += `<th class="sortable" onclick="sesToggleSort(${semNum},'${m}',${i})">${dia}${arrow(i)}`
-           + `<span class="fecha">${s.fecha}</span></th>`;
+    const cm = (s.origen === 'manual') ? ' col-manual' : '';
+    thead += `<th class="sortable${cm}" onclick="sesToggleSort(${semNum},'${m}',${i})">${dia}${arrow(i)}`
+           + `<span class="fecha">${s.fecha}${s.origen === 'manual' ? ' · manual' : ''}</span></th>`;
   });
   thead += `<th class="total-col sortable" onclick="sesToggleSort(${semNum},'${m}','total')">`
         + `TOTAL${arrow('total')}<span class="fecha">${sesAggLabel(m)}</span></th></tr>`;
@@ -834,7 +956,8 @@ function sesTablaMetrica(semNum, sesiones, jugArr, m){
     tbody += `<tr class="${esTop ? 'top1' : ''}"><td class="rankcol">${sort.col === 'alfa' ? '' : (idx+1)}</td>`
           + `<td class="jug-col">${j}</td>`;
     sesiones.forEach(s => {
-      tbody += `<td>${sesFmt(s.jugadores[j]?.[m], m)}</td>`;
+      const cm = (s.origen === 'manual') ? ' class="col-manual"' : '';
+      tbody += `<td${cm}>${sesFmt(s.jugadores[j]?.[m], m)}</td>`;
     });
     tbody += `<td class="total-col">${sesFmt(sesTotalJugador(sesiones, j, m), m)}</td></tr>`;
   });
@@ -889,7 +1012,7 @@ function buildSesiones(){
         </div>
         <div class="meta">${jugArr.length} jugadores · ${etiqMetricas}</div>
       </div>
-      <div class="sem-accordion-body">${tablas}</div>`;
+      <div class="sem-accordion-body">${notaPfHtml(semNum)}${tablas}</div>`;
     cont.appendChild(acc);
   });
 }
@@ -927,10 +1050,13 @@ function switchSection(sec){
   document.getElementById('section-semanal').style.display = sec==='semanal' ? 'block' : 'none';
   document.getElementById('section-sesiones').style.display = sec==='sesiones' ? 'block' : 'none';
   document.getElementById('section-graficos').style.display = sec==='graficos' ? 'block' : 'none';
+  document.getElementById('section-registro').style.display = sec==='registro' ? 'block' : 'none';
   document.getElementById('weekTabsWrap').style.display = sec==='semanal' ? 'block' : 'none';
   document.getElementById('secBtnSemanal').classList.toggle('active', sec==='semanal');
   document.getElementById('secBtnSesiones').classList.toggle('active', sec==='sesiones');
   document.getElementById('secBtnGraficos').classList.toggle('active', sec==='graficos');
+  document.getElementById('secBtnRegistro').classList.toggle('active', sec==='registro');
+  if(sec==='registro' && window.__registro) window.__registro.render();
   if(sec!=='semanal'){ document.getElementById('btnBack').style.display='none'; }
   if(sec==='graficos' && !window.__graficosRendered){ window.__graficosRendered=true; render(); }
   if(sec==='sesiones' && !window.__sesionesRendered){ window.__sesionesRendered=true; buildSesiones(); }
@@ -938,6 +1064,263 @@ function switchSection(sec){
 
 </script>
 
+<script>
+// ===== Registro PF: notas semanales y sesiones manuales =====
+// manual.json vive en el repo. Se escribe con la API de GitHub usando el mismo PAT
+// del boton "Actualizar datos". El campo sha da control de concurrencia: si otro
+// guardo primero, GitHub rechaza el PUT y avisamos en vez de pisar.
+window.__registro = (function(){
+  const REPO = 'pumas7/Seven-readiness';
+  const RUTA = 'manual.json';
+  const API = 'https://api.github.com/repos/' + REPO + '/contents/' + RUTA;
+
+  const MOTIVOS = {
+    sin_gps: 'Entrenó sin GPS',
+    falla_unidad: 'Falla de la unidad',
+    estimada: 'Carga estimada',
+    completar_semana: 'Completar la semana'
+  };
+
+  let manual = {version: 1, notas: {}, sesiones: []};
+  let sha = null;
+  let cargado = false;
+
+  function b64encode(str){
+    return btoa(String.fromCharCode(...new TextEncoder().encode(str)));
+  }
+  function b64decode(b64){
+    const bin = atob(b64.replace(/\n/g, ''));
+    return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+  }
+
+  async function cargar(){
+    const token = getToken();
+    if(!token) return false;
+    const r = await fetch(API + '?ref=main', {
+      headers: {Authorization: 'token ' + token, Accept: 'application/vnd.github+json'},
+      cache: 'no-store'
+    });
+    if(!r.ok) throw new Error('No pude leer manual.json (' + r.status + ')');
+    const j = await r.json();
+    sha = j.sha;
+    manual = JSON.parse(b64decode(j.content));
+    manual.notas = manual.notas || {};
+    manual.sesiones = manual.sesiones || [];
+    cargado = true;
+    return true;
+  }
+
+  async function guardar(mensaje){
+    const token = getToken();
+    if(!token){ showMsg('Falta el token de GitHub.', 'error'); return false; }
+    const body = {
+      message: mensaje,
+      content: b64encode(JSON.stringify(manual, null, 2) + '\n'),
+      sha: sha,
+      branch: 'main'
+    };
+    const r = await fetch(API, {
+      method: 'PUT',
+      headers: {Authorization: 'token ' + token, Accept: 'application/vnd.github+json',
+                'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    if(r.status === 409 || r.status === 422){
+      showMsg('Alguien más guardó primero. Recargá la página para no pisarle los cambios.', 'error');
+      return false;
+    }
+    if(!r.ok){
+      showMsg('Error al guardar (' + r.status + ').', 'error');
+      return false;
+    }
+    const j = await r.json();
+    sha = j.content.sha;
+    return true;
+  }
+
+  function semanasDisponibles(){
+    const s = new Set(Object.keys(window.SESIONES || {}).map(Number));
+    const max = s.size ? Math.max(...s) : 1;
+    for(let i = 1; i <= max + 1; i++) s.add(i);
+    return [...s].sort((a,b) => a - b);
+  }
+
+  function jugadoresConocidos(){
+    return Object.keys(window.ROSTER || {}).sort((a,b) => a.localeCompare(b,'es'));
+  }
+
+  function pintarSelects(){
+    const sems = semanasDisponibles();
+    ['regNotaSemana','regSesSemana'].forEach(id => {
+      const el = document.getElementById(id);
+      if(!el) return;
+      const prev = el.value;
+      el.innerHTML = sems.map(n => '<option value="' + n + '">Semana ' + n + '</option>').join('');
+      if(prev) el.value = prev;
+      else el.value = String(Math.max(...sems) - 1);
+    });
+    const sm = document.getElementById('regSesMetrica');
+    if(sm && !sm.options.length){
+      sm.innerHTML = SES_METRICS.map(m =>
+        '<option value="' + m + '">' + SES_METRIC_LABELS[m] + '</option>').join('');
+      sm.addEventListener('change', pintarGrilla);
+    }
+  }
+
+  function pintarGrilla(){
+    const cont = document.getElementById('regJugGrid');
+    if(!cont) return;
+    const m = document.getElementById('regSesMetrica').value || 'distancia';
+    const previos = {};
+    cont.querySelectorAll('input[data-jug]').forEach(i => { previos[i.dataset.jug] = i.value; });
+    cont.innerHTML = jugadoresConocidos().map(j =>
+      '<div class="jmg-row"><span>' + j + '</span>' +
+      '<input type="number" step="any" data-jug="' + j.replace(/"/g,'&quot;') + '" data-met="' + m + '" ' +
+      'value="' + (previos[j] || '') + '" placeholder="0"></div>').join('');
+  }
+
+  function aplicarATodos(){
+    const v = document.getElementById('regSesBulk').value;
+    if(v === '') return;
+    document.querySelectorAll('#regJugGrid input[data-jug]').forEach(i => { i.value = v; });
+  }
+
+  // Las metricas cargadas se acumulan por jugador entre cambios de metrica
+  let buffer = {};
+  function volcarBuffer(){
+    const m = document.getElementById('regSesMetrica').value || 'distancia';
+    document.querySelectorAll('#regJugGrid input[data-jug]').forEach(i => {
+      const v = parseFloat(i.value);
+      if(!isNaN(v) && v !== 0){
+        buffer[i.dataset.jug] = buffer[i.dataset.jug] || {};
+        buffer[i.dataset.jug][m] = v;
+      }
+    });
+  }
+
+  function pintarLista(){
+    const cont = document.getElementById('regManualLista');
+    const sub = document.getElementById('regManualSub');
+    if(!cont) return;
+    const ses = manual.sesiones || [];
+    if(sub) sub.textContent = ses.length
+      ? ses.length + (ses.length === 1 ? ' sesión manual registrada' : ' sesiones manuales registradas')
+      : 'Todavía no hay sesiones manuales.';
+    cont.innerHTML = ses.map(s =>
+      '<div class="man-item"><div><b>' + (s.nombre || 'Sesión manual') + '</b>' +
+      '<span class="badge-manual">manual</span>' +
+      '<div class="mi-meta">Semana ' + s.semana + ' · ' + (s.fecha || 's/fecha') +
+      ' · ' + (MOTIVOS[s.motivo] || s.motivo || '') +
+      ' · ' + Object.keys(s.jugadores || {}).length + ' jugadores' +
+      ' · cargada por ' + (s.autor || '?') + '</div></div>' +
+      '<button class="btn-reg danger" onclick="window.__registro.borrar(\'' + s.id + '\')">Borrar</button></div>'
+    ).join('');
+  }
+
+  async function render(){
+    pintarSelects();
+    pintarGrilla();
+    if(!cargado){
+      try { await cargar(); }
+      catch(e){ showMsg(e.message, 'error'); }
+    }
+    const selN = document.getElementById('regNotaSemana');
+    if(selN && !selN.dataset.hooked){
+      selN.dataset.hooked = '1';
+      selN.addEventListener('change', cargarNotaEnForm);
+    }
+    cargarNotaEnForm();
+    pintarLista();
+  }
+
+  function cargarNotaEnForm(){
+    const sem = document.getElementById('regNotaSemana').value;
+    const n = (manual.notas || {})[sem] || {};
+    document.getElementById('regNotaTexto').value = n.texto || '';
+    if(n.autor) document.getElementById('regNotaAutor').value = n.autor;
+  }
+
+  async function guardarNota(){
+    const btn = document.getElementById('btnGuardarNota');
+    const sem = document.getElementById('regNotaSemana').value;
+    const texto = document.getElementById('regNotaTexto').value.trim();
+    const autor = document.getElementById('regNotaAutor').value.trim() || 'PF';
+    btn.disabled = true;
+    try {
+      if(!cargado) await cargar();
+      if(texto) manual.notas[sem] = {texto, autor, actualizado: new Date().toISOString().slice(0,10)};
+      else delete manual.notas[sem];
+      const ok = await guardar('Nota semana ' + sem + ' (' + autor + ')');
+      if(ok){
+        showMsg('Nota guardada. Se va a ver en el tablero cuando corras "Actualizar datos".', 'ok');
+        pintarLista();
+      }
+    } catch(e){ showMsg(e.message, 'error'); }
+    btn.disabled = false;
+  }
+
+  async function guardarSesion(){
+    const btn = document.getElementById('btnGuardarSesion');
+    volcarBuffer();
+    const semana = parseInt(document.getElementById('regSesSemana').value, 10);
+    const fecha = document.getElementById('regSesFecha').value.trim();
+    const nombre = document.getElementById('regSesNombre').value.trim();
+    const motivo = document.getElementById('regSesMotivo').value;
+    const autor = document.getElementById('regSesAutor').value.trim();
+
+    if(!autor){ showMsg('Poné quién carga la sesión: queda en el registro.', 'error'); return; }
+    if(!Object.keys(buffer).length){ showMsg('No cargaste ninguna métrica.', 'error'); return; }
+
+    btn.disabled = true;
+    try {
+      if(!cargado) await cargar();
+      manual.sesiones.push({
+        id: 'man-' + Date.now(),
+        semana: semana,
+        fecha: fecha || '',
+        nombre: nombre || ('Sem ' + semana + ' manual'),
+        motivo: motivo,
+        autor: autor,
+        creado: new Date().toISOString(),
+        jugadores: JSON.parse(JSON.stringify(buffer))
+      });
+      const ok = await guardar('Sesion manual semana ' + semana + ' (' + autor + ')');
+      if(ok){
+        buffer = {};
+        document.querySelectorAll('#regJugGrid input[data-jug]').forEach(i => { i.value = ''; });
+        showMsg('Sesión guardada. Corré "Actualizar datos" para que impacte en los totales.', 'ok');
+        pintarLista();
+      }
+    } catch(e){ showMsg(e.message, 'error'); }
+    btn.disabled = false;
+  }
+
+  async function borrar(id){
+    if(!confirm('¿Borrar esta sesión manual? Queda en el historial del repo.')) return;
+    try {
+      if(!cargado) await cargar();
+      manual.sesiones = manual.sesiones.filter(s => s.id !== id);
+      const ok = await guardar('Baja de sesion manual ' + id);
+      if(ok){ showMsg('Sesión borrada. Corré "Actualizar datos".', 'ok'); pintarLista(); }
+    } catch(e){ showMsg(e.message, 'error'); }
+  }
+
+  document.addEventListener('change', function(e){
+    if(e.target && e.target.id === 'regSesMetrica') volcarBuffer();
+  }, true);
+
+  return {render, guardarNota, guardarSesion, borrar, aplicarATodos, pintarGrilla};
+})();
+
+function toggleExcluirManual(v){
+  window.EXCLUIR_MANUAL = !!v;
+  window.__semanal.buildGrid();
+  if(document.getElementById('viewDetalle').classList.contains('show')){
+    const n = document.getElementById('detalleNombre').textContent;
+    if(n) window.__semanal.abrirDetalle(n);
+  }
+}
+</script>
 <div class="update-msg" id="updateMsg"><button class="um-close" onclick="document.getElementById('updateMsg').classList.remove('show')">&times;</button><span id="updateMsgText"></span></div>
 
 <script>
@@ -1085,6 +1468,10 @@ fetch('../carga.json?v=' + Date.now())
     // porque los IIFE capturaron la referencia con const.
     Object.keys(window.ROSTER).forEach(k => delete window.ROSTER[k]);
     Object.assign(window.ROSTER, json.roster);
+    window.NOTAS = json.notas || {};
+    const nMan = json.n_manuales || 0;
+    const sw = document.getElementById('exclSwitch');
+    if(sw) sw.style.display = nMan > 0 ? 'flex' : 'none';
     Object.keys(window.SESIONES).forEach(k => delete window.SESIONES[k]);
     Object.assign(window.SESIONES, json.sesiones);
     Object.keys(window.DATA).forEach(k => delete window.DATA[k]);
