@@ -310,6 +310,25 @@ table.inf-tbl td.f-ok{color:#1FA463}
   table.inf-tbl tr{page-break-inside:avoid}
   .inf-head{page-break-after:avoid}
 }
+
+/* --- Ajustes: aire interno, escudo en informes, comparador de metricas --- */
+.sem-accordion-body > *{padding-left:20px;padding-right:20px}
+.sem-accordion-body > .sesiones-table-wrap{padding-left:20px;padding-right:20px;
+  padding-bottom:18px}
+.sem-accordion-body .nota-pf{margin-left:20px;margin-right:20px;padding-left:14px}
+.sem-accordion-body > *:first-child{padding-top:4px}
+.sesiones-intro{padding:14px 18px}
+.sesiones-controls{padding:0 4px}
+table.sesiones-tbl th.grupo-met{text-align:center;background:#E4F0FB;color:var(--navy);
+  border-left:2px solid #fff;font-size:11px;letter-spacing:.4px}
+table.sesiones-tbl th.sep,table.sesiones-tbl td.sep{border-left:2px solid #E8EEF5}
+.inf-crest{float:right;height:42px;margin-left:14px}
+.inf-crest img{height:100%;width:auto;object-fit:contain}
+.cmp-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px;
+  margin-bottom:18px}
+.cmp-card h3{margin:0 0 3px;font-size:15px;color:var(--navy)}
+.cmp-card .sub{font-size:12px;color:var(--grey);margin-bottom:12px}
+.cmp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
 </style>
 </head>
 <body>
@@ -507,6 +526,15 @@ table.inf-tbl td.f-ok{color:#1FA463}
         </div></div>
         <div class="chart-wrap"><canvas id="chart4"></canvas></div>
       </div>
+    </div>
+
+    <div class="cmp-card">
+      <h3>5 · Comparar varias métricas</h3>
+      <div class="sub">Cada métrica en su propia línea. Como las unidades no son comparables entre sí
+        (metros vs km/h vs conteos), se grafica en <b>índice base 100 = primera semana con datos</b>:
+        cada punto es el % respecto de esa semana. El valor real aparece al pasar el mouse.</div>
+      <div class="cmp-chips" id="cmpChips"></div>
+      <div class="chart-wrap"><canvas id="chartCmp"></canvas></div>
     </div>
   </div>
 </main></div>
@@ -951,10 +979,10 @@ function sesTotalJugador(sesiones, j, m){
 function sesSortKey(sem, m){ return sem + '|' + m; }
 
 function sesToggleSort(sem, m, col){
-  const k = sesSortKey(sem, m);
+  const k = 'sem' + sem;
   const cur = SES_SORT[k];
-  if(cur && String(cur.col) === String(col)) cur.dir = -cur.dir;
-  else SES_SORT[k] = {col: col, dir: -1};
+  if(cur && cur.met === m && String(cur.col) === String(col)) cur.dir = -cur.dir;
+  else SES_SORT[k] = {met: m, col: col, dir: -1};
   buildSesiones();
 }
 
@@ -963,15 +991,16 @@ function sesToggleWeek(sem){
   buildSesiones();
 }
 
-function sesTablaMetrica(semNum, sesiones, jugArr, m){
-  const k = sesSortKey(semNum, m);
-  const sort = SES_SORT[k] || {col: (SES_ORDEN === 'alfa' ? 'alfa' : 'total'), dir: -1};
+function sesTablaCombinada(semNum, sesiones, jugArr, metricas){
+  const k = 'sem' + semNum;
+  const sort = SES_SORT[k] || {met: metricas[0], col: 'total', dir: -1};
+  // si la metrica por la que se ordenaba se desactivo, volver a la primera
+  if(!metricas.includes(sort.met)){ sort.met = metricas[0]; sort.col = 'total'; }
 
-  // valor por el que se ordena la tabla
   const valorOrden = j => {
-    if(sort.col === 'total') return sesTotalJugador(sesiones, j, m);
     if(sort.col === 'alfa') return null;
-    const v = sesiones[sort.col]?.jugadores[j]?.[m];
+    if(sort.col === 'total') return sesTotalJugador(sesiones, j, sort.met);
+    const v = sesiones[sort.col]?.jugadores[j]?.[sort.met];
     return (v === undefined) ? null : v;
   };
 
@@ -982,53 +1011,64 @@ function sesTablaMetrica(semNum, sesiones, jugArr, m){
     filas.sort((a,b) => {
       const va = valorOrden(a), vb = valorOrden(b);
       if(va === null && vb === null) return a.localeCompare(b,'es');
-      if(va === null) return 1;   // sin dato siempre al final
+      if(va === null) return 1;
       if(vb === null) return -1;
       if(va === vb) return a.localeCompare(b,'es');
       return (va - vb) * sort.dir;
     });
   }
 
-  const arrow = col => (String(sort.col) === String(col))
+  const arrow = (met, col) => (sort.met === met && String(sort.col) === String(col))
     ? `<span class="sarrow">${sort.dir === -1 ? '▼' : '▲'}</span>` : '';
 
-  let thead = `<tr><th class="rankcol"></th>`
-    + `<th class="jug-col sortable" onclick="sesToggleSort(${semNum},'${m}','alfa')">Jugador${arrow('alfa')}</th>`;
-  sesiones.forEach((s, i) => {
-    const dia = s.nombre.replace(/Svn Sem \d+ ?[Dd]ia ?/i,'D');
-    const cm = (s.origen === 'manual') ? ' col-manual' : '';
-    thead += `<th class="sortable${cm}" onclick="sesToggleSort(${semNum},'${m}',${i})">${dia}${arrow(i)}`
-           + `<span class="fecha">${s.fecha}${s.origen === 'manual' ? ' · manual' : ''}</span></th>`;
+  // fila 1: nombre de cada metrica agrupando sus columnas
+  let head1 = `<tr><th class="rankcol" rowspan="2"></th>`
+    + `<th class="jug-col sortable" rowspan="2" onclick="sesToggleSort(${semNum},'${metricas[0]}','alfa')">`
+    + `Jugador${arrow(metricas[0],'alfa')}</th>`;
+  metricas.forEach(m => {
+    head1 += `<th class="grupo-met sep" colspan="${sesiones.length + 1}">${SES_METRIC_LABELS[m]}`
+          + `<span class="fecha">total = ${sesAggLabel(m)}</span></th>`;
   });
-  thead += `<th class="total-col sortable" onclick="sesToggleSort(${semNum},'${m}','total')">`
-        + `TOTAL${arrow('total')}<span class="fecha">${sesAggLabel(m)}</span></th></tr>`;
+  head1 += '</tr>';
+
+  // fila 2: las sesiones y el total de cada metrica
+  let head2 = '<tr>';
+  metricas.forEach(m => {
+    sesiones.forEach((s, i) => {
+      const dia = s.nombre.replace(/Svn Sem \d+ ?[Dd]ia ?/i,'D');
+      const cls = (i === 0 ? ' sep' : '') + (s.origen === 'manual' ? ' col-manual' : '');
+      head2 += `<th class="sortable${cls}" onclick="sesToggleSort(${semNum},'${m}',${i})">`
+            + `${dia}${arrow(m,i)}<span class="fecha">${s.fecha}${s.origen === 'manual' ? ' · manual' : ''}</span></th>`;
+    });
+    head2 += `<th class="total-col sortable" onclick="sesToggleSort(${semNum},'${m}','total')">`
+          + `TOTAL${arrow(m,'total')}</th>`;
+  });
+  head2 += '</tr>';
 
   let tbody = '';
   filas.forEach((j, idx) => {
     const esTop = (sort.col !== 'alfa' && sort.dir === -1 && idx === 0 && valorOrden(j) !== null);
     tbody += `<tr class="${esTop ? 'top1' : ''}"><td class="rankcol">${sort.col === 'alfa' ? '' : (idx+1)}</td>`
           + `<td class="jug-col">${j}</td>`;
-    sesiones.forEach(s => {
-      const cm = (s.origen === 'manual') ? ' class="col-manual"' : '';
-      tbody += `<td${cm}>${sesFmt(s.jugadores[j]?.[m], m)}</td>`;
+    metricas.forEach(m => {
+      sesiones.forEach((s, i) => {
+        const cls = (i === 0 ? ' sep' : '') + (s.origen === 'manual' ? ' col-manual' : '');
+        tbody += `<td class="${cls.trim()}">${sesFmt(s.jugadores[j]?.[m], m)}</td>`;
+      });
+      tbody += `<td class="total-col">${sesFmt(sesTotalJugador(sesiones, j, m), m)}</td>`;
     });
-    tbody += `<td class="total-col">${sesFmt(sesTotalJugador(sesiones, j, m), m)}</td></tr>`;
+    tbody += '</tr>';
   });
 
-  return `
-    <div class="metric-caption">
-      <h4>${SES_METRIC_LABELS[m]}</h4>
-      <span class="agg">total = ${sesAggLabel(m)}</span>
-    </div>
-    <div class="sesiones-table-wrap">
-      <table class="sesiones-tbl"><thead>${thead}</thead><tbody>${tbody}</tbody></table>
+  return `<div class="sesiones-table-wrap">
+      <table class="sesiones-tbl"><thead>${head1}${head2}</thead><tbody>${tbody}</tbody></table>
     </div>`;
 }
 
 function printToolbarSemana(semNum, sesiones){
   const botones = sesiones.map((s, i) =>
     `<button class="btn-print mini" onclick="event.stopPropagation();window.__informes.sesionEquipo(${semNum},${i})">`
-    + `🖨 ${s.nombre.replace(/Svn Sem \\d+ ?[Dd]ia ?/i,'D')}${s.origen === 'manual' ? ' (manual)' : ''}</button>`).join('');
+    + `🖨 ${s.nombre.replace(/Svn Sem \d+ ?[Dd]ia ?/i,'D')}${s.origen === 'manual' ? ' (manual)' : ''}</button>`).join('');
   return `<div class="print-toolbar"><span class="pt-label">Informes</span>`
     + `<button class="btn-print" onclick="event.stopPropagation();window.__informes.equipoSemana(${semNum})">🖨 Equipo · Semana ${semNum}</button>`
     + botones + `</div>`;
@@ -1060,7 +1100,7 @@ function buildSesiones(){
       ? `<span class="sem-incompleta-badge">⚠ ${nSes}/4 sesiones</span>`
       : `<span class="meta">${nSes}/4 sesiones</span>`;
 
-    const tablas = metricas.map(m => sesTablaMetrica(semNum, sesiones, jugArr, m)).join('');
+    const tablas = sesTablaCombinada(semNum, sesiones, jugArr, metricas);
     const etiqMetricas = metricas.length === 1
       ? SES_METRIC_LABELS[metricas[0]]
       : metricas.length + ' métricas';
@@ -1229,33 +1269,47 @@ window.__registro = (function(){
     }
   }
 
+  // Las metricas cargadas se acumulan por jugador entre cambios de metrica
+  let buffer = {};
+  let metricaEnGrilla = 'distancia';
+
   function pintarGrilla(){
     const cont = document.getElementById('regJugGrid');
     if(!cont) return;
     const m = document.getElementById('regSesMetrica').value || 'distancia';
-    const previos = {};
-    cont.querySelectorAll('input[data-jug]').forEach(i => { previos[i.dataset.jug] = i.value; });
-    cont.innerHTML = jugadoresConocidos().map(j =>
-      '<div class="jmg-row"><span>' + j + '</span>' +
-      '<input type="number" step="any" data-jug="' + j.replace(/"/g,'&quot;') + '" data-met="' + m + '" ' +
-      'value="' + (previos[j] || '') + '" placeholder="0"></div>').join('');
+    metricaEnGrilla = m;
+    // se muestra lo ya cargado para ESTA metrica, no lo de la anterior
+    cont.innerHTML = jugadoresConocidos().map(j => {
+      const guardado = (buffer[j] && buffer[j][m] !== undefined) ? buffer[j][m] : '';
+      const cargadas = buffer[j] ? Object.keys(buffer[j]).length : 0;
+      return '<div class="jmg-row"><span>' + j +
+        (cargadas ? ' <b style="color:#1FA463">·' + cargadas + '</b>' : '') + '</span>' +
+        '<input type="number" step="any" data-jug="' + j.replace(/"/g,'&quot;') + '" data-met="' + m + '" ' +
+        'value="' + guardado + '" placeholder="0"></div>';
+    }).join('');
   }
 
   function aplicarATodos(){
     const v = document.getElementById('regSesBulk').value;
     if(v === '') return;
     document.querySelectorAll('#regJugGrid input[data-jug]').forEach(i => { i.value = v; });
+    volcarBuffer();
+    pintarGrilla();
   }
 
-  // Las metricas cargadas se acumulan por jugador entre cambios de metrica
-  let buffer = {};
   function volcarBuffer(){
-    const m = document.getElementById('regSesMetrica').value || 'distancia';
+    // OJO: se usa la metrica que estaba pintada, no la del select, porque al
+    // cambiar de metrica el select ya cambio de valor antes de volcar.
+    const m = metricaEnGrilla;
     document.querySelectorAll('#regJugGrid input[data-jug]').forEach(i => {
       const v = parseFloat(i.value);
+      const j = i.dataset.jug;
       if(!isNaN(v) && v !== 0){
-        buffer[i.dataset.jug] = buffer[i.dataset.jug] || {};
-        buffer[i.dataset.jug][m] = v;
+        buffer[j] = buffer[j] || {};
+        buffer[j][m] = v;
+      } else if(buffer[j] && buffer[j][m] !== undefined){
+        delete buffer[j][m];
+        if(!Object.keys(buffer[j]).length) delete buffer[j];
       }
     });
   }
@@ -1349,7 +1403,7 @@ window.__registro = (function(){
       const ok = await guardar('Sesion manual semana ' + semana + ' (' + autor + ')');
       if(ok){
         buffer = {};
-        document.querySelectorAll('#regJugGrid input[data-jug]').forEach(i => { i.value = ''; });
+        pintarGrilla();
         showMsg('Sesión guardada. Corré "Actualizar datos" para que impacte en los totales.', 'ok');
         pintarLista();
       }
@@ -1382,6 +1436,131 @@ function toggleExcluirManual(v){
     if(n) window.__semanal.abrirDetalle(n);
   }
 }
+</script>
+<script>
+// ===== Comparador de varias metricas en un solo grafico =====
+// Las unidades no son comparables (metros vs km/h vs conteos), asi que se
+// normaliza a indice base 100 = primera semana con datos de esa metrica.
+// El tooltip muestra el valor real para que el numero no se pierda.
+window.__comparador = (function(){
+  const COLORES = ['#002e4b','#2C74B3','#1FA463','#E8A317','#D64545','#7B4BA8',
+                   '#0A9396','#B5651D','#8595A6','#C2185B'];
+  const LBL = {
+    distancia:'Distancia (m)', hsr:'HSR (m)', hsr_entr:'HSR Entr (#)', ds:'DS/Sprint (m)',
+    ds_entr:'DS Entr (#)', vmax:'Vmax (km/h)', pct:'% Vmax', accel:'Aceleraciones',
+    deccel:'Desaceleraciones', accmax:'Acc. Máx.'
+  };
+  const METS = ['distancia','hsr','hsr_entr','ds','ds_entr','vmax','pct','accel','deccel','accmax'];
+  let seleccion = ['distancia','hsr'];
+  let chart = null;
+
+  function dec(m){ return (m==='accmax') ? 2 : (m==='vmax'||m==='pct') ? 1 : 0; }
+  function fmt(v, m){
+    if(v === null || v === undefined) return '–';
+    return Number(v).toLocaleString('es-AR', {minimumFractionDigits:dec(m), maximumFractionDigits:dec(m)});
+  }
+
+  function serie(m){
+    const sel = document.getElementById('selJugador');
+    const quien = (sel && sel.value) ? sel.value : '__equipo__';
+    const D = window.DATA || {};
+    if(quien === '__equipo__') return (D.equipo && D.equipo[m]) || [];
+    return (D.jugadores && D.jugadores[quien] && D.jugadores[quien][m]) || [];
+  }
+
+  function toggle(m){
+    const i = seleccion.indexOf(m);
+    if(i >= 0){ if(seleccion.length > 1) seleccion.splice(i,1); }
+    else { if(seleccion.length >= 6){ return; } seleccion.push(m); }
+    seleccion.sort((a,b) => METS.indexOf(a) - METS.indexOf(b));
+    pintarChips();
+    render();
+  }
+
+  function pintarChips(){
+    const cont = document.getElementById('cmpChips');
+    if(!cont) return;
+    cont.innerHTML = METS.map(m =>
+      `<button class="mchip${seleccion.includes(m)?' on':''}" onclick="window.__comparador.toggle('${m}')">`
+      + `${LBL[m]}</button>`).join('')
+      + `<span style="font-size:11px;color:var(--grey);align-self:center;margin-left:6px">máx. 6</span>`;
+  }
+
+  function render(){
+    const cv = document.getElementById('chartCmp');
+    if(!cv || !window.Chart) return;
+    if(chart){ chart.destroy(); chart = null; }
+
+    const semanas = [...new Set(seleccion.flatMap(m => serie(m).map(p => p.semana)))].sort((a,b)=>a-b);
+    if(!semanas.length) return;
+
+    const reales = {};
+    const datasets = seleccion.map((m, i) => {
+      const s = serie(m);
+      const porSemana = {};
+      s.forEach(p => { porSemana[p.semana] = p.aguda; });
+      const primeros = semanas.map(w => porSemana[w]).filter(v => v !== undefined && v !== null && v !== 0);
+      const base = primeros.length ? primeros[0] : null;
+      reales[m] = porSemana;
+      return {
+        label: LBL[m],
+        data: semanas.map(w => {
+          const v = porSemana[w];
+          if(v === undefined || v === null || base === null) return null;
+          return Math.round((v / base) * 1000) / 10;
+        }),
+        borderColor: COLORES[i % COLORES.length],
+        backgroundColor: COLORES[i % COLORES.length],
+        borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
+        tension: 0.25, spanGaps: true, fill: false
+      };
+    });
+
+    chart = new Chart(cv.getContext('2d'), {
+      type: 'line',
+      data: {labels: semanas.map(w => 'Sem ' + w), datasets: datasets},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: {mode: 'index', intersect: false},
+        plugins: {
+          legend: {display: true, labels: {font: {size: 11}, color: '#3a4a5c', boxWidth: 14, usePointStyle: true}},
+          tooltip: {
+            callbacks: {
+              label: function(ctx){
+                const m = seleccion[ctx.datasetIndex];
+                const w = semanas[ctx.dataIndex];
+                const real = reales[m] ? reales[m][w] : null;
+                const idx = ctx.parsed.y;
+                return LBL[m] + ': ' + fmt(real, m) + '  (índice ' + (idx === null ? '–' : idx) + ')';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {grid: {display: false}, ticks: {color: '#8595A6', font: {size: 10}}},
+          y: {
+            grid: {color: '#EDF2F7'},
+            ticks: {color: '#8595A6', font: {size: 10}, callback: v => v + '%'},
+            title: {display: true, text: 'Índice (100 = primera semana con dato)',
+                    color: '#8595A6', font: {size: 10}}
+          }
+        }
+      }
+    });
+  }
+
+  function init(){
+    pintarChips();
+    const sj = document.getElementById('selJugador');
+    if(sj && !sj.dataset.cmpHooked){
+      sj.dataset.cmpHooked = '1';
+      sj.addEventListener('change', render);
+    }
+    render();
+  }
+
+  return {toggle, render, init, pintarChips};
+})();
 </script>
 <div id="printArea"></div>
 <style id="pageStyle"></style>
@@ -1436,8 +1615,13 @@ window.__informes = (function(){
     return p(d.getDate()) + '-' + p(d.getMonth()+1) + '-' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
   }
 
+  function escudo(){
+    const img = document.querySelector('.crest img');
+    return img ? `<div class="inf-crest"><img src="${img.src}" alt="Pumas 7s"></div>` : '';
+  }
+
   function cabecera(titulo, sub, extra){
-    return `<div class="inf-head">
+    return `<div class="inf-head">${escudo()}
       <h1>${esc(titulo)}</h1>
       <div class="inf-sub">${esc(sub)}</div>
       <div class="inf-meta">Pumas 7s · Carga externa (Catapult) · Emitido ${fechaHoy()}${extra ? ' · ' + esc(extra) : ''}</div>
@@ -1810,6 +1994,7 @@ fetch('../carga.json?v=' + Date.now())
     window.__semanal.renderTabs(json.semanas);
     window.__semanal.buildGrid();
     window.__graficos.populateSelects();
+    window.__comparador.init();
 
     if(document.getElementById('section-sesiones').style.display !== 'none'){
       // no-op, sesiones se arma on-demand
