@@ -28,14 +28,24 @@ INICIO_TEMPORADA = datetime(2026, 7, 20)   # lunes, semana 1 día 1
 SESIONES_NORMALES = 4                       # referencia semanal (pretemporada)
 
 # Mapeo de parámetros Catapult (validado)
+# Slugs tomados del tenant de la UAR (los mismos que usa el PF en su Excel).
+# OJO: en este tenant hay parametros distintos con el mismo nombre visible
+# (ej. dos "Aceleraciones"), asi que siempre usar el slug, nunca el nombre.
+HSR_ENTR_SLUG = "hsr_efforts"   # alternativa a probar: "#_esf_hsr_1"
+
 PARAMS = [
     "total_distance",
+    # HSR distancia: suma de bandas (ya coincidia con el Excel del PF)
     "velocity_band5_total_distance", "velocity_band6_total_distance",
     "velocity_band7_total_distance", "velocity_band8_total_distance",
-    "gen2_velocity_band5_total_effort_count", "gen2_velocity_band6_total_effort_count",
-    "gen2_velocity_band7_total_effort_count", "gen2_velocity_band8_total_effort_count",
+    # HSR entradas: se piden los dos candidatos para poder compararlos
+    "hsr_efforts", "#_esf_hsr_1",
+    "dt_+25,2_km/h",        # DS / Sprint (m)  -> corte real en 25,2 km/h
+    "sprint_sevens_esf",    # DS entradas
     "max_vel", "percentage_max_velocity",
-    "aceleraciones", "desaceleraciones", "max_effort_acceleration",
+    "gen2_acceleration_band7plus_total_effort_count",  # Aceleraciones B2-3
+    "gen2_acceleration_band2plus_total_effort_count",  # Desaceleraciones B2-3
+    "max_effort_acceleration",
 ]
 METRICS = ['distancia','hsr','hsr_entr','ds','ds_entr','vmax','pct','accel','deccel','accmax']
 MAX_METRICS = {'vmax','pct','accmax'}  # estas se agregan por MÁXIMO, el resto por SUMA
@@ -95,20 +105,22 @@ def semana_de(fecha):
 
 
 def fila_metrica(row):
-    """Convierte una fila de /stats en las 10 métricas del tablero."""
+    """Convierte una fila de /stats en las 10 métricas del tablero.
+    DS, DS entradas, HSR entradas, acel y decel salen de parametros propios
+    del tenant, no de sumas de bandas: las sumas daban de mas porque los
+    cortes de banda no son los que usa el PF."""
     hsr = sum(row.get(f'velocity_band{i}_total_distance', 0) or 0 for i in [5, 6, 7, 8])
-    hsr_e = sum(row.get(f'gen2_velocity_band{i}_total_effort_count', 0) or 0 for i in [5, 6, 7, 8])
-    ds = sum(row.get(f'velocity_band{i}_total_distance', 0) or 0 for i in [6, 7, 8])
-    ds_e = sum(row.get(f'gen2_velocity_band{i}_total_effort_count', 0) or 0 for i in [6, 7, 8])
     return {
-        'distancia': round(row.get('total_distance', 0), 1),
-        'hsr': round(hsr, 1), 'hsr_entr': hsr_e,
-        'ds': round(ds, 1), 'ds_entr': ds_e,
-        'vmax': round(row.get('max_vel', 0), 1),
-        'pct': round(row.get('percentage_max_velocity', 0), 1),
-        'accel': row.get('aceleraciones', 0),
-        'deccel': row.get('desaceleraciones', 0),
-        'accmax': round(row.get('max_effort_acceleration', 0), 2),
+        'distancia': round(row.get('total_distance', 0) or 0, 1),
+        'hsr': round(hsr, 1),
+        'hsr_entr': row.get(HSR_ENTR_SLUG, 0) or 0,
+        'ds': round(row.get('dt_+25,2_km/h', 0) or 0, 1),
+        'ds_entr': row.get('sprint_sevens_esf', 0) or 0,
+        'vmax': round(row.get('max_vel', 0) or 0, 1),
+        'pct': round(row.get('percentage_max_velocity', 0) or 0, 1),
+        'accel': row.get('gen2_acceleration_band7plus_total_effort_count', 0) or 0,
+        'deccel': row.get('gen2_acceleration_band2plus_total_effort_count', 0) or 0,
+        'accmax': round(row.get('max_effort_acceleration', 0) or 0, 2),
     }
 
 
@@ -207,6 +219,17 @@ def main():
         acts = sorted(acts_por_semana.get(num, []), key=lambda x: x['start_time'])
         act_ids = [a['id'] for a in acts]
         raw = post_stats(act_ids, group_by=["activity", "athlete"]) if act_ids else []
+
+        # diagnostico: los dos candidatos de HSR entradas, para elegir con datos
+        if raw and num == semanas_todas[0]:
+            print("  --- HSR entradas: comparacion de slugs (semana %d) ---" % num)
+            for r0 in raw[:6]:
+                print("      %-26s hsr_efforts=%-6s #_esf_hsr_1=%-6s ds=%-8s ds_esf=%-5s ac=%-5s dc=%s"
+                      % (r0.get('athlete_name', '')[:26],
+                         r0.get('hsr_efforts'), r0.get('#_esf_hsr_1'),
+                         r0.get('dt_+25,2_km/h'), r0.get('sprint_sevens_esf'),
+                         r0.get('gen2_acceleration_band7plus_total_effort_count'),
+                         r0.get('gen2_acceleration_band2plus_total_effort_count')))
 
         # detalle por sesión
         sesiones = {a['id']: {
