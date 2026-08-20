@@ -76,16 +76,40 @@ def post_stats(activity_ids, group_by):
 # creado. La clave es el nombre generico como viene de Catapult (normalizado);
 # el valor, el nombre real al que se fusionan sus sesiones.
 # Para agregar uno nuevo: 'Nombre Generico': 'Nombre Real'.
+# Un mismo perfil generico puede pasar de un jugador a otro con el tiempo, asi
+# que cada alias es una lista de tramos: (jugador real, desde, hasta).
+# 'desde' inclusive, 'hasta' exclusivo; None = sin limite por ese lado.
+# Las sesiones fuera de todo tramo quedan con el nombre generico (no se imputan
+# a nadie). Para cerrar un tramo: ponerle 'hasta' con la fecha del cambio.
 ALIAS = {
-    'Jugador Uno':  'Ignacio Diaz',
-    'Jugador Dos':  'Francisco Calello',
-    'Jugador Tres': 'Juan Cruz Massun',
+    'Jugador Uno': [
+        ('Ignacio Diaz',    None,                  datetime(2026, 8, 17)),
+        # desde Sem 5 (17/08) el perfil lo usa Danilo Ghisolfi, jugador nuevo.
+        # Cuando tenga perfil propio en OpenField, sus sesiones caen bajo el
+        # mismo nombre y se unen solas: no hay que tocar nada.
+        ('Danilo Ghisolfi', datetime(2026, 8, 17), None),
+    ],
+    'Jugador Dos':  [('Francisco Calello', None, None)],
+    'Jugador Tres': [('Juan Cruz Massun',  None, None)],
 }
 
 
 def norm(name):
-    n = ' '.join(w.capitalize() for w in name.strip().split())
-    return ALIAS.get(n, n)
+    return ' '.join(w.capitalize() for w in name.strip().split())
+
+
+def real(name, fecha=None):
+    """Nombre al que se imputa la sesion, segun la fecha en que se grabo."""
+    n = norm(name)
+    if n not in ALIAS:
+        return n
+    if fecha is None:
+        return n
+    f = fecha.date()
+    for destino, desde, hasta in ALIAS[n]:
+        if (desde is None or f >= desde.date()) and (hasta is None or f < hasta.date()):
+            return destino
+    return n
 
 
 def combinar(a, b):
@@ -241,10 +265,24 @@ def main():
         # acumulador por jugador para el TOTAL
         by_ath = defaultdict(list)
         sueltos = defaultdict(list)
+        # Red de seguridad: si el perfil generico y el jugador real grabaron los
+        # dos en la MISMA actividad, el generico ya no es de el -> no se fusiona.
+        fecha_act = {a['id']: datetime.fromtimestamp(a['start_time']) for a in acts}
+        propios = defaultdict(set)
+        for row in raw:
+            n0 = norm(row['athlete_name'])
+            if n0 not in ALIAS:
+                propios[row.get('activity_id')].add(n0)
+
         for row in raw:
             aid = row.get('activity_id')
             m = fila_metrica(row)
-            j = norm(row['athlete_name'])
+            n0 = norm(row['athlete_name'])
+            j = real(n0, fecha_act.get(aid))
+            if j != n0 and j in propios.get(aid, ()):
+                print(f"  ! '{n0}' y '{j}' grabaron los dos en "
+                      f"'{sesiones.get(aid, {}).get('nombre', aid)}': NO se fusionan")
+                j = n0
             if aid in sesiones:
                 previo = sesiones[aid]['jugadores'].get(j)
                 if previo is not None:
@@ -271,10 +309,15 @@ def main():
         n_man = 0
         for ms in sorted(man_por_semana.get(num, []), key=lambda x: x.get('fecha', '')):
             jugadores_ms = {}
+            try:
+                f_ms = datetime.strptime(ms.get('fecha', '')[:10], '%Y-%m-%d')
+            except ValueError:
+                f_ms = None
             for jn, met in (ms.get('jugadores') or {}).items():
                 fila = fila_manual(met)
-                jugadores_ms[norm(jn)] = fila
-                by_ath[norm(jn)].append(fila)
+                jn_real = real(jn, f_ms)
+                jugadores_ms[jn_real] = fila
+                by_ath[jn_real].append(fila)
             lista_ses.append({
                 'nombre': ms.get('nombre', 'Sesión manual'),
                 'fecha': ms.get('fecha', ''),
