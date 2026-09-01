@@ -87,7 +87,9 @@ ALIAS = {
         # desde Sem 5 (17/08) el perfil lo usa Danilo Ghisolfi, jugador nuevo.
         # Cuando tenga perfil propio en OpenField, sus sesiones caen bajo el
         # mismo nombre y se unen solas: no hay que tocar nada.
-        ('Danilo Ghisolfi', datetime(2026, 8, 17), None),
+        ('Danilo Ghisolfi', datetime(2026, 8, 17), datetime(2026, 8, 24)),
+        # desde Sem 6 (24/08) el perfil pasa a Bautista Estofan.
+        ('Bautista Estofan', datetime(2026, 8, 24), None),
     ],
     'Jugador Dos':  [('Francisco Calello', None, None)],
     'Jugador Tres': [('Juan Cruz Massun',  None, None)],
