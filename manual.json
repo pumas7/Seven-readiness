@@ -22,6 +22,228 @@
       "actualizado": "2026-08-13"
     }
   },
-  "sesiones": []
+  "sesiones": [
+    {
+      "id": "man-1790721739219",
+      "semana": 10,
+      "fecha": "",
+      "nombre": "Sem 10 manual",
+      "motivo": "completar_semana",
+      "autor": "jokin",
+      "creado": "2026-09-29T22:42:19.219Z",
+      "jugadores": {
+        "Bautista Estofan": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Danilo Ghisolfi": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Francisco Calello": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Gregorio Perez Pardo": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Ignacio Diaz": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Joaquin Pellandini": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Juan Cruz Massun": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Juan Patricio Batac": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Jugador Tres": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Luciano Gonzalez Rizzoni": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Marcos Moneta": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Martiniano Arrieta": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Mateo Fossati": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Matteo Graziano": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Pedro De Haro": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Santiago Alvarez Fourcade": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Santiago Mare": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Santiago Vera Feld": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Santino Zangara": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Sebastián Dubuc": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        }
+      }
+    },
+    {
+      "id": "man-1790722400559",
+      "semana": 10,
+      "fecha": "",
+      "nombre": "Sem 10 manual",
+      "motivo": "completar_semana",
+      "autor": "jokin",
+      "creado": "2026-09-29T22:53:20.559Z",
+      "jugadores": {
+        "Bautista Estofan": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Danilo Ghisolfi": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Francisco Calello": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Gregorio Perez Pardo": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Ignacio Diaz": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Joaquin Pellandini": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Juan Cruz Massun": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Juan Patricio Batac": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Jugador Tres": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Luciano Gonzalez Rizzoni": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Marcos Moneta": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Martiniano Arrieta": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Mateo Fossati": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Matteo Graziano": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Pedro De Haro": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Santiago Alvarez Fourcade": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Santiago Mare": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Santiago Vera Feld": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Santino Zangara": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        },
+        "Sebastián Dubuc": {
+          "distancia": 6500,
+          "hsr": 2200,
+          "accel": 30
+        }
+      }
+    }
+  ]
 }
-
