@@ -244,6 +244,33 @@
           "accel": 30
         }
       }
+    },
+    {
+      "id": "man-1791200544380",
+      "semana": 11,
+      "fecha": "2/10",
+      "nombre": "Sem 11 manual",
+      "motivo": "estimada",
+      "autor": "jokin",
+      "creado": "2026-10-05T11:42:24.380Z",
+      "jugadores": {
+        "Joaquin Pellandini": {
+          "distancia": 4172,
+          "hsr": 1400,
+          "hsr_entr": 75,
+          "vmax": 23.45,
+          "accel": 74,
+          "deccel": 38
+        },
+        "Santiago Alvarez Fourcade": {
+          "distancia": 3637,
+          "hsr": 1083,
+          "hsr_entr": 62,
+          "vmax": 22.3,
+          "accel": 58,
+          "deccel": 30
+        }
+      }
     }
   ]
 }
