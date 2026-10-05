@@ -271,6 +271,137 @@
           "deccel": 30
         }
       }
+    },
+    {
+      "id": "man-1791200606715",
+      "semana": 10,
+      "fecha": "2/10",
+      "nombre": "Sem 10 manual",
+      "motivo": "estimada",
+      "autor": "jokin",
+      "creado": "2026-10-05T11:43:26.715Z",
+      "jugadores": {
+        "Bautista Estofan": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Danilo Ghisolfi": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Francisco Calello": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Gregorio Perez Pardo": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Ignacio Diaz": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Joaquin Pellandini": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Juan Cruz Massun": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Juan Patricio Batac": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Jugador Tres": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Luciano Gonzalez Rizzoni": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Marcos Moneta": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Martiniano Arrieta": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Mateo Fossati": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Matteo Graziano": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Pedro De Haro": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Santiago Alvarez Fourcade": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Santiago Mare": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Santiago Vera Feld": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Santino Zangara": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        },
+        "Sebastián Dubuc": {
+          "distancia": 7000,
+          "hsr": 2300,
+          "hsr_entr": 30,
+          "accel": 30
+        }
+      }
     }
   ]
 }
