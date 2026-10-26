@@ -252,12 +252,17 @@
        "id": "F1",
        "ej": "P.IT ELEVADO + OBELISCOS",
        "dosis": "3 X 6+6 ( 10KG)- 6"
+      },
+      {
+       "id": "F2",
+       "ej": "ISOS EN EXTENSION PARADO",
+       "dosis": "3 X 20\""
       }
      ]
     }
    ],
    "autor": "",
-   "fecha": "2026-10-26T13:16:21.991Z"
+   "fecha": "2026-10-26T13:26:55.519Z"
   }
  }
 }
