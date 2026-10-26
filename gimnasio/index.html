@@ -99,6 +99,18 @@ body.idle .ctrl{opacity:0;transform:translateY(-100%);pointer-events:none}
 body.idle .pacts{visibility:hidden}
 .pnote{display:flex;gap:10px;align-items:baseline;margin:0;padding:calc(clamp(8px,.8vw,14px) * var(--k)) clamp(14px,1.3vw,26px);background:#2E2606;color:#FFE27A;font-weight:600;font-size:calc(clamp(14px,1.1vw,22px) * var(--k));line-height:1.3;border-bottom:1px solid #4A3D0A}
 .pnote b{color:var(--gold);font-family:var(--f-display);font-weight:800;letter-spacing:.04em;flex:none}
+/* solo para el staff: se esconde en la tele (barra oculta) y en pantalla completa */
+body.idle .staff,:fullscreen .staff{display:none!important}
+.spanel{display:flex;flex-direction:column;gap:8px;background:#0B2238;border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:12px;padding:12px 16px;font-size:14.5px;line-height:1.4}
+.spanel h3{font-family:var(--f-display);font-size:15px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:8px}
+.spanel h3.w{color:#F2B33D}
+.spanel ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.spanel li b{font-family:var(--f-display);font-size:16px;letter-spacing:.03em;margin-right:6px}
+.spanel li small{color:var(--muted);margin-left:6px}
+.spanel .sbtn{background:transparent;border:0;color:var(--sky);font-weight:700;cursor:pointer;padding:0;font-size:13px}
+.nchip{font-family:var(--f-body);font-size:12px;font-weight:700;letter-spacing:.02em;text-transform:none;background:var(--gold);color:#04192A;border-radius:999px;padding:3px 9px;flex:none}
+#btnNotas.hay{background:var(--gold);border-color:var(--gold);color:#04192A}
+.tag-arr{display:inline-flex;align-items:center;gap:8px;background:#0E3557;color:#BFD6EA;border-radius:999px;padding:5px 14px;font-size:clamp(12px,.95vw,18px);font-weight:600}
 .modal{position:fixed;inset:0;z-index:40;background:rgba(2,12,22,.72);display:flex;align-items:flex-start;justify-content:center;padding:clamp(12px,4vh,48px) 16px;overflow-y:auto}
 .mbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:min(760px,100%);padding:20px clamp(16px,2vw,26px)}
 .mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
@@ -170,7 +182,7 @@ body.idle .pdfbtn{visibility:hidden}
     <label>Jugador<input id="nJug" list="nJugs" required autocomplete="off"></label><datalist id="nJugs"></datalist>
     <label>Semana<input id="nSem" type="number" min="1" max="80" required></label>
     <label>Quién la deja<input id="nAut"></label>
-    <label class="wide">Nota (sale en la tele y en el PDF de esa semana)<textarea id="nTxt" rows="2" required></textarea></label>
+    <label class="wide">Nota (la ves vos en el panel; no sale en la tele ni en el PDF)<textarea id="nTxt" rows="2" required></textarea></label>
     <label class="wide" id="nTokL" hidden>Token de GitHub (el mismo de Carga; queda guardado en esta compu)<input id="nTok" type="password"></label>
     <button class="btn gold" type="submit">Guardar nota</button>
   </form>
@@ -204,11 +216,60 @@ function diaDeHoy(plan){
 
 /* ---------- datos efectivos (hoja + ajustes) ---------- */
 const ajKey=(plan,dia,vista)=>`${plan}|${dia}|${vista}`;
+/* Cómo se arma lo que se ve:
+   1) lo que dice la hoja para ese plan y día;
+   2) los ajustes que venían de la semana anterior, jugador por jugador (correctivos) y bloque por bloque (rutina),
+      SOLO si el PF no cambió ese jugador/bloque al duplicar la pestaña. Si lo cambió, gana la hoja y se avisa;
+   3) los ajustes hechos en esta misma semana (con la misma regla: si después el PF cambió eso en la hoja, gana la hoja). */
+const nk=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
+const firma=u=>u?JSON.stringify((u.items||[]).map(i=>[nk(i.id),nk(i.ej),nk(i.dosis)])):'';
+function unidades(lista,vista){
+  const m=new Map(),c={};
+  (lista||[]).forEach(u=>{let k=vista==='rut'?nk(u.id):nk(u.jugador);if(vista==='rut'){c[k]=(c[k]||0)+1;k+='#'+c[k]}if(!m.has(k))m.set(k,u)});
+  return m;
+}
+const nombreU=(u,vista)=>vista==='rut'?('Bloque '+(u.id||'—')):u.jugador;
+function hoja(plan,dia,vista){const d=DATA.planes[plan]?.dias?.[dia];return d?((vista==='rut'?d.bloques:d.correctivos)||[]):[]}
+function predecesor(plan){
+  const p=DATA.planes[plan];if(!p)return null;
+  const prev=Object.keys(DATA.planes).filter(k=>DATA.planes[k].semana<p.semana);if(!prev.length)return null;
+  const s=Math.max(...prev.map(k=>DATA.planes[k].semana));const orden=Object.keys(DATA.planes);
+  const nd=k=>Object.keys(DATA.planes[k].dias_semana||{}).length,mio=Object.keys(p.dias_semana||{}).length;
+  return prev.filter(k=>DATA.planes[k].semana===s)
+    .sort((a,b)=>(Math.abs(nd(a)-mio)-Math.abs(nd(b)-mio))||(nd(b)-nd(a))||(orden.indexOf(b)-orden.indexOf(a)))[0];
+}
+/* aplica sobre la hoja actual los cambios entre base→datos, solo donde la hoja sigue igual a la base */
+function aplicar(lista,vista,base,datos,origenDe,avisos){
+  const H=unidades(lista,vista),B=unidades(base,vista),D=unidades(datos,vista),out=new Map(H),marc={};
+  for(const [k,u] of D){
+    const b=B.get(k);if(b&&firma(b)===firma(u))continue;
+    if(firma(H.get(k))===firma(b)){out.set(k,u);marc[k]=origenDe(k)}
+    else avisos.push({k,nombre:nombreU(u,vista),...origenDe(k)});
+  }
+  for(const [k,b] of B){
+    if(D.has(k))continue;
+    if(firma(H.get(k))===firma(b)){out.delete(k);marc[k]={...origenDe(k),borrado:true}}
+    else avisos.push({k,nombre:nombreU(b,vista),...origenDe(k)});
+  }
+  return {lista:[...out.values()],marc};
+}
 function seccion(plan,dia,vista){
+  let lista=hoja(plan,dia,vista),marc={},avisos=[];
   const a=AJ.ajustes[ajKey(plan,dia,vista)];
-  const base=DATA.planes[plan]?.dias?.[dia];
-  if(a)return {datos:a.datos,aj:a};
-  return {datos:base?(vista==='rut'?base.bloques:base.correctivos):[],aj:null};
+  if(!a?.sinArrastre){
+    const pr=predecesor(plan);
+    if(pr&&DATA.planes[pr].dias?.[dia]){
+      const e=seccion(pr,dia,vista);
+      const r=aplicar(lista,vista,hoja(pr,dia,vista),e.datos,k=>({...(e.marc[k]||{plan:pr}),arrastre:true}),avisos);
+      lista=r.lista;Object.assign(marc,r.marc);
+    }
+  }
+  if(a&&!a.sinArrastre){
+    const r=aplicar(lista,vista,a.base||hoja(plan,dia,vista),a.datos,()=>({plan,autor:a.autor,fecha:a.fecha}),avisos);
+    lista=r.lista;Object.assign(marc,r.marc);
+  }
+  avisos=avisos.filter(x=>!(x.k in marc));
+  return {datos:lista,marc,avisos,aj:Object.keys(marc).length?a||{}:null};
 }
 
 /* ---------- render ---------- */
@@ -220,7 +281,12 @@ function render(){
   let h=`<div class="head"><div><h1>${VISTA==='rut'?'Gimnasio':'Correctivos'} · <em>Día ${esc(DIA)}</em></h1>
     <div class="sub">${esc(dsTxt)}${dsTxt?' · ':''}${esc(p.etiqueta)}</div></div>
     <div class="clock" id="clock"></div></div>`;
-  if(aj&&!EDIT)h+=`<div><span class="tag-edit">Ajustado en el tablero${aj.autor?' por '+esc(aj.autor):''} · ${esc(fFecha(aj.fecha))} · difiere de la hoja</span></div>`;
+  const S=seccion(PLAN,DIA,VISTA);
+  if(!EDIT&&Object.keys(S.marc).length){
+    const arr=[...new Set(Object.values(S.marc).filter(m=>m.arrastre).map(m=>m.plan))],prop=Object.values(S.marc).some(m=>!m.arrastre);
+    h+=`<div style="display:flex;flex-wrap:wrap;gap:8px">${prop?`<span class="tag-edit">Ajustado en el tablero${aj?.autor?' por '+esc(aj.autor):''}${aj?.fecha?' · '+esc(fFecha(aj.fecha)):''} · difiere de la hoja</span>`:''}${arr.length?`<span class="tag-arr">Con ajustes que vienen de ${arr.map(esc).join(', ')}</span>`:''}</div>`;
+  }
+  if(!EDIT)h+=panelStaff(S);
   if(VISTA==='rut'){
     if(day?.previo?.length&&!EDIT)h+=`<div class="previo">${day.previo.map((t,i)=>`<span><b>${i+1}</b>${esc(t)}</span>`).join('')}</div>`;
     h+=EDIT?rutEdit(datos):rutView(datos);
@@ -231,7 +297,8 @@ function render(){
   $('#otra').href=VISTA==='rut'?'#correctivos':'#rutina';
   $('#otra').textContent=VISTA==='rut'?'Abrir correctivos en otra pantalla ↗':'Abrir rutina en otra pantalla ↗';
   $('#vRut').setAttribute('aria-pressed',VISTA==='rut');$('#vCor').setAttribute('aria-pressed',VISTA==='cor');
-  $('#btnReset').hidden=!(EDIT&&AJ.ajustes[ajKey(PLAN,DIA,VISTA)]);
+  $('#btnReset').hidden=!(EDIT&&Object.keys(S.marc).length);
+  const nv=notasVisibles(PLAN).length;$('#btnNotas').textContent=nv?`Notas (${nv})`:'Notas';$('#btnNotas').classList.toggle('hay',!!nv);
   $('#dlRut').hidden=VISTA!=='rut'||!!EDIT;
 }
 const NOMBRE_BLOQUE={A:'Activación',F:'Fuerza'};
@@ -242,8 +309,8 @@ function rutView(bl){
 }
 function corView(ps){
   if(!ps?.length)return `<div class="empty">No hay correctivos cargados para este día.</div>`;
-  return `<div class="players">${ps.map(pl=>`<section class="player"><div class="ph"><span>${esc(pl.jugador)}</span><span class="pacts"><button class="pdfbtn" data-nota="${esc(pl.jugador)}" title="Dejar una nota para una semana siguiente">+ Nota</button><button class="pdfbtn" data-pdf="${esc(pl.jugador)}" title="Bajar sus correctivos de la semana en PDF">PDF ↓</button></span></div>
-    ${notasDe(pl.jugador,DATA.planes[PLAN].semana).map(n=>`<p class="pnote"><b>NOTA</b><span>${esc(n.texto)}</span></p>`).join('')}
+  return `<div class="players">${ps.map(pl=>`<section class="player"><div class="ph"><span>${esc(pl.jugador)}</span>${notasVisibles(PLAN,pl.jugador).length?'<span class="nchip staff" title="Tiene nota para esta semana">NOTA</span>':''}<span class="pacts"><button class="pdfbtn" data-nota="${esc(pl.jugador)}" title="Dejar una nota para una semana siguiente">+ Nota</button><button class="pdfbtn" data-pdf="${esc(pl.jugador)}" title="Bajar sus correctivos de la semana en PDF">PDF ↓</button></span></div>
+
     ${pl.items.length?pl.items.map(it=>`<div class="row"><span class="chip ${/^FIN/i.test(it.id)?'fin':it.id?'':'none'}">${esc(/^FIN/i.test(it.id)?'FIN':it.id||'·')}</span><div class="n">${esc(it.ej)}</div><div class="d">${esc(it.dosis)}</div></div>`).join('')
       :`<div class="empty">Sin correctivo para este día.</div>`}</section>`).join('')}</div>`;
 }
@@ -336,13 +403,15 @@ $('#btnSave').onclick=async()=>{
   // limpia filas vacías
   const datos=VISTA==='rut'?EDIT.map(b=>({...b,items:b.items.filter(i=>i.ej.trim()||i.dosis.trim())})).filter(b=>b.items.length)
                            :EDIT.map(p=>({...p,items:p.items.filter(i=>i.ej.trim()||i.dosis.trim())})).filter(p=>p.jugador.trim());
-  const k=ajKey(PLAN,DIA,VISTA);const v={datos,autor,fecha:new Date().toISOString()};
+  const k=ajKey(PLAN,DIA,VISTA);const v={datos,base:hoja(PLAN,DIA,VISTA),autor,fecha:new Date().toISOString()};
   PEND.set={[k]:v};PEND.del=[];AJ.ajustes[k]=v;
   if(await persistir()){salirEdicion();toast('Guardado. Las dos pantallas ya lo muestran.');bc?.postMessage({t:'aj',aj:AJ})}
 };
 $('#btnReset').onclick=async()=>{
-  const k=ajKey(PLAN,DIA,VISTA);PEND.set={};PEND.del=[k];delete AJ.ajustes[k];
-  if(await persistir()){salirEdicion();toast('Listo: se muestra de nuevo lo que dice la hoja.');bc?.postMessage({t:'aj',aj:AJ})}
+  // vuelve a la hoja y corta el arrastre de la semana anterior para este día
+  const k=ajKey(PLAN,DIA,VISTA);const v={datos:hoja(PLAN,DIA,VISTA),base:hoja(PLAN,DIA,VISTA),sinArrastre:true,autor:$('#autor').value.trim(),fecha:new Date().toISOString()};
+  PEND.set={[k]:v};PEND.del=[];AJ.ajustes[k]=v;
+  if(await persistir()){salirEdicion();toast('Listo: se muestra lo que dice la hoja, sin ajustes.');bc?.postMessage({t:'aj',aj:AJ})}
 };
 $('#screen').addEventListener('input',e=>{const p=e.target.dataset.path;if(p&&EDIT)setPath(EDIT,p,e.target.value)});
 $('#screen').addEventListener('click',e=>{
@@ -383,14 +452,36 @@ async function guardarNotas(op){
   }catch(e){toast('No se pudo guardar: '+e.message,true);return false}
 }
 const nnN=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toUpperCase();
-const notasDe=(jug,sem)=>NOTAS.notas.filter(n=>n.semana===sem&&nnN(n.jugador)===nnN(jug));
+function firmaJugador(plan,jug){
+  const p=DATA.planes[plan];if(!p)return '';
+  return Object.keys(p.dias).sort((a,b)=>a-b).map(d=>firma(unidades(seccion(plan,d,'cor').datos,'cor').get(nk(jug)))).join('|');
+}
+/* una nota de la Sem N se ve en la Sem N y sigue en las siguientes mientras el jugador no cambie (hoja + ajustes) */
+function notaVisibleEn(n,plan){
+  const p=DATA.planes[plan];if(!p||n.semana>p.semana)return false;
+  if(n.semana===p.semana)return true;
+  let cur=plan;const f0=firmaJugador(plan,n.jugador);if(!f0.replace(/\|/g,''))return false;
+  while(DATA.planes[cur].semana>n.semana){
+    const pr=predecesor(cur);if(!pr||firmaJugador(pr,n.jugador)!==f0)return false;cur=pr;
+  }
+  return DATA.planes[cur].semana===n.semana;
+}
+const notasVisibles=(plan,jug)=>DATA&&DATA.planes[plan]?NOTAS.notas.filter(n=>(!jug||nnN(n.jugador)===nnN(jug))&&notaVisibleEn(n,plan)):[];
+/* panel solo para el staff (no sale en la tele ni en pantalla completa) */
+function panelStaff(S){
+  const sem=DATA.planes[PLAN].semana,ns=notasVisibles(PLAN);let h='';
+  if(ns.length)h+=`<h3>Notas para esta semana (${ns.length}) <button class="sbtn" data-abrir-notas>ver todas</button></h3><ul>${ns.map(n=>`<li><b>${esc(n.jugador)}</b>${esc(n.texto)}<small>${n.semana<sem?'viene de Sem '+n.semana+' · ':''}${esc(n.autor||'')}</small></li>`).join('')}</ul>`;
+  if(S.avisos.length)h+=`<h3 class="w">El PF cambió esto en la hoja</h3><ul>${S.avisos.map(a=>`<li><b>${esc(a.nombre)}</b>tu ajuste de ${esc(a.plan)} no se aplicó: se muestra lo de la hoja.</li>`).join('')}</ul>`;
+  return h?`<div class="spanel staff">${h}</div>`:'';
+}
 const fDMn=d=>d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});
 const rangoSem=s=>{const l=new Date(INICIO.getTime()+(s-1)*7*864e5);return `${fDMn(l)} al ${fDMn(new Date(l.getTime()+6*864e5))}`};
 function jugadoresConocidos(){const s=new Set();Object.values(DATA.planes).forEach(p=>Object.values(p.dias).forEach(d=>(d.correctivos||[]).forEach(c=>s.add(c.jugador.trim().toUpperCase()))));return [...s].sort()}
 function pintarNotas(){
-  const act=semanaDe(hoy());const ns=[...NOTAS.notas].sort((a,b)=>a.semana-b.semana||a.jugador.localeCompare(b.jugador));
-  const fut=ns.filter(n=>n.semana>=act),pas=ns.filter(n=>n.semana<act).reverse();
-  const fila=n=>`<div class="nrow${n.semana<act?' past':''}"><span class="nsem">Sem ${n.semana}${n.semana===act?' (esta)':''}<small>${rangoSem(n.semana)}</small></span><b>${esc(n.jugador)}</b><span class="ntxt">${esc(n.texto)}<small>${esc(n.autor||'')}${n.autor?' · ':''}${esc(fFecha(n.fecha))}</small></span><button class="x" data-ndel="${esc(n.id)}" aria-label="Borrar nota">✕</button></div>`;
+  const act=DATA.planes[PLAN].semana;const ns=[...NOTAS.notas].sort((a,b)=>a.semana-b.semana||a.jugador.localeCompare(b.jugador));
+  const vis=new Set(notasVisibles(PLAN).map(n=>n.id));
+  const fut=ns.filter(n=>n.semana>=act||vis.has(n.id)),pas=ns.filter(n=>n.semana<act&&!vis.has(n.id)).reverse();
+  const fila=n=>`<div class="nrow${n.semana<act?' past':''}"><span class="nsem">Sem ${n.semana}${n.semana===act?' (esta)':vis.has(n.id)?' → sigue':''}<small>${rangoSem(n.semana)}</small></span><b>${esc(n.jugador)}</b><span class="ntxt">${esc(n.texto)}<small>${esc(n.autor||'')}${n.autor?' · ':''}${esc(fFecha(n.fecha))}</small></span><button class="x" data-ndel="${esc(n.id)}" aria-label="Borrar nota">✕</button></div>`;
   $('#notasLista').innerHTML=(fut.length?fut.map(fila).join(''):'<p class="note">No hay notas para esta semana ni las próximas.</p>')
     +(pas.length?`<details><summary>Semanas pasadas (${pas.length})</summary>${pas.map(fila).join('')}</details>`:'');
 }
@@ -401,6 +492,7 @@ function abrirNotas(jug){
   $('#nTokL').hidden=!!ls.get('gh_token');pintarNotas();$('#notasModal').hidden=false;(jug?$('#nTxt'):$('#nJug')).focus();
 }
 $('#btnNotas').onclick=()=>abrirNotas('');
+$('#screen').addEventListener('click',e=>{if(e.target.closest('[data-abrir-notas]'))abrirNotas('')});
 $('#notasCerrar').onclick=()=>{$('#notasModal').hidden=true};
 $('#notasModal').addEventListener('click',e=>{if(e.target.id==='notasModal')$('#notasModal').hidden=true});
 addEventListener('keydown',e=>{if(e.key==='Escape')$('#notasModal').hidden=true});
@@ -441,13 +533,6 @@ async function pdfJugador(nombre){
   doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.setTextColor(200,215,230);
   doc.text(`${PLAN}  ·  semana del ${fDM(lunes)} al ${fDM(new Date(lunes.getTime()+6*864e5))}`,M+40,24);
   let y=46,alguno=false;
-  const notas=notasDe(nombre,p.semana);
-  if(notas.length){
-    const lines=notas.flatMap(n=>doc.splitTextToSize('• '+n.texto,W-2*M-10));const h=11+lines.length*5;
-    doc.setFillColor(255,247,209);doc.setDrawColor(...GOLD);doc.setLineWidth(.5);doc.roundedRect(M,y-6,W-2*M,h,2,2,'FD');
-    doc.setTextColor(122,99,0);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('NOTAS DE LA SEMANA',M+5,y);
-    doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.setTextColor(11,26,43);doc.text(lines,M+5,y+6);y+=h+8;
-  }
   for(const dia of Object.keys(p.dias).sort((a,b)=>a-b)){
     const pl=(seccion(PLAN,dia,'cor').datos||[]).find(x=>nn(x.jugador)===nn(nombre));
     const ds=p.dias_semana?.[dia];const fecha=ds&&OFF[ds]!=null?new Date(lunes.getTime()+OFF[ds]*864e5):null;
@@ -464,7 +549,7 @@ async function pdfJugador(nombre){
       columnStyles:{0:{cellWidth:15,halign:'center',fontStyle:'bold',fillColor:[255,247,209]},1:{fontStyle:'bold'},2:{cellWidth:62}}});
     y=doc.lastAutoTable.finalY+11;
   }
-  if(!alguno&&!notas.length){toast(`${nombre} no tiene correctivos en ${PLAN}.`,true);return}
+  if(!alguno){toast(`${nombre} no tiene correctivos en ${PLAN}.`,true);return}
   const n=doc.getNumberOfPages();
   for(let i=1;i<=n;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(133,149,166);
     doc.text('Pumas 7s · Preparación física — generado el '+new Date().toLocaleDateString('es-AR'),M,289);doc.text(`${i}/${n}`,W-M,289,{align:'right'})}
@@ -536,7 +621,7 @@ bc&&(bc.onmessage=e=>{const m=e.data;if(m.t==='sel'&&!EDIT){setSel(m.plan,m.dia,
 window.addEventListener('storage',e=>{if(e.key==='gym_demo_aj'&&DEMO){try{AJ=JSON.parse(e.newValue)||AJ}catch(x){}if(!EDIT)render()}});
 window.addEventListener('hashchange',()=>{if(EDIT)return;VISTA=location.hash==='#correctivos'?'cor':'rut';render()});
 // la barra se esconde sola a los 6 s sin mover el mouse (para la tele)
-let idleT;function wake(){document.body.classList.remove('idle');clearTimeout(idleT);idleT=setTimeout(()=>{if(!EDIT)document.body.classList.add('idle')},6000)}
+let idleT;function wake(){if(document.body.classList.contains('idle')){document.body.classList.remove('idle');ajustar()}clearTimeout(idleT);idleT=setTimeout(()=>{if(!EDIT){document.body.classList.add('idle');ajustar()}},6000)}
 ['mousemove','keydown','touchstart','focusin'].forEach(ev=>addEventListener(ev,wake,{passive:true}));wake();
 // que la pantalla no se apague
 (async()=>{try{await navigator.wakeLock?.request('screen')}catch(e){}})();
@@ -563,6 +648,8 @@ async function cargar(){
   const n=semanaDe(hoy());const cand=planesDe(n);const guardado=ls.get('gym_plan');
   PLAN=(guardado&&DATA.planes[guardado]&&DATA.planes[guardado].semana===n)?guardado:(cand.sort((a,b)=>Object.keys(DATA.planes[b].dias_semana||{}).length-Object.keys(DATA.planes[a].dias_semana||{}).length)[0]||Object.keys(DATA.planes)[0]);
   DIA=diaDeHoy(PLAN);fillSelects();render();
+  const nv=notasVisibles(PLAN).length;
+  if(nv&&!document.fullscreenElement)toast(nv===1?'Hay 1 nota para esta semana: tocá Notas.':`Hay ${nv} notas para esta semana: tocá Notas.`);
 }
 cargar();
 </script>
