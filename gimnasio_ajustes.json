@@ -1,0 +1,67 @@
+{
+ "version": 1,
+ "ajustes": {
+  "Sem 15|1|rut": {
+   "datos": [
+    {
+     "id": "A1",
+     "items": [
+      {
+       "ej": "CAMBIO TRIPLE C DISCO",
+       "dosis": "3X 3 + 3"
+      },
+      {
+       "ej": "PLANCHA LAT BANCO C PESO",
+       "dosis": "3x 15\"+15\""
+      }
+     ]
+    },
+    {
+     "id": "F1",
+     "items": [
+      {
+       "ej": "CARG P1 + CARG C2  + JERK",
+       "dosis": "3X(1+1+1) 75%"
+      }
+     ]
+    },
+    {
+     "id": "F2",
+     "items": [
+      {
+       "ej": "PECHO PLANO",
+       "dosis": "3 X5 75%"
+      },
+      {
+       "ej": "LANZAMIENTO DE PECHO ACOSTADO",
+       "dosis": "3 X 4 (30%)"
+      },
+      {
+       "ej": "REMO MENTON BAR",
+       "dosis": "3 X 6"
+      }
+     ]
+    },
+    {
+     "id": "F3",
+     "items": [
+      {
+       "ej": "DOMINADAS",
+       "dosis": "3 X5 75%"
+      },
+      {
+       "ej": "SLAM BALL",
+       "dosis": "3 X 4"
+      },
+      {
+       "ej": "PRESS HOMBROS ARRODILLADOS",
+       "dosis": "3 X 6"
+      }
+     ]
+    }
+   ],
+   "autor": "",
+   "fecha": "2026-10-26T12:33:01.450Z"
+  }
+ }
+}
