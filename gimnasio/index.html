@@ -95,6 +95,31 @@ body.idle .ctrl{opacity:0;transform:translateY(-100%);pointer-events:none}
 .player .n{font-family:var(--f-display);font-weight:600;font-size:calc(clamp(16px,1.35vw,28px) * var(--k));text-transform:uppercase;line-height:1.12;min-width:0;overflow-wrap:anywhere}
 .player .d{font-family:var(--f-display);font-weight:700;font-size:calc(clamp(15px,1.25vw,26px) * var(--k));color:var(--gold);text-align:right;white-space:pre-line;font-variant-numeric:tabular-nums}
 .empty{padding:22px 26px;color:var(--muted);font-size:clamp(14px,1.1vw,22px)}
+.pacts{margin-left:auto;display:flex;gap:6px;flex:none}
+body.idle .pacts{visibility:hidden}
+.pnote{display:flex;gap:10px;align-items:baseline;margin:0;padding:calc(clamp(8px,.8vw,14px) * var(--k)) clamp(14px,1.3vw,26px);background:#2E2606;color:#FFE27A;font-weight:600;font-size:calc(clamp(14px,1.1vw,22px) * var(--k));line-height:1.3;border-bottom:1px solid #4A3D0A}
+.pnote b{color:var(--gold);font-family:var(--f-display);font-weight:800;letter-spacing:.04em;flex:none}
+.modal{position:fixed;inset:0;z-index:40;background:rgba(2,12,22,.72);display:flex;align-items:flex-start;justify-content:center;padding:clamp(12px,4vh,48px) 16px;overflow-y:auto}
+.mbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:min(760px,100%);padding:20px clamp(16px,2vw,26px)}
+.mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.mhead h2{font-family:var(--f-display);font-weight:800;font-size:26px;text-transform:uppercase;letter-spacing:.03em}
+.nform{display:grid;grid-template-columns:1fr 110px 1fr;gap:10px 12px;align-items:end;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.nform label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600}
+.nform .wide{grid-column:1/-1}
+.nform input,.nform textarea{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:15px;color:var(--fg);resize:vertical}
+.nform .btn{justify-self:start}
+.nrow{display:grid;grid-template-columns:110px 130px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 0;border-top:1px solid var(--line)}
+.nrow.past{opacity:.55}
+.nsem{font-family:var(--f-display);font-weight:700;color:var(--gold);font-size:17px}
+.nsem small,.ntxt small{display:block;font-family:var(--f-body);font-weight:500;font-size:11.5px;color:var(--muted)}
+.nrow b{font-family:var(--f-display);font-size:17px;text-transform:uppercase}
+.ntxt{font-size:14.5px;line-height:1.4;overflow-wrap:anywhere}
+details summary{cursor:pointer;color:var(--muted);font-size:13px;padding:10px 0}
+@media (max-width:640px){.nform{grid-template-columns:1fr 90px}.nrow{grid-template-columns:1fr auto}.nrow .nsem,.nrow b{grid-column:1}}
+.pdfbtn{flex:none;font-family:var(--f-body);font-size:13px;font-weight:700;letter-spacing:.02em;text-transform:none;background:transparent;color:var(--gold);border:1px solid var(--gold);border-radius:8px;padding:5px 11px;cursor:pointer}
+.pdfbtn:hover{background:var(--gold);color:#04192A}
+.pdfbtn:disabled{opacity:.6;cursor:wait}
+body.idle .pdfbtn{visibility:hidden}
 
 /* edición */
 .ed input{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:15px;min-width:0}
@@ -124,6 +149,7 @@ body.idle .ctrl{opacity:0;transform:translateY(-100%);pointer-events:none}
     <button id="vCor" aria-pressed="false">Correctivos</button>
   </div>
   <a class="btn ghost" id="otra" target="_blank" rel="noopener">Abrir la otra pantalla ↗</a>
+  <button class="btn" id="btnNotas">Notas</button>
   <button class="btn" id="btnEdit">Editar</button>
   <button class="btn" id="btnFull">Pantalla completa</button>
   <a class="btn ghost" href="../">← Inicio</a>
@@ -137,6 +163,18 @@ body.idle .ctrl{opacity:0;transform:translateY(-100%);pointer-events:none}
   <button class="btn ghost" id="btnCancel">Descartar</button>
   <button class="btn gold" id="btnSave">Guardar</button>
 </div>
+<div class="modal" id="notasModal" hidden role="dialog" aria-modal="true" aria-labelledby="notasTit"><div class="mbox">
+  <div class="mhead"><h2 id="notasTit">Notas por jugador</h2><button class="x" id="notasCerrar" aria-label="Cerrar">✕</button></div>
+  <form class="nform" id="notaForm">
+    <label>Jugador<input id="nJug" list="nJugs" required autocomplete="off"></label><datalist id="nJugs"></datalist>
+    <label>Semana<input id="nSem" type="number" min="1" max="80" required></label>
+    <label>Quién la deja<input id="nAut"></label>
+    <label class="wide">Nota (sale en la tele y en el PDF de esa semana)<textarea id="nTxt" rows="2" required></textarea></label>
+    <label class="wide" id="nTokL" hidden>Token de GitHub (el mismo de Carga; queda guardado en esta compu)<input id="nTok" type="password"></label>
+    <button class="btn gold" type="submit">Guardar nota</button>
+  </form>
+  <div id="notasLista"></div>
+</div></div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -202,7 +240,8 @@ function rutView(bl){
 }
 function corView(ps){
   if(!ps?.length)return `<div class="empty">No hay correctivos cargados para este día.</div>`;
-  return `<div class="players">${ps.map(pl=>`<section class="player"><div class="ph">${esc(pl.jugador)}</div>
+  return `<div class="players">${ps.map(pl=>`<section class="player"><div class="ph"><span>${esc(pl.jugador)}</span><span class="pacts"><button class="pdfbtn" data-nota="${esc(pl.jugador)}" title="Dejar una nota para una semana siguiente">+ Nota</button><button class="pdfbtn" data-pdf="${esc(pl.jugador)}" title="Bajar sus correctivos de la semana en PDF">PDF ↓</button></span></div>
+    ${notasDe(pl.jugador,DATA.planes[PLAN].semana).map(n=>`<p class="pnote"><b>NOTA</b><span>${esc(n.texto)}</span></p>`).join('')}
     ${pl.items.length?pl.items.map(it=>`<div class="row"><span class="chip ${/^FIN/i.test(it.id)?'fin':it.id?'':'none'}">${esc(/^FIN/i.test(it.id)?'FIN':it.id||'·')}</span><div class="n">${esc(it.ej)}</div><div class="d">${esc(it.dosis)}</div></div>`).join('')
       :`<div class="empty">Sin correctivo para este día.</div>`}</section>`).join('')}</div>`;
 }
@@ -315,8 +354,129 @@ $('#screen').addEventListener('click',e=>{
     else{const i=+add.slice(1);EDIT[i].items.push(VISTA==='rut'?{ej:'',dosis:''}:{id:'',ej:'',dosis:''})}
     render()}
 });
+/* ---------- notas por jugador para semanas siguientes (gimnasio_notas.json) ---------- */
+const NOTAS_PATH='gimnasio_notas.json', NOTAS_API=`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${NOTAS_PATH}`;
+let NOTAS={version:1,notas:[]}, SHA_N=null;
+async function leerNotasApi(token){
+  const r=await fetch(NOTAS_API+'?ref=main&t='+Date.now(),{headers:{Authorization:'token '+token,Accept:'application/vnd.github+json'}});
+  if(r.status===404){SHA_N=null;return {version:1,notas:[]}}
+  if(!r.ok)throw new Error(r.status);const j=await r.json();SHA_N=j.sha;return JSON.parse(b64d(j.content));
+}
+async function cargarNotas(){
+  const t=ls.get('gh_token');let n=t?await leerNotasApi(t).catch(()=>null):null;
+  if(!n)n=await fetch(`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${NOTAS_PATH}?v=`+Date.now()).then(x=>x.ok?x.json():null).catch(()=>null);
+  if(n&&Array.isArray(n.notas))NOTAS=n;
+}
+async function guardarNotas(op){
+  let token=ls.get('gh_token');
+  if(!token){token=$('#nTok').value.trim();if(!token){$('#nTokL').hidden=false;toast('Pegá el token de GitHub (el mismo de Carga) para guardar.',true);return false}ls.set('gh_token',token)}
+  try{
+    const remoto=await leerNotasApi(token);const nuevo={version:1,notas:op(remoto.notas||[])};
+    const body={message:'Gimnasio: notas por jugador',content:b64e(JSON.stringify(nuevo,null,1)+'\n'),branch:'main'};if(SHA_N)body.sha=SHA_N;
+    const r=await fetch(NOTAS_API,{method:'PUT',headers:{Authorization:'token '+token,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(r.status===401){try{localStorage.removeItem('gh_token')}catch(e){}$('#nTokL').hidden=false;toast('El token no sirve. Pegalo de nuevo.',true);return false}
+    if(r.status===409||r.status===422){toast('Otra pantalla guardó al mismo tiempo. Probá de nuevo.',true);return false}
+    if(!r.ok){toast('No se pudo guardar ('+r.status+').',true);return false}
+    SHA_N=(await r.json()).content.sha;NOTAS=nuevo;bc?.postMessage({t:'notas',notas:NOTAS});return true;
+  }catch(e){toast('No se pudo guardar: '+e.message,true);return false}
+}
+const nnN=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toUpperCase();
+const notasDe=(jug,sem)=>NOTAS.notas.filter(n=>n.semana===sem&&nnN(n.jugador)===nnN(jug));
+const fDMn=d=>d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});
+const rangoSem=s=>{const l=new Date(INICIO.getTime()+(s-1)*7*864e5);return `${fDMn(l)} al ${fDMn(new Date(l.getTime()+6*864e5))}`};
+function jugadoresConocidos(){const s=new Set();Object.values(DATA.planes).forEach(p=>Object.values(p.dias).forEach(d=>(d.correctivos||[]).forEach(c=>s.add(c.jugador.trim().toUpperCase()))));return [...s].sort()}
+function pintarNotas(){
+  const act=semanaDe(hoy());const ns=[...NOTAS.notas].sort((a,b)=>a.semana-b.semana||a.jugador.localeCompare(b.jugador));
+  const fut=ns.filter(n=>n.semana>=act),pas=ns.filter(n=>n.semana<act).reverse();
+  const fila=n=>`<div class="nrow${n.semana<act?' past':''}"><span class="nsem">Sem ${n.semana}${n.semana===act?' (esta)':''}<small>${rangoSem(n.semana)}</small></span><b>${esc(n.jugador)}</b><span class="ntxt">${esc(n.texto)}<small>${esc(n.autor||'')}${n.autor?' · ':''}${esc(fFecha(n.fecha))}</small></span><button class="x" data-ndel="${esc(n.id)}" aria-label="Borrar nota">✕</button></div>`;
+  $('#notasLista').innerHTML=(fut.length?fut.map(fila).join(''):'<p class="note">No hay notas para esta semana ni las próximas.</p>')
+    +(pas.length?`<details><summary>Semanas pasadas (${pas.length})</summary>${pas.map(fila).join('')}</details>`:'');
+}
+function abrirNotas(jug){
+  if(!DATA)return;
+  $('#nJugs').innerHTML=jugadoresConocidos().map(j=>`<option value="${esc(j)}">`).join('');
+  $('#nJug').value=jug||'';$('#nSem').value=semanaDe(hoy())+1;$('#nTxt').value='';$('#nAut').value=ls.get('gym_autor')||'';
+  $('#nTokL').hidden=!!ls.get('gh_token');pintarNotas();$('#notasModal').hidden=false;(jug?$('#nTxt'):$('#nJug')).focus();
+}
+$('#btnNotas').onclick=()=>abrirNotas('');
+$('#notasCerrar').onclick=()=>{$('#notasModal').hidden=true};
+$('#notasModal').addEventListener('click',e=>{if(e.target.id==='notasModal')$('#notasModal').hidden=true});
+addEventListener('keydown',e=>{if(e.key==='Escape')$('#notasModal').hidden=true});
+$('#notaForm').onsubmit=async e=>{
+  e.preventDefault();
+  const n={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),jugador:$('#nJug').value.trim().toUpperCase(),semana:+$('#nSem').value,texto:$('#nTxt').value.trim(),autor:$('#nAut').value.trim(),fecha:new Date().toISOString()};
+  if(!n.jugador||!n.semana||!n.texto)return;ls.set('gym_autor',n.autor);
+  const b=e.submitter;if(b)b.disabled=true;
+  if(await guardarNotas(l=>[...l,n])){toast(`Nota guardada: ${n.jugador} · Sem ${n.semana}.`);$('#nTxt').value='';pintarNotas();if(!EDIT)render()}
+  if(b)b.disabled=false;
+};
+$('#notasLista').addEventListener('click',async e=>{const b=e.target.closest('[data-ndel]');if(!b)return;b.disabled=true;
+  const id=b.dataset.ndel;if(await guardarNotas(l=>l.filter(x=>x.id!==id))){pintarNotas();if(!EDIT)render()}else b.disabled=false});
+$('#screen').addEventListener('click',e=>{const b=e.target.closest('[data-nota]');if(b&&!EDIT)abrirNotas(b.dataset.nota)});
+/* ---------- PDF de correctivos por jugador (toda la semana del plan elegido) ---------- */
+const nn=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toUpperCase();
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1).replace('miercoles','miércoles').replace('sabado','sábado');
+const fDM=d=>d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});
+const CDN_PDF=['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js','https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'];
+let libsPDF=null;
+function cargarScript(src){return new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>ko(new Error('sin conexión a la librería de PDF'));document.head.appendChild(s)})}
+async function libs(){
+  if(!libsPDF)libsPDF=(async()=>{for(const u of CDN_PDF)await cargarScript(u)})();
+  try{await libsPDF}catch(e){libsPDF=null;throw e}
+  return window.jspdf.jsPDF;
+}
+function crestPNG(){return new Promise(ok=>{const im=new Image();im.onload=()=>{try{const c=document.createElement('canvas');c.width=950;c.height=546;c.getContext('2d').drawImage(im,0,0,c.width,c.height);ok(c.toDataURL('image/png'))}catch(e){ok(null)}};im.onerror=()=>ok(null);im.src=document.querySelector('.crest img').src})}
+async function pdfJugador(nombre){
+  const jsPDF=await libs();const p=DATA.planes[PLAN];
+  const lunes=new Date(INICIO.getTime()+(p.semana-1)*7*864e5);
+  const OFF={lunes:0,martes:1,miercoles:2,jueves:3,viernes:4,sabado:5,domingo:6};
+  const doc=new jsPDF({unit:'mm',format:'a4'});const W=210,M=14,NAVY=[0,46,75],GOLD=[255,206,0];
+  doc.setFillColor(...NAVY);doc.rect(0,0,W,34,'F');
+  const png=await crestPNG();
+  if(png){doc.setFillColor(255,255,255);doc.roundedRect(M,7,34,20,3,3,'F');doc.addImage(png,'PNG',M+2.5,8.8,29,16.7)}
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(19);
+  doc.text('CORRECTIVOS · '+nombre.toUpperCase(),M+40,17);
+  doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.setTextColor(200,215,230);
+  doc.text(`${PLAN}  ·  semana del ${fDM(lunes)} al ${fDM(new Date(lunes.getTime()+6*864e5))}`,M+40,24);
+  let y=46,alguno=false;
+  const notas=notasDe(nombre,p.semana);
+  if(notas.length){
+    const lines=notas.flatMap(n=>doc.splitTextToSize('• '+n.texto,W-2*M-10));const h=11+lines.length*5;
+    doc.setFillColor(255,247,209);doc.setDrawColor(...GOLD);doc.setLineWidth(.5);doc.roundedRect(M,y-6,W-2*M,h,2,2,'FD');
+    doc.setTextColor(122,99,0);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('NOTAS DE LA SEMANA',M+5,y);
+    doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.setTextColor(11,26,43);doc.text(lines,M+5,y+6);y+=h+8;
+  }
+  for(const dia of Object.keys(p.dias).sort((a,b)=>a-b)){
+    const pl=(seccion(PLAN,dia,'cor').datos||[]).find(x=>nn(x.jugador)===nn(nombre));
+    const ds=p.dias_semana?.[dia];const fecha=ds&&OFF[ds]!=null?new Date(lunes.getTime()+OFF[ds]*864e5):null;
+    if(y>255){doc.addPage();y=20}
+    doc.setTextColor(...NAVY);doc.setFont('helvetica','bold');doc.setFontSize(12.5);
+    doc.text(`DÍA ${dia}`+(ds?`  ·  ${cap(ds)} ${fDM(fecha)}`:''),M,y);
+    doc.setDrawColor(...GOLD);doc.setLineWidth(.8);doc.line(M,y+1.8,W-M,y+1.8);y+=5;
+    if(!pl||!pl.items.length){doc.setFont('helvetica','italic');doc.setFontSize(10);doc.setTextColor(120,135,150);doc.text('Sin correctivo este día.',M,y+5);y+=14;continue}
+    alguno=true;
+    doc.autoTable({startY:y,margin:{left:M,right:M},head:[['','Ejercicio','Dosis']],
+      body:pl.items.map(it=>[/^FIN/i.test(it.id)?'FIN':(it.id||''),it.ej,it.dosis||'']),
+      theme:'grid',styles:{font:'helvetica',fontSize:10.5,cellPadding:2.6,lineColor:[221,231,240],lineWidth:.2,textColor:[11,26,43],valign:'middle'},
+      headStyles:{fillColor:NAVY,textColor:255,fontStyle:'bold',fontSize:9},
+      columnStyles:{0:{cellWidth:15,halign:'center',fontStyle:'bold',fillColor:[255,247,209]},1:{fontStyle:'bold'},2:{cellWidth:62}}});
+    y=doc.lastAutoTable.finalY+11;
+  }
+  if(!alguno&&!notas.length){toast(`${nombre} no tiene correctivos en ${PLAN}.`,true);return}
+  const n=doc.getNumberOfPages();
+  for(let i=1;i<=n;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(133,149,166);
+    doc.text('Pumas 7s · Preparación física — generado el '+new Date().toLocaleDateString('es-AR'),M,289);doc.text(`${i}/${n}`,W-M,289,{align:'right'})}
+  doc.save(`Correctivos_${nn(nombre).replace(/[^A-Z0-9]+/g,'_')}_${PLAN.replace(/[^A-Za-z0-9]+/g,'_')}.pdf`);
+}
+$('#screen').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-pdf]');if(!b||EDIT)return;
+  const t=b.textContent;b.disabled=true;b.textContent='Armando…';
+  try{await pdfJugador(b.dataset.pdf)}catch(err){toast('No se pudo armar el PDF: '+err.message,true)}
+  finally{b.disabled=false;b.textContent=t}
+});
 bc&&(bc.onmessage=e=>{const m=e.data;if(m.t==='sel'&&!EDIT){setSel(m.plan,m.dia,true)}
-  if(m.t==='aj'){AJ=m.aj;if(!EDIT)render()}});
+  if(m.t==='aj'){AJ=m.aj;if(!EDIT)render()}
+  if(m.t==='notas'){NOTAS=m.notas;if(!EDIT)render()}});
 window.addEventListener('storage',e=>{if(e.key==='gym_demo_aj'&&DEMO){try{AJ=JSON.parse(e.newValue)||AJ}catch(x){}if(!EDIT)render()}});
 window.addEventListener('hashchange',()=>{if(EDIT)return;VISTA=location.hash==='#correctivos'?'cor':'rut';render()});
 // la barra se esconde sola a los 6 s sin mover el mouse (para la tele)
@@ -332,9 +492,10 @@ async function cargar(){
     const t=ls.get('gh_token');
     AJ=t?await leerAjustesApi(t).catch(()=>null):null;
     AJ=AJ||await fetch(`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${AJ_PATH}?v=`+Date.now()).then(x=>x.ok?x.json():null).catch(()=>null)||{version:1,ajustes:{}};
+    await cargarNotas();
     $('#fuente').textContent='Hoja del PF · actualizada '+fFecha(DATA.generated);
     // otra compu: refresca los ajustes cada 30 s
-    setInterval(async()=>{if(EDIT)return;const t=ls.get('gh_token');try{const a=t?await leerAjustesApi(t):null;if(a){AJ=a;render()}}catch(e){}},30000);
+    setInterval(async()=>{if(EDIT)return;const t=ls.get('gh_token');try{const a=t?await leerAjustesApi(t):null;if(a)AJ=a;await cargarNotas();render()}catch(e){}},30000);
   }catch(e){
     $('#screen').innerHTML='<div class="empty">No pude leer la rutina de la hoja del PF. Tocá <b>Actualizar datos</b> en Carga externa y volvé a abrir esta pantalla.</div>';
     $('#fuente').textContent='Sin datos de la hoja';
