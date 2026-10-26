@@ -262,12 +262,17 @@
        "id": "F2",
        "ej": "ISOS EN EXTENSION PARADO",
        "dosis": "3 X 20\""
+      },
+      {
+       "id": "F3",
+       "ej": "EXCENTRICOS C/PELOTA",
+       "dosis": "3 X 5"
       }
      ]
     }
    ],
    "autor": "",
-   "fecha": "2026-10-26T13:39:46.941Z"
+   "fecha": "2026-10-26T13:44:29.967Z"
   }
  }
 }
