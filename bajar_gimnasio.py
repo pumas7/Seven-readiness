@@ -178,7 +178,7 @@ def parsear_gimnasio(g, pestana=""):
             nom = txt(cel(g, r, c))
             if nom and not norm(nom).startswith("correctivos"):
                 items = emparejar(lineas_etiquetadas(cel(g, r, c + 1)), lineas_etiquetadas(cel(g, r, c + 3)))
-                corrs.append({"jugador": nom.strip(), "items": items})
+                corrs.append({"jugador": re.sub(r"\s+", " ", nom).strip(), "items": items})
         res["dias"][n] = {"previo": previo, "bloques": bloques, "correctivos": corrs}
     return res
 
