@@ -217,6 +217,11 @@
        "id": "F3",
        "ej": "SENT ISO",
        "dosis": "4 X 20\""
+      },
+      {
+       "id": "F4",
+       "ej": "PESO MUERTO MANC + OBELISCOS",
+       "dosis": "4 X 6 -5"
       }
      ]
     },
@@ -272,7 +277,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-10-26T13:45:05.080Z"
+   "fecha": "2026-10-26T13:53:49.614Z"
   }
  }
 }
