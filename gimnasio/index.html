@@ -148,6 +148,7 @@ body.idle .pdfbtn{visibility:hidden}
     <button id="vRut" aria-pressed="true">Rutina</button>
     <button id="vCor" aria-pressed="false">Correctivos</button>
   </div>
+  <div class="seg" id="dlRut" role="group" aria-label="Descargar rutina"><button data-rpdf="dia" title="Rutina de este día en PDF">PDF día ↓</button><button data-rpdf="semana" title="Rutina de toda la semana en PDF">PDF semana ↓</button></div>
   <a class="btn ghost" id="otra" target="_blank" rel="noopener">Abrir la otra pantalla ↗</a>
   <button class="btn" id="btnNotas">Notas</button>
   <button class="btn" id="btnEdit">Editar</button>
@@ -231,6 +232,7 @@ function render(){
   $('#otra').textContent=VISTA==='rut'?'Abrir correctivos en otra pantalla ↗':'Abrir rutina en otra pantalla ↗';
   $('#vRut').setAttribute('aria-pressed',VISTA==='rut');$('#vCor').setAttribute('aria-pressed',VISTA==='cor');
   $('#btnReset').hidden=!(EDIT&&AJ.ajustes[ajKey(PLAN,DIA,VISTA)]);
+  $('#dlRut').hidden=VISTA!=='rut'||!!EDIT;
 }
 const NOMBRE_BLOQUE={A:'Activación',F:'Fuerza'};
 function rutView(bl){
@@ -472,6 +474,60 @@ $('#screen').addEventListener('click',async e=>{
   const b=e.target.closest('[data-pdf]');if(!b||EDIT)return;
   const t=b.textContent;b.disabled=true;b.textContent='Armando…';
   try{await pdfJugador(b.dataset.pdf)}catch(err){toast('No se pudo armar el PDF: '+err.message,true)}
+  finally{b.disabled=false;b.textContent=t}
+});
+/* ---------- PDF de la rutina de gimnasio (día o semana) ---------- */
+async function pdfRutina(modo){
+  const jsPDF=await libs();const p=DATA.planes[PLAN];
+  const lunes=new Date(INICIO.getTime()+(p.semana-1)*7*864e5);
+  const OFF={lunes:0,martes:1,miercoles:2,jueves:3,viernes:4,sabado:5,domingo:6};
+  const fechaDe=d=>{const ds=p.dias_semana?.[d];return ds&&OFF[ds]!=null?`${cap(ds)} ${fDM(new Date(lunes.getTime()+OFF[ds]*864e5))}`:''};
+  const dias=modo==='dia'?[DIA]:Object.keys(p.dias).sort((a,b)=>a-b);
+  const doc=new jsPDF({unit:'mm',format:'a4'});const W=210,M=14,NAVY=[0,46,75],GOLD=[255,206,0];
+  doc.setFillColor(...NAVY);doc.rect(0,0,W,34,'F');
+  const png=await crestPNG();
+  if(png){doc.setFillColor(255,255,255);doc.roundedRect(M,7,34,20,3,3,'F');doc.addImage(png,'PNG',M+2.5,8.8,29,16.7)}
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(19);
+  doc.text(modo==='dia'?`GIMNASIO · DÍA ${DIA}`:'GIMNASIO · SEMANA',M+40,17);
+  doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.setTextColor(200,215,230);
+  const fd=fechaDe(DIA);
+  doc.text(modo==='dia'?`${PLAN}${fd?'  ·  '+fd:''}`:`${PLAN}  ·  semana del ${fDM(lunes)} al ${fDM(new Date(lunes.getTime()+6*864e5))}`,M+40,24);
+  let y=46,alguno=false;
+  for(const dia of dias){
+    const bl=seccion(PLAN,dia,'rut').datos||[];const prev=p.dias?.[dia]?.previo||[];
+    if(y>235){doc.addPage();y=20}
+    if(modo==='semana'){
+      const f=fechaDe(dia);
+      doc.setTextColor(...NAVY);doc.setFont('helvetica','bold');doc.setFontSize(12.5);
+      doc.text(`DÍA ${dia}`+(f?`  ·  ${f}`:''),M,y);
+      doc.setDrawColor(...GOLD);doc.setLineWidth(.8);doc.line(M,y+1.8,W-M,y+1.8);y+=5;
+    }
+    if(prev.length){
+      doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(90,105,120);
+      const t=doc.splitTextToSize('Previo: '+prev.map((x,i)=>`${i+1}) ${x}`).join('    '),W-2*M);
+      doc.text(t,M,y+4);y+=t.length*4.6+3;
+    }
+    if(!bl.length){doc.setFont('helvetica','italic');doc.setFontSize(10);doc.setTextColor(120,135,150);doc.text('Sin rutina cargada este día.',M,y+5);y+=14;continue}
+    alguno=true;
+    const body=[];bl.forEach(b=>b.items.forEach((it,i)=>body.push([i===0?(b.id||''):'',it.ej,it.dosis||''])));
+    doc.autoTable({startY:y,margin:{left:M,right:M},head:[['','Ejercicio','Dosis']],body,
+      theme:'grid',styles:{font:'helvetica',fontSize:10.5,cellPadding:2.6,lineColor:[221,231,240],lineWidth:.2,textColor:[11,26,43],valign:'middle'},
+      headStyles:{fillColor:NAVY,textColor:255,fontStyle:'bold',fontSize:9},
+      columnStyles:{0:{cellWidth:15,halign:'center',fontStyle:'bold',fillColor:[255,247,209]},1:{fontStyle:'bold'},2:{cellWidth:62}},
+      didParseCell:d=>{if(d.section==='body'&&d.column.index===0&&!d.cell.raw)d.cell.styles.fillColor=[255,255,255]}});
+    y=doc.lastAutoTable.finalY+11;
+  }
+  if(!alguno){toast('No hay rutina cargada para '+(modo==='dia'?'este día.':'esta semana.'),true);return}
+  const n=doc.getNumberOfPages();
+  for(let i=1;i<=n;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(133,149,166);
+    doc.text('Pumas 7s · Preparación física — generado el '+new Date().toLocaleDateString('es-AR'),M,289);doc.text(`${i}/${n}`,W-M,289,{align:'right'})}
+  const pl=PLAN.replace(/[^A-Za-z0-9]+/g,'_');
+  doc.save(modo==='dia'?`Gimnasio_${pl}_Dia${DIA}.pdf`:`Gimnasio_${pl}_semana.pdf`);
+}
+$('#dlRut').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-rpdf]');if(!b||EDIT||!DATA)return;
+  const t=b.textContent;b.disabled=true;b.textContent='Armando…';
+  try{await pdfRutina(b.dataset.rpdf)}catch(err){toast('No se pudo armar el PDF: '+err.message,true)}
   finally{b.disabled=false;b.textContent=t}
 });
 bc&&(bc.onmessage=e=>{const m=e.data;if(m.t==='sel'&&!EDIT){setSel(m.plan,m.dia,true)}
