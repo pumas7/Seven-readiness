@@ -35,6 +35,14 @@ jobs:
           CATAPULT_TOKEN: ${{ secrets.CATAPULT_TOKEN }}
         run: python bajar_catapult.py
 
+      - name: Bajar rutina y correctivos (hoja del PF)
+        continue-on-error: true
+        env:
+          GOOGLE_SA_JSON: ${{ secrets.GOOGLE_SA_JSON }}
+        run: |
+          pip install --quiet google-auth requests
+          python bajar_gimnasio.py
+
       - name: Preparar sitio
         run: |
           mkdir -p _site
@@ -44,6 +52,8 @@ jobs:
           cp -r carga _site/
           cp -r readiness _site/
           cp -r rtp _site/
+          cp -r gimnasio _site/
+          if [ -f gimnasio.json ]; then cp gimnasio.json _site/; fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
