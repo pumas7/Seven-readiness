@@ -62,6 +62,197 @@
    ],
    "autor": "",
    "fecha": "2026-10-26T12:36:10.518Z"
+  },
+  "Sem 15|1|cor": {
+   "datos": [
+    {
+     "jugador": "GREGO",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ISOS EN CCA",
+       "dosis": "3 X 45\""
+      },
+      {
+       "id": "F1",
+       "ej": "CONTROLES UNIPODALES",
+       "dosis": "3 X 6+6, disco 10kg"
+      }
+     ]
+    },
+    {
+     "jugador": "MARTI",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ISOS EN CCA",
+       "dosis": "3 X 45\""
+      },
+      {
+       "id": "F1",
+       "ej": "ISO PUSH DE RODILLA",
+       "dosis": "3 X 3-5\" x lado (máxima intensidad)"
+      }
+     ]
+    },
+    {
+     "jugador": "ALVA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "DESCENSOS CH C SB X2 + PTE ISQUIO ELEVADO 1P",
+       "dosis": "3 X 5+5 / X3-10\" x lado"
+      },
+      {
+       "id": "F1",
+       "ej": "ISOS CCA",
+       "dosis": "3 X 30\""
+      },
+      {
+       "id": "F2",
+       "ej": "PRESS PLANO A 1BR MANC + PRESS PLANO BARRA ( ADAPTADO)",
+       "dosis": "3 X 6"
+      },
+      {
+       "id": "F3",
+       "ej": "ISQUIO ISO CON SB",
+       "dosis": "3 X 3-10\" x lado"
+      }
+     ]
+    },
+    {
+     "jugador": "JOYA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "GEMELOS 1P ESTRICTO",
+       "dosis": "3 x 12+12 10kg"
+      },
+      {
+       "id": "F1",
+       "ej": "EVERSORES C/MB",
+       "dosis": "3 x 15"
+      },
+      {
+       "id": "F2",
+       "ej": "INVERSORES C/MB",
+       "dosis": "3 x 15"
+      },
+      {
+       "id": "F3",
+       "ej": "EQUILIBRIOS C KB",
+       "dosis": "3 x 5+5 9kg"
+      }
+     ]
+    },
+    {
+     "jugador": "LBV",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ARMADO DE ARCO ISO",
+       "dosis": "3 X 6+6"
+      },
+      {
+       "id": "F1",
+       "ej": "ADUCTOR EN BANCO",
+       "dosis": "3 X 10+10"
+      },
+      {
+       "id": "F2",
+       "ej": "GEMELOS SENTADO",
+       "dosis": "4 X 15\""
+      },
+      {
+       "id": "F3",
+       "ej": "FLEXORES DE CADERA C/SB",
+       "dosis": "3 X 6"
+      }
+     ]
+    },
+    {
+     "jugador": "GARZA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "NEURODINAMIA + P. LAT SEPARANDO",
+       "dosis": "3x6+6 + 15\" x lado"
+      },
+      {
+       "id": "F1",
+       "ej": "MARCHA LAT C MB + ROTACIONES",
+       "dosis": "3X 10+10 + 10+10"
+      },
+      {
+       "id": "F2",
+       "ej": "EXTENSIONES LUMBARES",
+       "dosis": "3 X 3-10\""
+      }
+     ]
+    },
+    {
+     "jugador": "MATE FOSSATI",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "MOVILIDAD CON PELOTA + ISOS",
+       "dosis": "4 X 10 + 8 X 3\""
+      },
+      {
+       "id": "F1",
+       "ej": "EXTENSION C/SB + TKNE ROLO",
+       "dosis": "4 X 8"
+      },
+      {
+       "id": "F2",
+       "ej": "MARCHA BASTON + TALON A LA COLA",
+       "dosis": "4 X 12+12 + 5"
+      },
+      {
+       "id": "F3",
+       "ej": "CCA ISO",
+       "dosis": "4 X 20\""
+      }
+     ]
+    },
+    {
+     "jugador": "PELLAN",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "I-Y-T PARADO + HALOS C DISCO",
+       "dosis": "3 X 3-5\" por posición / +10 disco 10kg"
+      },
+      {
+       "id": "F1",
+       "ej": "ROT INT/EXT CODO PEGADO",
+       "dosis": "3 X 3-10\" x posición (máxima intensidad)"
+      },
+      {
+       "id": "F2",
+       "ej": "ADUCTORES PAL LARGA",
+       "dosis": "3 X 30\""
+      },
+      {
+       "id": "F3",
+       "ej": "ECCENTRICOS + COLGADO",
+       "dosis": "3 X 6 + 20\""
+      }
+     ]
+    },
+    {
+     "jugador": "GUATU",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ISOS 90-90",
+       "dosis": "4 X 10\""
+      }
+     ]
+    }
+   ],
+   "autor": "",
+   "fecha": "2026-10-26T12:56:58.722Z"
   }
  }
 }
