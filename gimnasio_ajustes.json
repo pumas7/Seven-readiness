@@ -859,13 +859,18 @@
       },
       {
        "id": "F1",
-       "ej": "BUENOS DIAS C DISCO + SLR C BANDA",
-       "dosis": "3X10+10 10KG"
+       "ej": "PESO MUERTO RUMANO BARRA + NEURODINAMIA",
+       "dosis": "3X10 + 6+6"
       },
       {
        "id": "F2",
-       "ej": "SENTADILLA GOBLET PROF + NEURODINAMIA",
-       "dosis": "3X12 + 6+6"
+       "ej": "BULGARA + OBELISCOS",
+       "dosis": "3X8+8 + 10+10"
+      },
+      {
+       "id": "F3",
+       "ej": "RECEP 2P + CMJ + BROAD",
+       "dosis": "3X10+5+5"
       }
      ]
     },
@@ -1123,7 +1128,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-10-27T17:28:04.182Z"
+   "fecha": "2026-10-27T17:30:21.699Z"
   }
  }
 }
