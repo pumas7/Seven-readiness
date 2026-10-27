@@ -854,8 +854,8 @@
      "items": [
       {
        "id": "A1",
-       "ej": "PTE ISQUIO ELEVADO 2P ISO + OBELISCOS",
-       "dosis": "3X3-20\" + 10+10"
+       "ej": "PTE ISQUIO 1P + SLR ACTIVO",
+       "dosis": "3X12+12 + 10+10"
       },
       {
        "id": "F1",
@@ -885,7 +885,7 @@
       {
        "id": "F2",
        "ej": "ROT INT/EXT CODO PEGADO",
-       "dosis": "3 X 3-10\" por posición (máxima intensidad)"
+       "dosis": "3 X 15+15"
       },
       {
        "id": "F3",
@@ -1123,7 +1123,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-10-27T17:24:39.862Z"
+   "fecha": "2026-10-27T17:28:04.182Z"
   }
  }
 }
