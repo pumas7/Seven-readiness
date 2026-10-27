@@ -413,6 +413,11 @@
        "id": "",
        "ej": "CAMINATA EXCENTRICA + OBELISCOS",
        "dosis": "4 X 8 + 5+5"
+      },
+      {
+       "id": "",
+       "ej": "GEMELOS A 1P + ADUCTORES",
+       "dosis": "3 X 8+8 - 20\""
       }
      ]
     },
@@ -689,8 +694,8 @@
      ]
     }
    ],
-   "autor": "",
-   "fecha": "2026-10-27T13:34:48.586Z"
+   "autor": "jokin",
+   "fecha": "2026-10-27T13:44:23.505Z"
   },
   "Sem 15|3|cor": {
    "datos": [
