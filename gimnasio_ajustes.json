@@ -321,8 +321,8 @@
       },
       {
        "id": "F1",
-       "ej": "V. LAT ISO SB",
-       "dosis": "3 X 3-10\""
+       "ej": "I - Y - T DINAMICO",
+       "dosis": "3 X 3-3"
       },
       {
        "id": "F2",
@@ -408,6 +408,11 @@
        "id": "",
        "ej": "EMPUJE DE TRINEO + EXT SB",
        "dosis": "12+12 + 6"
+      },
+      {
+       "id": "",
+       "ej": "CAMINATA EXCENTRICA + OBELISCOS",
+       "dosis": "4 X 8 + 5+5"
       }
      ]
     },
@@ -684,8 +689,8 @@
      ]
     }
    ],
-   "autor": "",
-   "fecha": "2026-10-27T13:19:10.245Z"
+   "autor": "jokin",
+   "fecha": "2026-10-27T13:23:16.790Z"
   }
  }
 }
