@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "casos": [
+    {
+      "id": "c1793101274249",
+      "jugador": "Juan Cruz Massun",
+      "puesto": "BACKS",
+      "tipo": "isquio",
+      "lesion": "Lesion grado 2 de tercio proximal del biceps femoral",
+      "region": "post",
+      "lado": "Derecho",
+      "fecha": "2026-10-20",
+      "bateria": "isquio",
+      "checks": {},
+      "pct": {},
+      "contacto": 0,
+      "previas": "",
+      "pron": "",
+      "recom": "",
+      "disp": false,
+      "restr": "",
+      "tests": {},
+      "umb": {},
+      "extra": [],
+      "estado": "activo",
+      "creado": "2026-10-27"
+    }
+  ]
+}
