@@ -441,18 +441,18 @@
      "items": [
       {
        "id": "A1",
-       "ej": "P.IT ELEVADO A 1 P + OBELISCOS ",
-       "dosis": "4 X 3 - 10\"+10\" + 10+10"
+       "ej": "ISOS 90 CON SB + OBELISCOS",
+       "dosis": "4 X 15\" + 5"
       },
       {
        "id": "F1",
-       "ej": "CAMINATAS DE ISQUIO EXC + ELEVACION PIERNA RECTA CON BANDA",
-       "dosis": "3 X 8 + 10+10"
+       "ej": "RDL C/MANC + ELEVACION PIERNA RECTA",
+       "dosis": "4 X 6 + 5"
       },
       {
        "id": "F2",
-       "ej": "BUENOS DIAS CON DISCO + BUDA",
-       "dosis": "3 X 12 + 10"
+       "ej": "ESTOCADAS FIJAS + NEURODINAMIA",
+       "dosis": "4 X 5+5 + 5"
       }
      ]
     },
@@ -684,8 +684,8 @@
      ]
     }
    ],
-   "autor": "jokin",
-   "fecha": "2026-10-27T12:12:20.025Z"
+   "autor": "",
+   "fecha": "2026-10-27T12:42:48.239Z"
   }
  }
 }
