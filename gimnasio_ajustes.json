@@ -392,12 +392,12 @@
       {
        "id": "A1",
        "ej": "CURL JEFFERSON C KB + DEFICIT",
-       "dosis": "3x3 5KG / 3X12+12"
+       "dosis": "3x3 5KG"
       },
       {
        "id": "A1",
        "ej": "PLANCHA LAT DINAMICA SEPARANDO",
-       "dosis": ""
+       "dosis": "3X12+12"
       },
       {
        "id": "F1",
@@ -710,7 +710,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-10-27T12:55:58.158Z"
+   "fecha": "2026-10-27T13:07:38.282Z"
   }
  }
 }
