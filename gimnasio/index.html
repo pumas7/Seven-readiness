@@ -110,6 +110,21 @@ body.idle .staff,:fullscreen .staff{display:none!important}
 .spanel .sbtn{background:transparent;border:0;color:var(--sky);font-weight:700;cursor:pointer;padding:0;font-size:13px}
 .nchip{font-family:var(--f-body);font-size:12px;font-weight:700;letter-spacing:.02em;text-transform:none;background:var(--gold);color:#04192A;border-radius:999px;padding:3px 9px;flex:none}
 #btnNotas.hay{background:var(--gold);border-color:var(--gold);color:#04192A}
+.mbox.wide{width:min(1500px,100%)}
+.semtab{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-top:6px}
+.semtab table{border-collapse:collapse;width:100%;min-width:760px}
+.semtab th,.semtab td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:10px 12px;vertical-align:top;text-align:left}
+.semtab thead th{background:var(--panel-2);font-family:var(--f-display);font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:15px}
+.semtab tbody th{font-family:var(--f-display);font-weight:800;color:var(--gold);font-size:17px;white-space:nowrap}
+.semtab tbody th small{display:block;font-family:var(--f-body);font-weight:500;font-size:11.5px;color:var(--muted)}
+.semtab tr.actual td,.semtab tr.actual th{background:#0D2F4D}
+.semtab .it{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 8px;margin-bottom:9px;font-size:14px;line-height:1.3}
+.semtab .it .chip{font-size:12px;align-self:start}
+.semtab .it .ej{font-weight:600;text-transform:uppercase;overflow-wrap:anywhere}
+.semtab .it .dz{grid-column:2;color:var(--gold);font-weight:700}
+.semtab .mk{display:inline-block;margin-left:6px;font-style:normal;font-size:11.5px;font-weight:700;color:#3CCB86}
+.semtab .it.chg{background:rgba(60,203,134,.08);border-radius:6px;padding:3px 4px}
+.semtab .vacio{color:var(--muted)}
 .tag-arr{display:inline-flex;align-items:center;gap:8px;background:#0E3557;color:#BFD6EA;border-radius:999px;padding:5px 14px;font-size:clamp(12px,.95vw,18px);font-weight:600}
 .modal{position:fixed;inset:0;z-index:40;background:rgba(2,12,22,.72);display:flex;align-items:flex-start;justify-content:center;padding:clamp(12px,4vh,48px) 16px;overflow-y:auto}
 .mbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:min(760px,100%);padding:20px clamp(16px,2vw,26px)}
@@ -187,6 +202,11 @@ body.idle .pdfbtn{visibility:hidden}
     <button class="btn gold" type="submit">Guardar nota</button>
   </form>
   <div id="notasLista"></div>
+</div></div>
+<div class="modal" id="semModal" hidden role="dialog" aria-modal="true" aria-labelledby="semTit"><div class="mbox wide">
+  <div class="mhead"><h2 id="semTit">Semana</h2><button class="x" id="semCerrar" aria-label="Cerrar">✕</button></div>
+  <p class="note" id="semSub"></p>
+  <div id="semBody"></div>
 </div></div>
 <div class="toast" id="toast" hidden></div>
 
@@ -309,7 +329,7 @@ function rutView(bl){
 }
 function corView(ps){
   if(!ps?.length)return `<div class="empty">No hay correctivos cargados para este día.</div>`;
-  return `<div class="players">${ps.map(pl=>`<section class="player"><div class="ph"><span>${esc(pl.jugador)}</span>${notasVisibles(PLAN,pl.jugador).length?'<span class="nchip staff" title="Tiene nota para esta semana">NOTA</span>':''}<span class="pacts"><button class="pdfbtn" data-nota="${esc(pl.jugador)}" title="Dejar una nota para una semana siguiente">+ Nota</button><button class="pdfbtn" data-pdf="${esc(pl.jugador)}" title="Bajar sus correctivos de la semana en PDF">PDF ↓</button></span></div>
+  return `<div class="players">${ps.map(pl=>`<section class="player"><div class="ph"><span>${esc(pl.jugador)}</span>${notasVisibles(PLAN,pl.jugador).length?'<span class="nchip staff" title="Tiene nota para esta semana">NOTA</span>':''}<span class="pacts"><button class="pdfbtn" data-semana="${esc(pl.jugador)}" title="Ver toda la semana y la progresión">Semana</button><button class="pdfbtn" data-nota="${esc(pl.jugador)}" title="Dejar una nota para una semana siguiente">+ Nota</button><button class="pdfbtn" data-pdf="${esc(pl.jugador)}" title="Bajar sus correctivos de la semana en PDF">PDF ↓</button></span></div>
 
     ${pl.items.length?pl.items.map(it=>`<div class="row"><span class="chip ${/^FIN/i.test(it.id)?'fin':it.id?'':'none'}">${esc(/^FIN/i.test(it.id)?'FIN':it.id||'·')}</span><div class="n">${esc(it.ej)}</div><div class="d">${esc(it.dosis)}</div></div>`).join('')
       :`<div class="empty">Sin correctivo para este día.</div>`}</section>`).join('')}</div>`;
@@ -507,6 +527,49 @@ $('#notaForm').onsubmit=async e=>{
 $('#notasLista').addEventListener('click',async e=>{const b=e.target.closest('[data-ndel]');if(!b)return;b.disabled=true;
   const id=b.dataset.ndel;if(await guardarNotas(l=>l.filter(x=>x.id!==id))){pintarNotas();if(!EDIT)render()}else b.disabled=false});
 $('#screen').addEventListener('click',e=>{const b=e.target.closest('[data-nota]');if(b&&!EDIT)abrirNotas(b.dataset.nota)});
+/* ---------- semana completa de un jugador y su progresión ---------- */
+let SEM_N=4,SEM_JUG=null;
+function semanaJugador(jug){
+  const k=nk(jug),filas=[];let pl=PLAN;
+  while(pl&&filas.length<SEM_N){filas.push(pl);pl=predecesor(pl)}
+  const p0=DATA.planes[PLAN],dias=Object.keys(p0.dias).sort((a,b)=>a-b);
+  const itemsDe=(plan,d)=>DATA.planes[plan]?.dias?.[d]?(unidades(seccion(plan,d,'cor').datos,'cor').get(k)?.items||[]):null;
+  const clave=i=>nk(i.id)+'|'+nk(i.ej);
+  const cap1=s=>s?s.charAt(0).toUpperCase()+s.slice(1).replace('miercoles','miércoles').replace('sabado','sábado'):'';
+  let h=`<div class="semtab"><table><thead><tr><th>Semana</th>${dias.map(d=>`<th>Día ${esc(d)}${p0.dias_semana?.[d]?' · '+esc(cap1(p0.dias_semana[d])):''}</th>`).join('')}</tr></thead><tbody>`;
+  filas.forEach((plan,ri)=>{
+    const p=DATA.planes[plan],prev=filas[ri+1];
+    h+=`<tr class="${ri===0?'actual':''}"><th>${esc(plan)}<small>${esc(rangoSem(p.semana))}</small></th>`;
+    dias.forEach(d=>{
+      const it=itemsDe(plan,d),old=prev?itemsDe(prev,d):null,om=new Map((old||[]).map(i=>[clave(i),i]));
+      if(it===null){h+='<td class="vacio">Sin día en este plan</td>';return}
+      if(!it.length){h+='<td class="vacio">Sin correctivo</td>';return}
+      h+='<td>'+it.map(i=>{
+        const o=om.get(clave(i)),cls=old===null?'':!o?'new':nk(o.dosis)!==nk(i.dosis)?'chg':'';
+        const fin=/^FIN/i.test(i.id);
+        return `<div class="it ${cls}"><span class="chip ${fin?'fin':i.id?'':'none'}">${esc(fin?'FIN':i.id||'·')}</span><span class="ej">${esc(i.ej)}${cls==='new'?'<em class="mk">nuevo</em>':''}</span><span class="dz">${esc(i.dosis)||'—'}${cls==='chg'?`<em class="mk">antes: ${esc(o.dosis||'—')}</em>`:''}</span></div>`;
+      }).join('')+'</td>';
+    });
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  if(pl)h+=`<p style="margin-top:12px"><button class="btn" data-semmas>Ver 4 semanas más</button></p>`;
+  const sems=new Set(filas.map(f=>DATA.planes[f].semana));
+  const ns=NOTAS.notas.filter(n=>nnN(n.jugador)===nnN(jug)&&sems.has(n.semana)).sort((a,b)=>b.semana-a.semana);
+  if(ns.length)h+=`<div class="spanel" style="margin-top:12px"><h3>Notas de estas semanas</h3><ul>${ns.map(n=>`<li><b>Sem ${n.semana}</b>${esc(n.texto)}<small>${esc(n.autor||'')}</small></li>`).join('')}</ul></div>`;
+  return h;
+}
+function abrirSemana(jug){
+  if(!DATA)return;SEM_JUG=jug;
+  $('#semTit').textContent=jug+' · semana completa';
+  $('#semSub').textContent=`Arriba ${PLAN}, abajo las semanas anteriores. En verde, lo que cambió respecto de la semana anterior.`;
+  $('#semBody').innerHTML=semanaJugador(jug);$('#semModal').hidden=false;
+}
+$('#screen').addEventListener('click',e=>{const b=e.target.closest('[data-semana]');if(b&&!EDIT){SEM_N=4;abrirSemana(b.dataset.semana)}});
+$('#semBody').addEventListener('click',e=>{if(e.target.closest('[data-semmas]')){SEM_N+=4;$('#semBody').innerHTML=semanaJugador(SEM_JUG)}});
+$('#semCerrar').onclick=()=>{$('#semModal').hidden=true};
+$('#semModal').addEventListener('click',e=>{if(e.target.id==='semModal')$('#semModal').hidden=true});
+addEventListener('keydown',e=>{if(e.key==='Escape')$('#semModal').hidden=true});
 /* ---------- PDF de correctivos por jugador (toda la semana del plan elegido) ---------- */
 const nn=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toUpperCase();
 const cap=s=>s.charAt(0).toUpperCase()+s.slice(1).replace('miercoles','miércoles').replace('sabado','sábado');
@@ -626,30 +689,47 @@ let idleT;function wake(){if(document.body.classList.contains('idle')){document.
 // que la pantalla no se apague
 (async()=>{try{await navigator.wakeLock?.request('screen')}catch(e){}})();
 
-/* ---------- arranque ---------- */
-async function cargar(){
-  try{
-    const r=await fetch('../gimnasio.json?v='+Date.now());if(!r.ok)throw 0;DATA=await r.json();
-    const t=ls.get('gh_token');
-    AJ=t?await leerAjustesApi(t).catch(()=>null):null;
-    AJ=AJ||await fetch(`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${AJ_PATH}?v=`+Date.now()).then(x=>x.ok?x.json():null).catch(()=>null)||{version:1,ajustes:{}};
-    await cargarNotas();
-    $('#fuente').textContent='Hoja del PF · actualizada '+fFecha(DATA.generated);
-    // otra compu: refresca los ajustes cada 30 s
-    setInterval(async()=>{if(EDIT)return;const t=ls.get('gh_token');try{const a=t?await leerAjustesApi(t):null;if(a)AJ=a;await cargarNotas();render()}catch(e){}},30000);
-  }catch(e){
-    $('#screen').innerHTML='<div class="empty">No pude leer la rutina de la hoja del PF. Tocá <b>Actualizar datos</b> en Carga externa y volvé a abrir esta pantalla.</div>';
-    $('#fuente').textContent='Sin datos de la hoja';
-    return;
-  }
-  if(!DATA.planes||!Object.keys(DATA.planes).length){
-    $('#screen').innerHTML='<div class="empty">La hoja del PF no tiene todavía ninguna pestaña con rutina de gimnasio.</div>';return;
-  }
+/* ---------- arranque ----------
+   1) muestra al instante lo último que vio esta compu (si hay);
+   2) baja rutina, ajustes y notas en paralelo y actualiza. */
+let AVISO_NOTAS=false;
+function elegirPlan(){
   const n=semanaDe(hoy());const cand=planesDe(n);const guardado=ls.get('gym_plan');
-  PLAN=(guardado&&DATA.planes[guardado]&&DATA.planes[guardado].semana===n)?guardado:(cand.sort((a,b)=>Object.keys(DATA.planes[b].dias_semana||{}).length-Object.keys(DATA.planes[a].dias_semana||{}).length)[0]||Object.keys(DATA.planes)[0]);
-  DIA=diaDeHoy(PLAN);fillSelects();render();
+  return (guardado&&DATA.planes[guardado]&&DATA.planes[guardado].semana===n)?guardado:(cand.sort((a,b)=>Object.keys(DATA.planes[b].dias_semana||{}).length-Object.keys(DATA.planes[a].dias_semana||{}).length)[0]||Object.keys(DATA.planes)[0]);
+}
+function arrancar(){
+  if(!DATA?.planes||!Object.keys(DATA.planes).length){
+    $('#screen').innerHTML='<div class="empty">La hoja del PF no tiene todavía ninguna pestaña con rutina de gimnasio.</div>';return false;
+  }
+  if(!PLAN||!DATA.planes[PLAN]){PLAN=elegirPlan();DIA=diaDeHoy(PLAN)}
+  else if(!DATA.planes[PLAN].dias[DIA])DIA=diaDeHoy(PLAN);
+  fillSelects();if(!EDIT)render();return true;
+}
+const guardarCache=()=>{try{ls.set('gym_cache',JSON.stringify({DATA,AJ,NOTAS}))}catch(e){}};
+async function cargar(){
+  await 0; // espera a que termine de leerse todo el script
+  let listo=false;
+  try{const c=JSON.parse(ls.get('gym_cache')||'null');
+    if(c?.DATA?.planes){DATA=c.DATA;AJ=c.AJ||AJ;if(Array.isArray(c.NOTAS?.notas))NOTAS=c.NOTAS;listo=arrancar();$('#fuente').textContent='Actualizando…'}}catch(e){}
+  const t=ls.get('gh_token');
+  const raw=p=>fetch(`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${p}?v=`+Date.now()).then(x=>x.ok?x.json():null).catch(()=>null);
+  const [d,a,n]=await Promise.all([
+    fetch('../gimnasio.json?v='+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null),
+    t?leerAjustesApi(t).catch(()=>raw(AJ_PATH)):raw(AJ_PATH),
+    t?leerNotasApi(t).catch(()=>raw(NOTAS_PATH)):raw(NOTAS_PATH)
+  ]);
+  if(!d){
+    if(listo){$('#fuente').textContent='Sin conexión: se ve lo último guardado en esta compu';return}
+    $('#screen').innerHTML='<div class="empty">No pude leer la rutina de la hoja del PF. Tocá <b>Actualizar datos</b> en Carga externa y volvé a abrir esta pantalla.</div>';
+    $('#fuente').textContent='Sin datos de la hoja';return;
+  }
+  DATA=d;AJ=a||{version:1,ajustes:{}};if(Array.isArray(n?.notas))NOTAS=n;guardarCache();
+  $('#fuente').textContent='Hoja del PF · actualizada '+fFecha(DATA.generated);
+  if(!arrancar())return;
+  // otra compu: refresca ajustes y notas cada 30 s
+  setInterval(async()=>{if(EDIT)return;const t=ls.get('gh_token');try{const a=t?await leerAjustesApi(t):null;if(a)AJ=a;await cargarNotas();guardarCache();render()}catch(e){}},30000);
   const nv=notasVisibles(PLAN).length;
-  if(nv&&!document.fullscreenElement)toast(nv===1?'Hay 1 nota para esta semana: tocá Notas.':`Hay ${nv} notas para esta semana: tocá Notas.`);
+  if(nv&&!AVISO_NOTAS&&!document.fullscreenElement){AVISO_NOTAS=true;toast(nv===1?'Hay 1 nota para esta semana: tocá Notas.':`Hay ${nv} notas para esta semana: tocá Notas.`)}
 }
 cargar();
 </script>
