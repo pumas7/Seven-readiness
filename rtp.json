@@ -23,7 +23,19 @@
       "umb": {},
       "extra": [],
       "estado": "activo",
-      "creado": "2026-10-27"
+      "creado": "2026-10-27",
+      "evolucion": [
+        {
+          "id": "e1793134829594",
+          "fecha": "2026-10-27",
+          "autor": "Tucha",
+          "dolor": "0",
+          "hizo": "Sesión de fuerza en gym + rutina adaptada (fuerza + adaptación al impacto). Sin molestias.",
+          "resp": "No refiere dolor ni molestias. Sobrecarga del isuqiotibial contralateral.",
+          "plan": "Intesificar carga en gym + volumen e intensidad en campo.",
+          "creado": "2026-10-27T21:00:29.594Z"
+        }
+      ]
     }
   ]
 }
