@@ -836,6 +836,16 @@
        "id": "",
        "ej": "PUENTE ISQUIO 2P + GEMELO 1P",
        "dosis": "4 X 12 + 12"
+      },
+      {
+       "id": "",
+       "ej": "TRINEO + PRENSA 1P",
+       "dosis": "4 X 15mts + 12"
+      },
+      {
+       "id": "",
+       "ej": "EXTENSIONES C SB",
+       "dosis": "4 X 15"
       }
      ]
     },
@@ -1113,7 +1123,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-10-27T17:23:08.741Z"
+   "fecha": "2026-10-27T17:24:39.862Z"
   }
  }
 }
