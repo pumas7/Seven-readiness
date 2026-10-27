@@ -716,6 +716,11 @@
        "id": "F2",
        "ej": "KNEE ISO PUSH  1P",
        "dosis": "3 X 3-5\""
+      },
+      {
+       "id": "FINISH",
+       "ej": "PRENSA 1P",
+       "dosis": "3X8-10 (RIR 1-2)"
       }
      ]
     },
@@ -759,7 +764,7 @@
       },
       {
        "id": "FINISHER",
-       "ej": "CCA CUAD 1P",
+       "ej": "PRENSA 1P",
        "dosis": "3 X 8-10 (RIR 1-2)"
       },
       {
@@ -1128,7 +1133,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-10-27T17:30:21.699Z"
+   "fecha": "2026-10-27T17:35:01.491Z"
   }
  }
 }
