@@ -442,7 +442,7 @@
       {
        "id": "A1",
        "ej": "CAMINATA DE ISQUIO EXC + OBELISCOS",
-       "dosis": "4 X 8 + 10+10"
+       "dosis": "4 X 8 (10KG)+ 10+10"
       },
       {
        "id": "F1",
@@ -709,8 +709,8 @@
      ]
     }
    ],
-   "autor": "",
-   "fecha": "2026-10-27T13:07:38.282Z"
+   "autor": "jokin",
+   "fecha": "2026-10-27T13:09:23.356Z"
   }
  }
 }
