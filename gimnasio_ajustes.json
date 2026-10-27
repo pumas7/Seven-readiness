@@ -765,26 +765,6 @@
      ]
     },
     {
-     "jugador": "JOYA",
-     "items": [
-      {
-       "id": "A1",
-       "ej": "INVERSORES/EVERSORES C SB",
-       "dosis": "3x15+15"
-      },
-      {
-       "id": "F2",
-       "ej": "ISO PUSH RACK 1P",
-       "dosis": "3x3-10\" x lado"
-      },
-      {
-       "id": "F3",
-       "ej": "RECEP 1P",
-       "dosis": "3x6+6"
-      }
-     ]
-    },
-    {
      "jugador": "LBV",
      "items": [
       {
@@ -1128,7 +1108,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-10-27T13:33:45.045Z"
+   "fecha": "2026-10-27T13:54:10.922Z"
   }
  }
 }
