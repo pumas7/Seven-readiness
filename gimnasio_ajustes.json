@@ -411,28 +411,23 @@
      "items": [
       {
        "id": "",
-       "ej": "MOVILIDAD CON PELOTA + ISOS",
-       "dosis": ""
+       "ej": "BICI",
+       "dosis": "5'"
       },
       {
        "id": "",
-       "ej": "FLEXO EXTENSION C/SB + OBELISCOS",
-       "dosis": ""
+       "ej": "SENT ISO A 1 P EN PARED + EXT PARED",
+       "dosis": "4 X 2 -10\"+10\" + 5"
       },
       {
        "id": "",
-       "ej": "TALON A LA COLA + MARCHA EN PARED",
-       "dosis": ""
+       "ej": "CCA CUAD EXC + EXT DECUBITO PRONO",
+       "dosis": "4 X 8 (3\") + 5"
       },
       {
        "id": "",
-       "ej": "MARCHA CON DISCO + EXTENSION PARED",
-       "dosis": ""
-      },
-      {
-       "id": "",
-       "ej": "SENT ISO EN PARED + EXT BOCA ABAJO",
-       "dosis": ""
+       "ej": "EMPUJE DE TRINEO + EXT SB",
+       "dosis": "12+12 + 6"
       }
      ]
     },
@@ -710,7 +705,7 @@
     }
    ],
    "autor": "jokin",
-   "fecha": "2026-10-27T13:09:23.356Z"
+   "fecha": "2026-10-27T13:17:21.629Z"
   }
  }
 }
