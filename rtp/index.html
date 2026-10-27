@@ -878,13 +878,14 @@ async function guardar(auto){
 }
 async function cargar(){
   try{
-    const r=await fetch('../carga.json?v='+Date.now());if(!r.ok)throw 0;CARGA=await r.json();
-    DATA=await fetch('../data.json?v='+Date.now()).then(x=>x.ok?x.json():null).catch(()=>null);
-    PLAN=await fetch('../plan.json?v='+Date.now()).then(x=>x.ok?x.json():null).catch(()=>null);
+    // todo en paralelo: carga, VALD, objetivos del PF, casos y baterías
     let t=null;try{t=localStorage.getItem('gh_token')}catch(e){}
-    if(t){try{RTP=await leerRTPapi(t)}catch(e){RTP=null}}
-    if(!RTP||!t)RTP=await fetch(`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/rtp.json?v=`+Date.now()).then(x=>x.ok?x.json():{version:1,casos:[]}).catch(()=>({version:1,casos:[]}));
-    const bt=await fetch(`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/rtp_baterias.json?v=`+Date.now()).then(x=>x.ok?x.json():null).catch(()=>null);
+    const js=u=>fetch(u).then(x=>x.ok?x.json():null).catch(()=>null);
+    const RAW=`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/`,v='?v='+Date.now();
+    const [c,d,p,rt,bt]=await Promise.all([js('../carga.json'+v),js('../data.json'+v),js('../plan.json'+v),
+      t?leerRTPapi(t).catch(()=>js(RAW+'rtp.json'+v)):js(RAW+'rtp.json'+v),js(RAW+'rtp_baterias.json'+v)]);
+    if(!c)throw 0;
+    CARGA=c;DATA=d;PLAN=p;RTP=rt||{version:1,casos:[]};
     if(bt){BATERIAS={...(bt.baterias||{}),otra:{t:'Sin batería',tests:[]}};if(bt.lesiones)LESIONES={...LESIONES,...bt.lesiones}}
     RTP.casos=RTP.casos||[];
   }catch(e){
