@@ -287,7 +287,7 @@
       {
        "id": "A1",
        "ej": "ISOS 1LS EN PARED (talón arriba)",
-       "dosis": "3 X 30\" x lado"
+       "dosis": "3 X 30\" x lado ( 10KG)"
       },
       {
        "id": "FINISHER",
@@ -709,8 +709,8 @@
      ]
     }
    ],
-   "autor": "",
-   "fecha": "2026-10-27T12:53:12.363Z"
+   "autor": "jokin",
+   "fecha": "2026-10-27T12:54:01.490Z"
   }
  }
 }
