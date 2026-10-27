@@ -125,6 +125,10 @@ body.idle .staff,:fullscreen .staff{display:none!important}
 .semtab .mk{display:inline-block;margin-left:6px;font-style:normal;font-size:11.5px;font-weight:700;color:#3CCB86}
 .semtab .it.chg{background:rgba(60,203,134,.08);border-radius:6px;padding:3px 4px}
 .semtab .vacio{color:var(--muted)}
+.semtab .blq{margin-bottom:10px}
+.semtab .blq>b{display:inline-block;font-family:var(--f-display);font-weight:800;font-size:15px;color:#04192A;background:var(--gold);border-radius:6px;padding:0 8px;margin-bottom:4px}
+.semtab .blq .it{grid-template-columns:minmax(0,1fr)}
+.semtab .blq .it .dz{grid-column:1}
 .tag-arr{display:inline-flex;align-items:center;gap:8px;background:#0E3557;color:#BFD6EA;border-radius:999px;padding:5px 14px;font-size:clamp(12px,.95vw,18px);font-weight:600}
 .modal{position:fixed;inset:0;z-index:40;background:rgba(2,12,22,.72);display:flex;align-items:flex-start;justify-content:center;padding:clamp(12px,4vh,48px) 16px;overflow-y:auto}
 .mbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:min(760px,100%);padding:20px clamp(16px,2vw,26px)}
@@ -175,7 +179,7 @@ body.idle .pdfbtn{visibility:hidden}
     <button id="vRut" aria-pressed="true">Rutina</button>
     <button id="vCor" aria-pressed="false">Correctivos</button>
   </div>
-  <div class="seg" id="dlRut" role="group" aria-label="Descargar rutina"><button data-rpdf="dia" title="Rutina de este día en PDF">PDF día ↓</button><button data-rpdf="semana" title="Rutina de toda la semana en PDF">PDF semana ↓</button></div>
+  <div class="seg" id="dlRut" role="group" aria-label="Rutina de la semana"><button data-rsem title="Ver la rutina de toda la semana y cómo progresa">Ver semana</button><button data-rpdf="dia" title="Rutina de este día en PDF">PDF día ↓</button><button data-rpdf="semana" title="Rutina de toda la semana en PDF">PDF semana ↓</button></div>
   <a class="btn ghost" id="otra" target="_blank" rel="noopener">Abrir la otra pantalla ↗</a>
   <button class="btn" id="btnNotas">Notas</button>
   <button class="btn" id="btnEdit">Editar</button>
@@ -528,7 +532,7 @@ $('#notasLista').addEventListener('click',async e=>{const b=e.target.closest('[d
   const id=b.dataset.ndel;if(await guardarNotas(l=>l.filter(x=>x.id!==id))){pintarNotas();if(!EDIT)render()}else b.disabled=false});
 $('#screen').addEventListener('click',e=>{const b=e.target.closest('[data-nota]');if(b&&!EDIT)abrirNotas(b.dataset.nota)});
 /* ---------- semana completa de un jugador y su progresión ---------- */
-let SEM_N=4,SEM_JUG=null;
+let SEM_N=4,SEM_JUG=null,SEM_MODO='jug';
 function semanaJugador(jug){
   const k=nk(jug),filas=[];let pl=PLAN;
   while(pl&&filas.length<SEM_N){filas.push(pl);pl=predecesor(pl)}
@@ -559,14 +563,49 @@ function semanaJugador(jug){
   if(ns.length)h+=`<div class="spanel" style="margin-top:12px"><h3>Notas de estas semanas</h3><ul>${ns.map(n=>`<li><b>Sem ${n.semana}</b>${esc(n.texto)}<small>${esc(n.autor||'')}</small></li>`).join('')}</ul></div>`;
   return h;
 }
-function abrirSemana(jug){
+/* rutina de gimnasio de toda la semana, con las semanas anteriores para ver la progresión */
+function semanaRutina(){
+  const filas=[];let pl=PLAN;
+  while(pl&&filas.length<SEM_N){filas.push(pl);pl=predecesor(pl)}
+  const p0=DATA.planes[PLAN],dias=Object.keys(p0.dias).sort((a,b)=>a-b);
+  const bloquesDe=(plan,d)=>DATA.planes[plan]?.dias?.[d]?(seccion(plan,d,'rut').datos||[]):null;
+  const clave=(b,i)=>nk(b.id)+'|'+nk(i.ej);
+  const cap1=s=>s?s.charAt(0).toUpperCase()+s.slice(1).replace('miercoles','miércoles').replace('sabado','sábado'):'';
+  let h=`<div class="semtab"><table><thead><tr><th>Semana</th>${dias.map(d=>`<th>Día ${esc(d)}${p0.dias_semana?.[d]?' · '+esc(cap1(p0.dias_semana[d])):''}</th>`).join('')}</tr></thead><tbody>`;
+  filas.forEach((plan,ri)=>{
+    const p=DATA.planes[plan],prev=filas[ri+1];
+    h+=`<tr class="${ri===0?'actual':''}"><th>${esc(plan)}<small>${esc(rangoSem(p.semana))}</small></th>`;
+    dias.forEach(d=>{
+      const bl=bloquesDe(plan,d),old=prev?bloquesDe(prev,d):null,om=new Map();
+      (old||[]).forEach(b=>b.items.forEach(i=>om.set(clave(b,i),i)));
+      if(bl===null){h+='<td class="vacio">Sin día en este plan</td>';return}
+      if(!bl.length){h+='<td class="vacio">Sin rutina</td>';return}
+      h+='<td>'+bl.map(b=>`<div class="blq"><b>${esc(b.id||'—')}</b>`+b.items.map(i=>{
+        const o=om.get(clave(b,i)),cls=old===null?'':!o?'new':nk(o.dosis)!==nk(i.dosis)?'chg':'';
+        return `<div class="it ${cls}"><span class="ej">${esc(i.ej)}${cls==='new'?'<em class="mk">nuevo</em>':''}</span><span class="dz">${esc(i.dosis)||'—'}${cls==='chg'?`<em class="mk">antes: ${esc(o.dosis||'—')}</em>`:''}</span></div>`;
+      }).join('')+'</div>').join('')+'</td>';
+    });
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  if(pl)h+=`<p style="margin-top:12px"><button class="btn" data-semmas>Ver 4 semanas más</button></p>`;
+  return h;
+}
+function abrirSemanaRutina(){
+  if(!DATA)return;SEM_MODO='rut';
+  $('#semTit').textContent='Gimnasio · semana completa';
+  $('#semSub').textContent=`Arriba ${PLAN}, abajo las semanas anteriores. En verde, lo que cambió respecto de la semana anterior.`;
+  $('#semBody').innerHTML=semanaRutina();$('#semModal').hidden=false;
+}
+$('#dlRut').addEventListener('click',e=>{if(e.target.closest('[data-rsem]')&&!EDIT){SEM_N=4;abrirSemanaRutina()}});
+function abrirSemana(jug){SEM_MODO='jug';
   if(!DATA)return;SEM_JUG=jug;
   $('#semTit').textContent=jug+' · semana completa';
   $('#semSub').textContent=`Arriba ${PLAN}, abajo las semanas anteriores. En verde, lo que cambió respecto de la semana anterior.`;
   $('#semBody').innerHTML=semanaJugador(jug);$('#semModal').hidden=false;
 }
 $('#screen').addEventListener('click',e=>{const b=e.target.closest('[data-semana]');if(b&&!EDIT){SEM_N=4;abrirSemana(b.dataset.semana)}});
-$('#semBody').addEventListener('click',e=>{if(e.target.closest('[data-semmas]')){SEM_N+=4;$('#semBody').innerHTML=semanaJugador(SEM_JUG)}});
+$('#semBody').addEventListener('click',e=>{if(e.target.closest('[data-semmas]')){SEM_N+=4;$('#semBody').innerHTML=SEM_MODO==='rut'?semanaRutina():semanaJugador(SEM_JUG)}});
 $('#semCerrar').onclick=()=>{$('#semModal').hidden=true};
 $('#semModal').addEventListener('click',e=>{if(e.target.id==='semModal')$('#semModal').hidden=true});
 addEventListener('keydown',e=>{if(e.key==='Escape')$('#semModal').hidden=true});
