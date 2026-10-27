@@ -441,18 +441,18 @@
      "items": [
       {
        "id": "A1",
-       "ej": "ISOS 90 CON SB + OBELISCOS",
-       "dosis": "4 X 15\" + 5"
+       "ej": "CAMINATA DE ISQUIO EXC + OBELISCOS",
+       "dosis": "4 X 8 + 10+10"
       },
       {
        "id": "F1",
-       "ej": "RDL C/MANC + ELEVACION PIERNA RECTA",
-       "dosis": "4 X 6 + 5"
+       "ej": "PTE ISQUIO 1P ISO ELEVADO + ELEVACION PIERNA RECTA",
+       "dosis": "4 X 3-10\" + 10+10"
       },
       {
        "id": "F2",
-       "ej": "ESTOCADAS FIJAS + NEURODINAMIA",
-       "dosis": "4 X 5+5 + 5"
+       "ej": "BUENOS DIAS DISCO + BUDAS",
+       "dosis": "4 X 12 + 10"
       }
      ]
     },
@@ -709,8 +709,8 @@
      ]
     }
    ],
-   "autor": "jokin",
-   "fecha": "2026-10-27T12:54:01.490Z"
+   "autor": "",
+   "fecha": "2026-10-27T12:55:58.158Z"
   }
  }
 }
