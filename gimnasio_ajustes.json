@@ -818,24 +818,24 @@
      "jugador": "MATE FOSSATI",
      "items": [
       {
-       "id": "A1",
-       "ej": "MOVILIDAD CON PELOTA + ISOS",
-       "dosis": "4 X 10 + 8 X 3\""
+       "id": "",
+       "ej": "BICI",
+       "dosis": "10'"
       },
       {
-       "id": "F1",
-       "ej": "EXTENSION C/SB + TKNE ROLO",
-       "dosis": "4 X 12+12 (5\")"
+       "id": "",
+       "ej": "EXTENSION C/SB + OBELISCOS",
+       "dosis": "4 X 12+12 + 10+10"
       },
       {
-       "id": "F2",
-       "ej": "MARCHA BASTON + TALON A LA COLA",
-       "dosis": "4 X 12+12 + 5"
+       "id": "",
+       "ej": "MARCHA C DISCO + SENTADILLA ISO PARED 1P",
+       "dosis": "4 X 15mts + 20\"+20\""
       },
       {
-       "id": "F3",
-       "ej": "CCA ISO",
-       "dosis": "4 X 3-20\""
+       "id": "",
+       "ej": "PUENTE ISQUIO 2P + GEMELO 1P",
+       "dosis": "4 X 12 + 12"
       }
      ]
     },
@@ -1113,7 +1113,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-10-27T17:19:57.071Z"
+   "fecha": "2026-10-27T17:23:08.741Z"
   }
  }
 }
