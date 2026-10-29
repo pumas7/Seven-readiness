@@ -1146,9 +1146,9 @@
        "dosis": "3 X 30\" x lado (10KG)"
       },
       {
-       "id": "F1",
-       "ej": "ISO PUSH 1P",
-       "dosis": "3X3-5\" (máxima)"
+       "id": "F2",
+       "ej": "CAIDAS 1P 45CM",
+       "dosis": "3X5+5 (20kg)"
       },
       {
        "id": "FINISH",
@@ -1525,7 +1525,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-10-28T15:03:04.496Z"
+   "fecha": "2026-10-29T17:39:00.395Z"
   }
  }
 }
