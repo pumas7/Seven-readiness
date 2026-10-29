@@ -1288,17 +1288,17 @@
       {
        "id": "A1",
        "ej": "PTE GLUTEO PISO ESTIRADO 1P + OBELISCOS",
-       "dosis": "3 X 3-20\" + 10+10"
+       "dosis": "3 X 3-20\" x lado + 10+10"
       },
       {
        "id": "F1",
-       "ej": "RECEPCIONES 2P + ELEVACION PIERNA RECTA DINAMICO",
-       "dosis": "3 X 10 + 10+10"
+       "ej": "RMD + ELEVACION PIERNA RECTA DINAMICO",
+       "dosis": "3 X 8 / 10+10"
       },
       {
        "id": "F2",
-       "ej": "CMJ + BROAD + BUDAS",
-       "dosis": "3X 5+5 + 10"
+       "ej": "CURL DE ISQUIOS EXC 2P + BUDAS",
+       "dosis": "3X 12 + 10"
       }
      ]
     },
@@ -1530,7 +1530,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-10-29T17:43:33.059Z"
+   "fecha": "2026-10-29T17:45:13.142Z"
   }
  }
 }
