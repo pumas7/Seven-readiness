@@ -1339,6 +1339,11 @@
        "id": "F1",
        "ej": "PRENSA 1P (RIR 1-2)",
        "dosis": "3X8+8"
+      },
+      {
+       "id": "F2",
+       "ej": "EQ 1P CON ARMADO DE ARCO (ARRASTRO BANDA DEDO GORDO)",
+       "dosis": "3X3-10\""
       }
      ]
     }
@@ -1541,7 +1546,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-10-29T17:48:47.779Z"
+   "fecha": "2026-10-29T18:46:53.431Z"
   }
  }
 }
