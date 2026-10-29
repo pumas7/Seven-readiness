@@ -1233,12 +1233,12 @@
       {
        "id": "A1",
        "ej": "CURL JEFFERSON C KB + DEFICIT",
-       "dosis": "3x5 / 3X12+12"
+       "dosis": "3x5 "
       },
       {
        "id": "A1",
        "ej": "PLANCHA LAT DINAMICA SEPARO",
-       "dosis": ""
+       "dosis": "3X12+12"
       },
       {
        "id": "F1",
@@ -1530,7 +1530,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-10-29T17:41:10.009Z"
+   "fecha": "2026-10-29T17:41:42.409Z"
   }
  }
 }
