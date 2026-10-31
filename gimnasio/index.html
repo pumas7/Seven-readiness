@@ -24,11 +24,11 @@
   --ok:#3CCB86; --warn:#F2B33D; --bad:#F06B6B;
   --f-display:'Barlow Condensed','Arial Narrow','Roboto Condensed',sans-serif;
   --f-body:'Barlow','Segoe UI',system-ui,sans-serif;
-  --s-hero:calc(clamp(40px,5.2vw,104px) * var(--k));
-  --s-ex:calc(clamp(17px,1.55vw,32px) * var(--k));
-  --s-dose:calc(clamp(16px,1.4vw,30px) * var(--k));
+  --s-hero:calc(clamp(32px,4vw,92px) * var(--k));
+  --s-ex:calc(clamp(20px,1.7vw,36px) * var(--k));
+  --s-dose:calc(clamp(19px,1.6vw,34px) * var(--k));
   --s-lab:calc(clamp(26px,2.6vw,54px) * var(--k));
-  --s-name:calc(clamp(22px,2.1vw,44px) * var(--k));
+  --s-name:calc(clamp(22px,2vw,42px) * var(--k));
   --k:1;               /* escala que ajusta el texto para que todo entre en la tele */
   color-scheme:dark;
 }
@@ -89,11 +89,11 @@ body.idle .ctrl{opacity:0;transform:translateY(-100%);pointer-events:none}
 .player .ph{padding:clamp(10px,1vw,20px) clamp(14px,1.3vw,26px);font-family:var(--f-display);font-weight:800;font-size:var(--s-name);text-transform:uppercase;letter-spacing:.03em;display:flex;align-items:center;gap:10px;border-bottom:3px solid var(--gold)}
 .player .row{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,40%);gap:4px 12px;align-items:baseline;padding:calc(clamp(8px,.8vw,16px) * var(--k)) clamp(14px,1.3vw,26px);border-top:1px solid var(--line)}
 .player .row:first-of-type{border-top:0}
-.chip{font-family:var(--f-display);font-weight:800;font-size:calc(clamp(14px,1.15vw,24px) * var(--k));color:#04192A;background:var(--gold);border-radius:6px;padding:1px 8px;line-height:1.3;min-width:2.4em;text-align:center}
+.chip{font-family:var(--f-display);font-weight:800;font-size:calc(clamp(16px,1.3vw,26px) * var(--k));color:#04192A;background:var(--gold);border-radius:6px;padding:1px 8px;line-height:1.3;min-width:2.4em;text-align:center}
 .chip.fin{background:var(--sky)}
 .chip.none{background:transparent;border:1px solid var(--line);color:var(--muted)}
-.player .n{font-family:var(--f-display);font-weight:600;font-size:calc(clamp(16px,1.35vw,28px) * var(--k));text-transform:uppercase;line-height:1.12;min-width:0;overflow-wrap:anywhere}
-.player .d{font-family:var(--f-display);font-weight:700;font-size:calc(clamp(15px,1.25vw,26px) * var(--k));color:var(--gold);text-align:right;white-space:pre-line;font-variant-numeric:tabular-nums}
+.player .n{font-family:var(--f-display);font-weight:600;font-size:calc(clamp(19px,1.6vw,32px) * var(--k));text-transform:uppercase;line-height:1.12;min-width:0;overflow-wrap:anywhere}
+.player .d{font-family:var(--f-display);font-weight:700;font-size:calc(clamp(18px,1.5vw,30px) * var(--k));color:var(--gold);text-align:right;white-space:pre-line;font-variant-numeric:tabular-nums}
 .empty{padding:22px 26px;color:var(--muted);font-size:clamp(14px,1.1vw,22px)}
 .pacts{margin-left:auto;display:flex;gap:6px;flex:none}
 body.idle .pacts{visibility:hidden}
@@ -183,6 +183,7 @@ body.idle .pdfbtn{visibility:hidden}
   <a class="btn ghost" id="otra" target="_blank" rel="noopener">Abrir la otra pantalla ↗</a>
   <button class="btn" id="btnNotas">Notas</button>
   <button class="btn" id="btnEdit">Editar</button>
+  <div class="seg" role="group" aria-label="Tamaño de letra"><button id="zMenos" title="Letra más chica">A−</button><button id="zMas" title="Letra más grande">A+</button></div>
   <button class="btn" id="btnFull">Pantalla completa</button>
   <a class="btn ghost" href="../">← Inicio</a>
 </div>
@@ -228,6 +229,7 @@ const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k
 let DATA=null, AJ={version:1,ajustes:{}}, SHA=null, DEMO=false;
 let PLAN=null, DIA=null, VISTA=(location.hash==='#correctivos')?'cor':'rut', EDIT=null;
 const bc=('BroadcastChannel' in window)?new BroadcastChannel('pumas7-gimnasio'):null;
+let ZOOM=(()=>{const z=parseFloat(ls.get('gym_zoom'));return z>=0.7&&z<=2.5?z:1})(); // tamaño de letra elegido en esta compu
 
 /* ---------- fechas / semana ---------- */
 const hoy=()=>{const d=new Date();d.setHours(0,0,0,0);return d};
@@ -355,12 +357,15 @@ function corEdit(ps){
 function setPath(obj,path,val){const k=path.split('.');let o=obj;for(let i=0;i<k.length-1;i++)o=o[k[i]];o[k[k.length-1]]=val}
 
 /* ---------- que entre todo en la pantalla (solo en pantallas grandes, sin editar) ---------- */
+/* achica la letra para que entre todo, pero nunca por debajo de un piso legible: si igual no entra, se scrollea */
 function ajustar(){
-  const r=document.documentElement;r.style.setProperty('--k',1);
+  const r=document.documentElement;r.style.setProperty('--k',ZOOM);
   if(EDIT||innerWidth<900)return;
-  let k=1;const alto=()=>$('#screen').getBoundingClientRect().bottom+scrollY;
-  while(alto()>innerHeight&&k>0.5){k-=0.04;r.style.setProperty('--k',k.toFixed(2))}
+  let k=ZOOM;const piso=ZOOM*0.85,alto=()=>$('#screen').getBoundingClientRect().bottom+scrollY;
+  while(alto()>innerHeight&&k>piso){k-=0.03;r.style.setProperty('--k',k.toFixed(2))}
 }
+function zoom(d){ZOOM=Math.min(2.5,Math.max(0.7,+(ZOOM+d).toFixed(2)));ls.set('gym_zoom',ZOOM);ajustar();toast('Tamaño de letra: '+Math.round(ZOOM*100)+'%')}
+$('#zMas').onclick=()=>zoom(0.1);$('#zMenos').onclick=()=>zoom(-0.1);
 let rT;addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(ajustar,150)});
 /* ---------- reloj ---------- */
 const fFecha=iso=>{if(!iso)return '';const d=new Date(iso);return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})};
