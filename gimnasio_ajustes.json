@@ -257,6 +257,16 @@
        "id": "A1",
        "ej": "LACROSSE + TOALLA",
        "dosis": "3X15+15"
+      },
+      {
+       "id": "F1",
+       "ej": "PUENTE ISQUIO ELEVADO 1P",
+       "dosis": "3X3-10\" X LADO"
+      },
+      {
+       "id": "F2",
+       "ej": "CONTROLES UNIPODALES PARED C DISCO",
+       "dosis": "3X8+8 10KG"
       }
      ]
     }
@@ -459,7 +469,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-01T23:26:46.113Z"
+   "fecha": "2026-11-01T23:29:23.246Z"
   },
   "Sem 15|2|cor": {
    "datos": [
