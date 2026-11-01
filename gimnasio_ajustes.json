@@ -249,6 +249,16 @@
        "dosis": "3X3"
       }
      ]
+    },
+    {
+     "jugador": "TOTO ",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "LACROSSE + TOALLA",
+       "dosis": "3X15+15"
+      }
+     ]
     }
    ],
    "base": [
@@ -449,7 +459,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-01T23:26:00.561Z"
+   "fecha": "2026-11-01T23:26:46.113Z"
   },
   "Sem 15|2|cor": {
    "datos": [
