@@ -2584,17 +2584,12 @@
       {
        "id": "A1",
        "ej": "ISOS EN CCA",
-       "dosis": "3 X 45\""
+       "dosis": "3 X 30\" (10KG)"
       },
       {
        "id": "F1",
        "ej": "ISOPUSH DE RODILLA",
        "dosis": "3 X 3-5\" x lado (máxima intensidad)"
-      },
-      {
-       "id": "F3",
-       "ej": "SKATERS DIAGONES A 2 PIERNAS",
-       "dosis": "GRUPO"
       }
      ]
     },
@@ -2608,13 +2603,18 @@
       },
       {
        "id": "F1",
-       "ej": "CONTROL UNIPODAL PARED",
-       "dosis": "3X8+8 (10KG)"
+       "ej": "ISOS CCA",
+       "dosis": "3 X 30\""
       },
       {
        "id": "F2",
        "ej": "ISOS GRANJERO Y MOZO C KB",
        "dosis": "3 X 3-10\" x posición (9/12kg)"
+      },
+      {
+       "id": "FINISHER",
+       "ej": "PRENSA 1P",
+       "dosis": "3 X 8-10 (RIR 1-2)"
       },
       {
        "id": "FINISHER",
@@ -2982,7 +2982,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-02T23:16:59.767Z"
+   "fecha": "2026-11-02T23:19:53.562Z"
   }
  }
 }
