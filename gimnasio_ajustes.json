@@ -1931,6 +1931,21 @@
        "dosis": "3 X 8+8 (RIR 1-2)"
       }
      ]
+    },
+    {
+     "jugador": "JCM",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "PUENTE CHINO 1P ",
+       "dosis": "3X3-10\" X LADO"
+      },
+      {
+       "id": "F1",
+       "ej": "ISO CATCH 1P",
+       "dosis": "3X6+6"
+      }
+     ]
     }
    ],
    "base": [
@@ -2116,7 +2131,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-02T23:10:44.568Z"
+   "fecha": "2026-11-02T23:14:05.183Z"
   }
  }
 }
