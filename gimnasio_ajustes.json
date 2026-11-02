@@ -1766,8 +1766,13 @@
        "dosis": "3 x 30\" x lado (10kg)"
       },
       {
-       "id": "FINISHER",
-       "ej": "BFR CAMILLA CUADRICEPS",
+       "id": "F1",
+       "ej": "LANDING 1P C CARGA 45/60CM",
+       "dosis": "3X6+6"
+      },
+      {
+       "id": "FINISH",
+       "ej": "BFR CAMILLA CAUDRICEPS",
        "dosis": "BANDA VERDE"
       }
      ]
@@ -2131,7 +2136,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-02T23:14:05.183Z"
+   "fecha": "2026-11-02T23:18:58.994Z"
   },
   "Sem 16|4|cor": {
    "datos": [
