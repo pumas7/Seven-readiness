@@ -1739,6 +1739,384 @@
    ],
    "autor": "",
    "fecha": "2026-10-29T18:46:55.499Z"
+  },
+  "Sem 16|2|cor": {
+   "datos": [
+    {
+     "jugador": "GREGO",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ISOS 1LS EN PARED (talón arriba)",
+       "dosis": "3 X 30\" x lado ( 10KG)"
+      },
+      {
+       "id": "FINISHER",
+       "ej": "BFR CCA",
+       "dosis": "BANDA VERDE"
+      }
+     ]
+    },
+    {
+     "jugador": "MARTI",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ISOS 1LS EN PARED (talón arriba)",
+       "dosis": "3 x 30\" x lado (10kg)"
+      },
+      {
+       "id": "FINISHER",
+       "ej": "BFR CAMILLA CUADRICEPS",
+       "dosis": "BANDA VERDE"
+      }
+     ]
+    },
+    {
+     "jugador": "ALVA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "APOYO FACIAL A 1 BR C/PESO",
+       "dosis": "3 X 3-10\" x lado"
+      },
+      {
+       "id": "F1",
+       "ej": "I - Y - T DINAMICO",
+       "dosis": "3 X 3-3"
+      },
+      {
+       "id": "F2",
+       "ej": "ISO PUSH CCA",
+       "dosis": "3 X 3-5\" x lado (máxima intensidad)"
+      },
+      {
+       "id": "F3",
+       "ej": "ROT EXT C/SB CODO PEGADO",
+       "dosis": "3 X 3-10\" x lado"
+      },
+      {
+       "id": "FINISHER",
+       "ej": "ISO 60 + PRENSA 1P",
+       "dosis": "3 X 3-10\" + 10+10 (RIR 1)"
+      }
+     ]
+    },
+    {
+     "jugador": "LBV",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "TIBIAL POST CON SB",
+       "dosis": "4 X 8"
+      },
+      {
+       "id": "F1",
+       "ej": "ADUCTORES PALACA CORTA",
+       "dosis": ""
+      },
+      {
+       "id": "F2",
+       "ej": "GEMELOS TIB POSTERIOR",
+       "dosis": "4 X 30\" · 3 X 8"
+      },
+      {
+       "id": "F3",
+       "ej": "ABUDCTORES C/SB",
+       "dosis": "3 X 6+6"
+      }
+     ]
+    },
+    {
+     "jugador": "GARZA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "CURL JEFFERSON C KB + DEFICIT",
+       "dosis": "3x3 5KG"
+      },
+      {
+       "id": "A1",
+       "ej": "PLANCHA LAT DINAMICA SEPARANDO",
+       "dosis": "3X12+12"
+      },
+      {
+       "id": "F1",
+       "ej": "PALLOF ISO C MARCHA",
+       "dosis": "3X 6+6"
+      }
+     ]
+    },
+    {
+     "jugador": "MATE FOSSATI",
+     "items": [
+      {
+       "id": "",
+       "ej": "BICI",
+       "dosis": "5'"
+      },
+      {
+       "id": "",
+       "ej": "SENT ISO A 1 P EN PARED + EXT PARED",
+       "dosis": "4 X 2 -10\"+10\" + 5"
+      },
+      {
+       "id": "",
+       "ej": "CCA CUAD EXC + EXT DECUBITO PRONO",
+       "dosis": "4 X 8 (3\") + 5"
+      },
+      {
+       "id": "",
+       "ej": "EMPUJE DE TRINEO + EXT SB",
+       "dosis": "12+12 + 6"
+      },
+      {
+       "id": "",
+       "ej": "CAMINATA EXCENTRICA + OBELISCOS",
+       "dosis": "4 X 8 + 5+5"
+      },
+      {
+       "id": "",
+       "ej": "GEMELOS A 1P + ADUCTORES",
+       "dosis": "3 X 8+8 - 20\""
+      }
+     ]
+    },
+    {
+     "jugador": "PELLAN",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "I-Y-T PARADO + PLANCHA 3 AP.",
+       "dosis": "3 X 3-5\" x posición / x3-10\" x lado"
+      },
+      {
+       "id": "F1",
+       "ej": "PREDICADORES EN BANCO C BASTON",
+       "dosis": "3x10"
+      },
+      {
+       "id": "F2",
+       "ej": "ROT INT/EXT CODO 90",
+       "dosis": "3x3-10\" x posición"
+      },
+      {
+       "id": "F3",
+       "ej": "EXCENTRICOS + COLGADO",
+       "dosis": "3 X 6 + 20\""
+      }
+     ]
+    },
+    {
+     "jugador": "TOTO",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "LACROSSE + TOALLA",
+       "dosis": "3 X 2' + 15"
+      },
+      {
+       "id": "F1",
+       "ej": "ARMADO DE ARCO A 1P (ARRASTRO BANDA)",
+       "dosis": "3 X 3 - 10\""
+      },
+      {
+       "id": "F2",
+       "ej": "ISO ISQUIO 90 PISO",
+       "dosis": "3 X 3-5\" (máxima)"
+      },
+      {
+       "id": "F3",
+       "ej": "PRENSA 1P",
+       "dosis": "3 X 8+8 (RIR 1-2)"
+      }
+     ]
+    }
+   ],
+   "base": [
+    {
+     "jugador": "GREGO",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ISOS 1LS EN PARED (talón arriba)",
+       "dosis": "3 X 30\" x lado"
+      },
+      {
+       "id": "FINISHER",
+       "ej": "BFR CCA",
+       "dosis": "BANDA VERDE"
+      }
+     ]
+    },
+    {
+     "jugador": "MARTI",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ISOS 1LS EN PARED (talón arriba)",
+       "dosis": "3 x 30\" x lado"
+      },
+      {
+       "id": "FINISHER",
+       "ej": "BFR CAMILLA CUADRICEPS",
+       "dosis": "BANDA VERDE"
+      }
+     ]
+    },
+    {
+     "jugador": "ALVA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "APOYO FACIAL A 1 BR C/PESO",
+       "dosis": "3 X 3-10\" x lado"
+      },
+      {
+       "id": "F1",
+       "ej": "V. LAT ISO SB",
+       "dosis": "3 X 3-10\""
+      },
+      {
+       "id": "F2",
+       "ej": "ISO PUSH CCA",
+       "dosis": "3 X 3-5\" x lado (máxima intensidad)"
+      },
+      {
+       "id": "F3",
+       "ej": "ROT EXT C/SB CODO PEGADO",
+       "dosis": "3 X 3-10\" x lado"
+      },
+      {
+       "id": "FINISHER",
+       "ej": "ISO 60 + PRENSA 1P",
+       "dosis": "3 X 3-10\" + 10+10 (RIR 1)"
+      }
+     ]
+    },
+    {
+     "jugador": "JOYA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "INVERSORES/EVERSORES C SB",
+       "dosis": "3x15+15"
+      },
+      {
+       "id": "F2",
+       "ej": "ISO PUSH RACK 1P",
+       "dosis": "3x3-10\" x lado"
+      },
+      {
+       "id": "F3",
+       "ej": "TIBIAL ANTERIOR EN PARED",
+       "dosis": "3x15"
+      }
+     ]
+    },
+    {
+     "jugador": "LBV",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "TIBIAL POST CON SB",
+       "dosis": "4 X 8"
+      },
+      {
+       "id": "F1",
+       "ej": "ADUCTORES PALACA CORTA",
+       "dosis": ""
+      },
+      {
+       "id": "F2",
+       "ej": "GEMELOS TIB POSTERIOR",
+       "dosis": "4 X 30\" · 3 X 8"
+      },
+      {
+       "id": "F3",
+       "ej": "ABUDCTORES C/SB",
+       "dosis": "3 X 6+6"
+      }
+     ]
+    },
+    {
+     "jugador": "GARZA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "CURL JEFFERSON C KB + DEFICIT",
+       "dosis": "3x3 5KG / 3X12+12"
+      },
+      {
+       "id": "A1",
+       "ej": "PLANCHA LAT DINAMICA SEPARANDO",
+       "dosis": ""
+      },
+      {
+       "id": "F1",
+       "ej": "PALLOF ISO C MARCHA",
+       "dosis": "3X 6+6"
+      }
+     ]
+    },
+    {
+     "jugador": "MATE FOSSATI",
+     "items": [
+      {
+       "id": "",
+       "ej": "MOVILIDAD CON PELOTA + ISOS",
+       "dosis": ""
+      },
+      {
+       "id": "",
+       "ej": "FLEXO EXTENSION C/SB + OBELISCOS",
+       "dosis": ""
+      },
+      {
+       "id": "",
+       "ej": "TALON A LA COLA + MARCHA EN PARED",
+       "dosis": ""
+      },
+      {
+       "id": "",
+       "ej": "MARCHA CON DISCO + EXTENSION PARED",
+       "dosis": ""
+      },
+      {
+       "id": "",
+       "ej": "SENT ISO EN PARED + EXT BOCA ABAJO",
+       "dosis": ""
+      }
+     ]
+    },
+    {
+     "jugador": "PELLAN",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "I-Y-T PARADO + PLANCHA 3 AP.",
+       "dosis": "3 X 3-5\" x posición / x3-10\" x lado"
+      },
+      {
+       "id": "F1",
+       "ej": "PREDICADORES EN BANCO C BASTON",
+       "dosis": "3x10"
+      },
+      {
+       "id": "F2",
+       "ej": "ROT INT/EXT CODO 90",
+       "dosis": "3x3-10\" x posición"
+      },
+      {
+       "id": "F3",
+       "ej": "EXCENTRICOS + COLGADO",
+       "dosis": "3 X 6 + 20\""
+      }
+     ]
+    }
+   ],
+   "autor": "",
+   "fecha": "2026-11-02T23:10:44.568Z"
   }
  }
 }
