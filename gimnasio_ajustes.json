@@ -2195,8 +2195,8 @@
       },
       {
        "id": "FINISH",
-       "ej": "BFR IT 90 GRADOS",
-       "dosis": "PROTOCOLO"
+       "ej": "PRENSA 1P",
+       "dosis": "3X8+8 (RIR 1)"
       }
      ]
     },
@@ -2544,7 +2544,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-02T23:16:00.516Z"
+   "fecha": "2026-11-02T23:17:22.767Z"
   },
   "Sem 16|3|cor": {
    "datos": [
