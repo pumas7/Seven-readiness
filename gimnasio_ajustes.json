@@ -2588,8 +2588,13 @@
       },
       {
        "id": "F1",
-       "ej": "ISOPUSH DE RODILLA",
-       "dosis": "3 X 3-5\" x lado (máxima intensidad)"
+       "ej": "CONTROLES UNIPODALES",
+       "dosis": "3 X 10+10, disco 10kg"
+      },
+      {
+       "id": "F2 ",
+       "ej": "KNEE ISO PUSH 1P",
+       "dosis": "3 X 3-5\""
       }
      ]
     },
@@ -2982,7 +2987,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-02T23:19:53.562Z"
+   "fecha": "2026-11-04T15:29:01.359Z"
   }
  }
 }
