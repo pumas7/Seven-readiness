@@ -2738,8 +2738,8 @@
      "items": [
       {
        "id": "A1",
-       "ej": "ROTACIONES EN PLANCHA 1B + HALOS C DISCO",
-       "dosis": "3 X 10+10 / +10"
+       "ej": "I-Y-T ACOSTADO + HALOS C DISCO",
+       "dosis": "3 X 3-5\" por posición (máxima intensidad) / +10"
       },
       {
        "id": "F1",
@@ -2748,8 +2748,13 @@
       },
       {
        "id": "F2",
-       "ej": "ROT INT Y EXT PEGADO DINAMICO",
-       "dosis": "3X15+15"
+       "ej": "ROT INT/EXT CODO PEGADO",
+       "dosis": "3 X 15+15"
+      },
+      {
+       "id": "F3",
+       "ej": "EXCENTRICOS + COLGADO",
+       "dosis": "3 X 6 + 20\""
       }
      ]
     },
@@ -2982,7 +2987,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-04T18:37:19.021Z"
+   "fecha": "2026-11-04T18:40:37.446Z"
   }
  }
 }
