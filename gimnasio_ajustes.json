@@ -2713,13 +2713,23 @@
      "items": [
       {
        "id": "A1",
-       "ej": "CAMINATA DE ISQUIOS",
-       "dosis": "3X8"
+       "ej": "PTE ISQUIO 1P + SLR ACTIVO",
+       "dosis": "3X12+12 + 10+10"
       },
       {
        "id": "F1",
-       "ej": "PESO MUERTO 1P",
-       "dosis": "3X8+8"
+       "ej": "SENTADILLA PROFUNDA + NEURODINAMIA",
+       "dosis": "3X10 + 6+6"
+      },
+      {
+       "id": "F2",
+       "ej": "SUBIDAS AL BANCO + OBELISCOS",
+       "dosis": "3X8+8 + 10+10"
+      },
+      {
+       "id": "F3",
+       "ej": "RECEP 2P + CMJ + BROAD",
+       "dosis": "3X10+5+5"
       }
      ]
     },
@@ -2738,8 +2748,8 @@
       },
       {
        "id": "F2",
-       "ej": "PORNSTAR",
-       "dosis": "3 X 10+10"
+       "ej": "ROT INT Y EXT PEGADO DINAMICO",
+       "dosis": "3X15+15"
       }
      ]
     },
@@ -2972,7 +2982,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-04T18:35:18.166Z"
+   "fecha": "2026-11-04T18:37:19.021Z"
   }
  }
 }
