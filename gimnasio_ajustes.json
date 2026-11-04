@@ -2713,23 +2713,13 @@
      "items": [
       {
        "id": "A1",
-       "ej": "PTE ISQUIO 1P + SLR ACTIVO",
-       "dosis": "3X12+12 + 10+10"
+       "ej": "CAMINATA DE ISQUIOS",
+       "dosis": "3X8"
       },
       {
        "id": "F1",
-       "ej": "SENTADILLA PROFUNDA + NEURODINAMIA",
-       "dosis": "3X10 + 6+6"
-      },
-      {
-       "id": "F2",
-       "ej": "SUBIDAS AL BANCO + OBELISCOS",
-       "dosis": "3X8+8 + 10+10"
-      },
-      {
-       "id": "F3",
-       "ej": "RECEP 2P + CMJ + BROAD",
-       "dosis": "3X10+5+5"
+       "ej": "PESO MUERTO 1P",
+       "dosis": "3X8+8"
       }
      ]
     },
@@ -2738,23 +2728,18 @@
      "items": [
       {
        "id": "A1",
-       "ej": "I-Y-T ACOSTADO + HALOS C DISCO",
-       "dosis": "3 X 3-5\" por posición (máxima intensidad) / +10"
+       "ej": "ROTACIONES EN PLANCHA 1B + HALOS C DISCO",
+       "dosis": "3 X 10+10 / +10"
       },
       {
        "id": "F1",
        "ej": "ADUCT BANCO C BANDA",
-       "dosis": "3 X 8+8"
+       "dosis": "3 X 12+12"
       },
       {
        "id": "F2",
-       "ej": "ROT INT/EXT CODO PEGADO",
-       "dosis": "3 X 15+15"
-      },
-      {
-       "id": "F3",
-       "ej": "EXCENTRICOS + COLGADO",
-       "dosis": "3 X 6 + 20\""
+       "ej": "PORNSTAR",
+       "dosis": "3 X 10+10"
       }
      ]
     },
@@ -2987,7 +2972,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-04T15:29:01.359Z"
+   "fecha": "2026-11-04T18:35:18.166Z"
   }
  }
 }
