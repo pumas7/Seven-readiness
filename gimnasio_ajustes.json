@@ -2724,7 +2724,7 @@
       {
        "id": "F1",
        "ej": "ADUCT BANCO C BANDA",
-       "dosis": "3 X 8+8"
+       "dosis": "3 X 12+12"
       },
       {
        "id": "F2",
@@ -2776,17 +2776,7 @@
       {
        "id": "F1",
        "ej": "CONTROLES UNIPODALES",
-       "dosis": "3 X 10+10, disco 10kg"
-      },
-      {
-       "id": "F2",
-       "ej": "KNEE ISO PUSH  1P",
-       "dosis": "3 X 3-5\""
-      },
-      {
-       "id": "FINISH",
-       "ej": "PRENSA 1P",
-       "dosis": "3X8-10 (RIR 1-2)"
+       "dosis": "3 X 6+6, disco 10kg"
       }
      ]
     },
@@ -2830,13 +2820,33 @@
       },
       {
        "id": "FINISHER",
-       "ej": "PRENSA 1P",
-       "dosis": "3 X 8-10 (RIR 1-2)"
+       "ej": "CCA CUAD 1P",
+       "dosis": "3 X 10\" /3X10"
       },
       {
        "id": "FINISHER",
        "ej": "ISQUIO 30",
-       "dosis": "3 X 3-10\""
+       "dosis": ""
+      }
+     ]
+    },
+    {
+     "jugador": "JOYA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "INVERSORES/EVERSORES C SB",
+       "dosis": "3x15+15"
+      },
+      {
+       "id": "F2",
+       "ej": "ISO PUSH RACK 1P",
+       "dosis": "3x3-10\" x lado"
+      },
+      {
+       "id": "F3",
+       "ej": "RECEP 1P",
+       "dosis": "3x6+6"
       }
      ]
     },
@@ -2889,34 +2899,24 @@
      "jugador": "MATE FOSSATI",
      "items": [
       {
-       "id": "",
-       "ej": "BICI",
-       "dosis": "10'"
+       "id": "A1",
+       "ej": "MOVILIDAD CON PELOTA + ISOS",
+       "dosis": "4 X 10 + 8 X 3\""
       },
       {
-       "id": "",
-       "ej": "EXTENSION C/SB + OBELISCOS",
-       "dosis": "4 X 12+12 + 10+10"
+       "id": "F1",
+       "ej": "EXTENSION C/SB + TKNE ROLO",
+       "dosis": "4 X 12+12 (5\")"
       },
       {
-       "id": "",
-       "ej": "MARCHA C DISCO + SENTADILLA ISO PARED 1P",
-       "dosis": "4 X 15mts + 20\"+20\""
+       "id": "F2",
+       "ej": "MARCHA BASTON + TALON A LA COLA",
+       "dosis": "4 X 12+12 + 5"
       },
       {
-       "id": "",
-       "ej": "PUENTE ISQUIO 2P + GEMELO 1P",
-       "dosis": "4 X 12 + 12"
-      },
-      {
-       "id": "",
-       "ej": "TRINEO + PRENSA 1P",
-       "dosis": "4 X 15mts + 12"
-      },
-      {
-       "id": "",
-       "ej": "EXTENSIONES C SB",
-       "dosis": "4 X 15"
+       "id": "F3",
+       "ej": "CCA ISO",
+       "dosis": "4 X 3-20\""
       }
      ]
     },
@@ -2925,23 +2925,18 @@
      "items": [
       {
        "id": "A1",
-       "ej": "PTE ISQUIO 1P + SLR ACTIVO",
-       "dosis": "3X12+12 + 10+10"
+       "ej": "PTE ISQUIO ELEVADO 2P ISO + OBELISCOS",
+       "dosis": "3X3-20\" + 10+10"
       },
       {
        "id": "F1",
-       "ej": "SENTADILLA PROFUNDA + NEURODINAMIA",
-       "dosis": "3X10 + 6+6"
+       "ej": "BUENOS DIAS C DISCO + SLR C BANDA",
+       "dosis": "3X10+10 10KG"
       },
       {
        "id": "F2",
-       "ej": "SUBIDAS AL BANCO + OBELISCOS",
-       "dosis": "3X8+8 + 10+10"
-      },
-      {
-       "id": "F3",
-       "ej": "RECEP 2P + CMJ + BROAD",
-       "dosis": "3X10+5+5"
+       "ej": "SENTADILLA GOBLET PROF + NEURODINAMIA",
+       "dosis": "3X12 + 6+6"
       }
      ]
     },
@@ -2961,7 +2956,7 @@
       {
        "id": "F2",
        "ej": "ROT INT/EXT CODO PEGADO",
-       "dosis": "3 X 15+15"
+       "dosis": "3 X 3-10\" por posición (máxima intensidad)"
       },
       {
        "id": "F3",
@@ -2969,35 +2964,10 @@
        "dosis": "3 X 6 + 20\""
       }
      ]
-    },
-    {
-     "jugador": "TOTO",
-     "items": [
-      {
-       "id": "A1",
-       "ej": "LACROSSE + TOALLA",
-       "dosis": "3 X 2' + 15"
-      },
-      {
-       "id": "F1",
-       "ej": "EQUILIBRIO 1P C KB",
-       "dosis": "3X5+5"
-      },
-      {
-       "id": "F2",
-       "ej": "PTE ISQUIO ISO 1P",
-       "dosis": "3X3-10\""
-      },
-      {
-       "id": "F3",
-       "ej": "CONTROLES UNIPODALES C DISCO",
-       "dosis": "3X8+8 (10kg)"
-      }
-     ]
     }
    ],
-   "autor": "jokin",
-   "fecha": "2026-11-05T04:35:35.583Z"
+   "autor": "",
+   "fecha": "2026-11-05T11:57:15.589Z"
   }
  }
 }
