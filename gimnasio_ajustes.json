@@ -2674,41 +2674,6 @@
      ]
     },
     {
-     "jugador": "MATE FOSSATI",
-     "items": [
-      {
-       "id": "",
-       "ej": "BICI",
-       "dosis": "10'"
-      },
-      {
-       "id": "",
-       "ej": "EXTENSION C/SB + OBELISCOS",
-       "dosis": "4 X 12+12 + 10+10"
-      },
-      {
-       "id": "",
-       "ej": "MARCHA C DISCO + SENTADILLA ISO PARED 1P",
-       "dosis": "4 X 15mts + 20\"+20\""
-      },
-      {
-       "id": "",
-       "ej": "PUENTE ISQUIO 2P + GEMELO 1P",
-       "dosis": "4 X 12 + 12"
-      },
-      {
-       "id": "",
-       "ej": "TRINEO + PRENSA 1P",
-       "dosis": "4 X 15mts + 12"
-      },
-      {
-       "id": "",
-       "ej": "EXTENSIONES C SB",
-       "dosis": "4 X 15"
-      }
-     ]
-    },
-    {
      "jugador": "JCM",
      "items": [
       {
@@ -2744,7 +2709,7 @@
       {
        "id": "F1",
        "ej": "ADUCT BANCO C BANDA",
-       "dosis": "3 X 12+12"
+       "dosis": "3 X 8+8"
       },
       {
        "id": "F2",
@@ -2986,8 +2951,8 @@
      ]
     }
    ],
-   "autor": "",
-   "fecha": "2026-11-04T18:40:37.446Z"
+   "autor": "jokin",
+   "fecha": "2026-11-05T04:35:14.790Z"
   }
  }
 }
