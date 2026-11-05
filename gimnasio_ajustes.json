@@ -2358,10 +2358,15 @@
       {
        "id": "A1",
        "ej": "ISOS 1LS EN PARED (talón arriba)",
-       "dosis": "3 X 30\" x lado"
+       "dosis": "3 X 30\" x lado (10KG)"
       },
       {
-       "id": "FINISHER",
+       "id": "F2",
+       "ej": "CAIDAS 1P 45CM",
+       "dosis": "3X5+5 (20kg)"
+      },
+      {
+       "id": "FINISH",
        "ej": "BFR PRENSA",
        "dosis": "60KG"
       }
@@ -2392,7 +2397,7 @@
       },
       {
        "id": "F1",
-       "ej": "Y - T - W",
+       "ej": "Y - T - W REVERSO",
        "dosis": "3 X 3-5\" x posición (máxima intensidad)"
       },
       {
@@ -2401,29 +2406,14 @@
        "dosis": "3 X 3-10\" x lado"
       },
       {
-       "id": "FINISHER",
+       "id": "F3",
+       "ej": "CONTROLES UNIPODALES PARED",
+       "dosis": "3X8+8 (10KG)"
+      },
+      {
+       "id": "FINISH",
        "ej": "BFR IT 90 GRADOS",
        "dosis": "PROTOCOLO"
-      }
-     ]
-    },
-    {
-     "jugador": "JOYA",
-     "items": [
-      {
-       "id": "A1",
-       "ej": "FLEXIBILIDAD TOBILLO C CARGA",
-       "dosis": "3 X 10+10"
-      },
-      {
-       "id": "F1",
-       "ej": "TIBIAL ANTERIOR PARED",
-       "dosis": "3 X 15"
-      },
-      {
-       "id": "F2",
-       "ej": "SIDE HOPS",
-       "dosis": "3 X 12+12"
       }
      ]
     },
@@ -2458,12 +2448,12 @@
       {
        "id": "A1",
        "ej": "CURL JEFFERSON C KB + DEFICIT",
-       "dosis": "3x5 / 3X12+12"
+       "dosis": "3x5 "
       },
       {
        "id": "A1",
        "ej": "PLANCHA LAT DINAMICA SEPARO",
-       "dosis": ""
+       "dosis": "3X12+12"
       },
       {
        "id": "F1",
@@ -2477,28 +2467,33 @@
      "items": [
       {
        "id": "",
-       "ej": "MOVILIDAD CON PELOTA + ISOS",
-       "dosis": ""
+       "ej": "BICI",
+       "dosis": "10'"
       },
       {
        "id": "",
-       "ej": "FLEXO EXTENSION C/SB + OBELISCOS",
-       "dosis": ""
+       "ej": "EXTENSION C SB X2 + MARCHA C DISCO",
+       "dosis": "3X 12+12 + 15mts"
       },
       {
        "id": "",
-       "ej": "TALON A LA COLA + MARCHA EN PARED",
-       "dosis": ""
+       "ej": "SENTADILLA 1P BANCO + GEMELO 1P",
+       "dosis": "3X8+8 (10/20KG) + 12+12"
       },
       {
        "id": "",
-       "ej": "MARCHA CON DISCO + EXTENSION PARED",
-       "dosis": ""
+       "ej": "PESO MEURTO RUMANO + OBELISCOS",
+       "dosis": "3X12 + 10+10"
       },
       {
        "id": "",
-       "ej": "SENT ISO EN PARED + EXT BOCA ABAJO",
-       "dosis": ""
+       "ej": "TRINEO + TALON A LA COLA C SB",
+       "dosis": "3X 15mts + 12+12"
+      },
+      {
+       "id": "",
+       "ej": "EXTENSION SENTADO C SB",
+       "dosis": "4X15+15"
       }
      ]
     },
@@ -2507,18 +2502,18 @@
      "items": [
       {
        "id": "A1",
-       "ej": "ISOS 90 CON SB + OBELISCOS",
-       "dosis": "4 X 15\" + 5"
+       "ej": "PTE GLUTEO PISO ESTIRADO 1P + OBELISCOS",
+       "dosis": "3 X 3-20\" x lado + 10+10"
       },
       {
        "id": "F1",
-       "ej": "RDL C/MANC + ELEVACION PIERNA RECTA",
-       "dosis": "4 X 6 + 5"
+       "ej": "RMD + ELEVACION PIERNA RECTA DINAMICO",
+       "dosis": "3 X 8 / 10+10"
       },
       {
        "id": "F2",
-       "ej": "ESTOCADAS FIJAS + NEURODINAMIA",
-       "dosis": "4 X 5+5 + 5"
+       "ej": "CURL DE ISQUIOS EXC 2P + BUDAS",
+       "dosis": "3X 12 + 10"
       }
      ]
     },
@@ -2527,23 +2522,43 @@
      "items": [
       {
        "id": "A1",
-       "ej": "I-Y-T REVERSO",
-       "dosis": "3 X 3-5\" x posición (máxima intensidad)"
+       "ej": "I-Y-T REVERSO + FLEXORES DE CADERAS C SB",
+       "dosis": "3 X 3-5\" x posición (máxima intensidad) / 3X8+8"
       },
       {
-       "id": "F1",
+       "id": "A1",
        "ej": "MOVILIDAD OH COMPLETA C SB",
        "dosis": "3 X 10"
       },
       {
-       "id": "F2",
-       "ej": "ROT INT/EXT CODO 90",
-       "dosis": "3 X 3-10\" x posición (máxima intensidad)"
+       "id": "F1",
+       "ej": "PORNSTAR",
+       "dosis": "3X10+10"
       },
       {
-       "id": "F3",
+       "id": "F2",
        "ej": "EXCENTRICOS + COLGADO",
        "dosis": "3 X 6 + 20\""
+      }
+     ]
+    },
+    {
+     "jugador": "TOTO",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "LACROSSE + TOALLA",
+       "dosis": "3X15+15"
+      },
+      {
+       "id": "F1",
+       "ej": "PRENSA 1P (RIR 1-2)",
+       "dosis": "3X8+8"
+      },
+      {
+       "id": "F2",
+       "ej": "EQ 1P CON ARMADO DE ARCO (ARRASTRO BANDA DEDO GORDO)",
+       "dosis": "3X3-10\""
       }
      ]
     }
@@ -2761,7 +2776,17 @@
       {
        "id": "F1",
        "ej": "CONTROLES UNIPODALES",
-       "dosis": "3 X 6+6, disco 10kg"
+       "dosis": "3 X 10+10, disco 10kg"
+      },
+      {
+       "id": "F2",
+       "ej": "KNEE ISO PUSH  1P",
+       "dosis": "3 X 3-5\""
+      },
+      {
+       "id": "FINISH",
+       "ej": "PRENSA 1P",
+       "dosis": "3X8-10 (RIR 1-2)"
       }
      ]
     },
@@ -2805,33 +2830,13 @@
       },
       {
        "id": "FINISHER",
-       "ej": "CCA CUAD 1P",
-       "dosis": "3 X 10\" /3X10"
+       "ej": "PRENSA 1P",
+       "dosis": "3 X 8-10 (RIR 1-2)"
       },
       {
        "id": "FINISHER",
        "ej": "ISQUIO 30",
-       "dosis": ""
-      }
-     ]
-    },
-    {
-     "jugador": "JOYA",
-     "items": [
-      {
-       "id": "A1",
-       "ej": "INVERSORES/EVERSORES C SB",
-       "dosis": "3x15+15"
-      },
-      {
-       "id": "F2",
-       "ej": "ISO PUSH RACK 1P",
-       "dosis": "3x3-10\" x lado"
-      },
-      {
-       "id": "F3",
-       "ej": "RECEP 1P",
-       "dosis": "3x6+6"
+       "dosis": "3 X 3-10\""
       }
      ]
     },
@@ -2884,24 +2889,34 @@
      "jugador": "MATE FOSSATI",
      "items": [
       {
-       "id": "A1",
-       "ej": "MOVILIDAD CON PELOTA + ISOS",
-       "dosis": "4 X 10 + 8 X 3\""
+       "id": "",
+       "ej": "BICI",
+       "dosis": "10'"
       },
       {
-       "id": "F1",
-       "ej": "EXTENSION C/SB + TKNE ROLO",
-       "dosis": "4 X 12+12 (5\")"
+       "id": "",
+       "ej": "EXTENSION C/SB + OBELISCOS",
+       "dosis": "4 X 12+12 + 10+10"
       },
       {
-       "id": "F2",
-       "ej": "MARCHA BASTON + TALON A LA COLA",
-       "dosis": "4 X 12+12 + 5"
+       "id": "",
+       "ej": "MARCHA C DISCO + SENTADILLA ISO PARED 1P",
+       "dosis": "4 X 15mts + 20\"+20\""
       },
       {
-       "id": "F3",
-       "ej": "CCA ISO",
-       "dosis": "4 X 3-20\""
+       "id": "",
+       "ej": "PUENTE ISQUIO 2P + GEMELO 1P",
+       "dosis": "4 X 12 + 12"
+      },
+      {
+       "id": "",
+       "ej": "TRINEO + PRENSA 1P",
+       "dosis": "4 X 15mts + 12"
+      },
+      {
+       "id": "",
+       "ej": "EXTENSIONES C SB",
+       "dosis": "4 X 15"
       }
      ]
     },
@@ -2910,18 +2925,23 @@
      "items": [
       {
        "id": "A1",
-       "ej": "PTE ISQUIO ELEVADO 2P ISO + OBELISCOS",
-       "dosis": "3X3-20\" + 10+10"
+       "ej": "PTE ISQUIO 1P + SLR ACTIVO",
+       "dosis": "3X12+12 + 10+10"
       },
       {
        "id": "F1",
-       "ej": "BUENOS DIAS C DISCO + SLR C BANDA",
-       "dosis": "3X10+10 10KG"
+       "ej": "SENTADILLA PROFUNDA + NEURODINAMIA",
+       "dosis": "3X10 + 6+6"
       },
       {
        "id": "F2",
-       "ej": "SENTADILLA GOBLET PROF + NEURODINAMIA",
-       "dosis": "3X12 + 6+6"
+       "ej": "SUBIDAS AL BANCO + OBELISCOS",
+       "dosis": "3X8+8 + 10+10"
+      },
+      {
+       "id": "F3",
+       "ej": "RECEP 2P + CMJ + BROAD",
+       "dosis": "3X10+5+5"
       }
      ]
     },
@@ -2941,12 +2961,37 @@
       {
        "id": "F2",
        "ej": "ROT INT/EXT CODO PEGADO",
-       "dosis": "3 X 3-10\" por posición (máxima intensidad)"
+       "dosis": "3 X 15+15"
       },
       {
        "id": "F3",
        "ej": "EXCENTRICOS + COLGADO",
        "dosis": "3 X 6 + 20\""
+      }
+     ]
+    },
+    {
+     "jugador": "TOTO",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "LACROSSE + TOALLA",
+       "dosis": "3 X 2' + 15"
+      },
+      {
+       "id": "F1",
+       "ej": "EQUILIBRIO 1P C KB",
+       "dosis": "3X5+5"
+      },
+      {
+       "id": "F2",
+       "ej": "PTE ISQUIO ISO 1P",
+       "dosis": "3X3-10\""
+      },
+      {
+       "id": "F3",
+       "ej": "CONTROLES UNIPODALES C DISCO",
+       "dosis": "3X8+8 (10kg)"
       }
      ]
     }
