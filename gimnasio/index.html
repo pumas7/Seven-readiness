@@ -141,6 +141,13 @@ body.idle .staff,:fullscreen .staff{display:none!important}
 .nform .btn{justify-self:start}
 .nrow{display:grid;grid-template-columns:110px 130px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 0;border-top:1px solid var(--line)}
 .nrow.past{opacity:.55}
+.nest{display:inline-block;margin-top:5px;font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 9px;background:#16324D;color:var(--muted)}
+.nest.pend{background:var(--gold);color:#04192A}
+.nest.ok{background:#1E5A3A;color:#BDF0D2}
+.nacc{display:flex;gap:6px;align-items:center}
+.nbtn{background:transparent;border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:4px 10px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.nbtn.ok{border-color:var(--ok);color:var(--ok)}
+.nbtn:disabled{opacity:.5;cursor:wait}
 .nsem{font-family:var(--f-display);font-weight:700;color:var(--gold);font-size:17px}
 .nsem small,.ntxt small{display:block;font-family:var(--f-body);font-weight:500;font-size:11.5px;color:var(--muted)}
 .nrow b{font-family:var(--f-display);font-size:17px;text-transform:uppercase}
@@ -279,7 +286,7 @@ function aplicar(lista,vista,base,datos,origenDe,avisos){
   }
   return {lista:[...out.values()],marc};
 }
-function seccion(plan,dia,vista){
+function seccion(plan,dia,vista,sinPropio){
   let lista=hoja(plan,dia,vista),marc={},avisos=[];
   const a=AJ.ajustes[ajKey(plan,dia,vista)];
   if(!a?.sinArrastre){
@@ -290,7 +297,7 @@ function seccion(plan,dia,vista){
       lista=r.lista;Object.assign(marc,r.marc);
     }
   }
-  if(a&&!a.sinArrastre){
+  if(a&&!a.sinArrastre&&!sinPropio){
     const r=aplicar(lista,vista,a.base||hoja(plan,dia,vista),a.datos,()=>({plan,autor:a.autor,fecha:a.fecha}),avisos);
     lista=r.lista;Object.assign(marc,r.marc);
   }
@@ -432,7 +439,7 @@ $('#btnSave').onclick=async()=>{
   // limpia filas vacías
   const datos=VISTA==='rut'?EDIT.map(b=>({...b,items:b.items.filter(i=>i.ej.trim()||i.dosis.trim())})).filter(b=>b.items.length)
                            :EDIT.map(p=>({...p,items:p.items.filter(i=>i.ej.trim()||i.dosis.trim())})).filter(p=>p.jugador.trim());
-  const k=ajKey(PLAN,DIA,VISTA);const v={datos,base:hoja(PLAN,DIA,VISTA),autor,fecha:new Date().toISOString()};
+  const k=ajKey(PLAN,DIA,VISTA);const v={datos,base:seccion(PLAN,DIA,VISTA,true).datos,autor,fecha:new Date().toISOString()};
   PEND.set={[k]:v};PEND.del=[];AJ.ajustes[k]=v;
   if(await persistir()){salirEdicion();toast('Guardado. Las dos pantallas ya lo muestran.');bc?.postMessage({t:'aj',aj:AJ})}
 };
@@ -481,25 +488,18 @@ async function guardarNotas(op){
   }catch(e){toast('No se pudo guardar: '+e.message,true);return false}
 }
 const nnN=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toUpperCase();
-function firmaJugador(plan,jug){
-  const p=DATA.planes[plan];if(!p)return '';
-  return Object.keys(p.dias).sort((a,b)=>a-b).map(d=>firma(unidades(seccion(plan,d,'cor').datos,'cor').get(nk(jug)))).join('|');
-}
-/* una nota de la Sem N se ve en la Sem N y sigue en las siguientes mientras el jugador no cambie (hoja + ajustes) */
+/* Una nota de la Sem N se ve desde la Sem N y sigue en las semanas siguientes mientras esté pendiente.
+   Deja de verse cuando se marca "hecha" (se tuvo en cuenta); se puede reabrir. */
+const notaHecha=n=>n.estado==='hecha';
 function notaVisibleEn(n,plan){
   const p=DATA.planes[plan];if(!p||n.semana>p.semana)return false;
-  if(n.semana===p.semana)return true;
-  let cur=plan;const f0=firmaJugador(plan,n.jugador);if(!f0.replace(/\|/g,''))return false;
-  while(DATA.planes[cur].semana>n.semana){
-    const pr=predecesor(cur);if(!pr||firmaJugador(pr,n.jugador)!==f0)return false;cur=pr;
-  }
-  return DATA.planes[cur].semana===n.semana;
+  return !notaHecha(n);
 }
 const notasVisibles=(plan,jug)=>DATA&&DATA.planes[plan]?NOTAS.notas.filter(n=>(!jug||nnN(n.jugador)===nnN(jug))&&notaVisibleEn(n,plan)):[];
 /* panel solo para el staff (no sale en la tele ni en pantalla completa) */
 function panelStaff(S){
   const sem=DATA.planes[PLAN].semana,ns=notasVisibles(PLAN);let h='';
-  if(ns.length)h+=`<h3>Notas para esta semana (${ns.length}) <button class="sbtn" data-abrir-notas>ver todas</button></h3><ul>${ns.map(n=>`<li><b>${esc(n.jugador)}</b>${esc(n.texto)}<small>${n.semana<sem?'viene de Sem '+n.semana+' · ':''}${esc(n.autor||'')}</small></li>`).join('')}</ul>`;
+  if(ns.length)h+=`<h3>Notas para esta semana (${ns.length}) <button class="sbtn" data-abrir-notas>ver todas</button></h3><ul>${ns.map(n=>`<li><b>${esc(n.jugador)}</b>${esc(n.texto)}<small>${n.semana<sem?'pendiente desde Sem '+n.semana+' · ':''}${esc(n.autor||'')}</small> <button class="sbtn" data-nhecha="${esc(n.id)}" title="Marcar que ya se tuvo en cuenta">✓ Hecha</button></li>`).join('')}</ul>`;
   if(S.avisos.length)h+=`<h3 class="w">El PF cambió esto en la hoja</h3><ul>${S.avisos.map(a=>`<li><b>${esc(a.nombre)}</b>tu ajuste de ${esc(a.plan)} no se aplicó: se muestra lo de la hoja.</li>`).join('')}</ul>`;
   return h?`<div class="spanel staff">${h}</div>`:'';
 }
@@ -509,10 +509,14 @@ function jugadoresConocidos(){const s=new Set();Object.values(DATA.planes).forEa
 function pintarNotas(){
   const act=DATA.planes[PLAN].semana;const ns=[...NOTAS.notas].sort((a,b)=>a.semana-b.semana||a.jugador.localeCompare(b.jugador));
   const vis=new Set(notasVisibles(PLAN).map(n=>n.id));
-  const fut=ns.filter(n=>n.semana>=act||vis.has(n.id)),pas=ns.filter(n=>n.semana<act&&!vis.has(n.id)).reverse();
-  const fila=n=>`<div class="nrow${n.semana<act?' past':''}"><span class="nsem">Sem ${n.semana}${n.semana===act?' (esta)':vis.has(n.id)?' → sigue':''}<small>${rangoSem(n.semana)}</small></span><b>${esc(n.jugador)}</b><span class="ntxt">${esc(n.texto)}<small>${esc(n.autor||'')}${n.autor?' · ':''}${esc(fFecha(n.fecha))}</small></span><button class="x" data-ndel="${esc(n.id)}" aria-label="Borrar nota">✕</button></div>`;
-  $('#notasLista').innerHTML=(fut.length?fut.map(fila).join(''):'<p class="note">No hay notas para esta semana ni las próximas.</p>')
-    +(pas.length?`<details><summary>Semanas pasadas (${pas.length})</summary>${pas.map(fila).join('')}</details>`:'');
+  const fut=ns.filter(n=>!notaHecha(n)),pas=ns.filter(notaHecha).sort((a,b)=>(b.hechaFecha||'').localeCompare(a.hechaFecha||''));
+  const estado=n=>notaHecha(n)?`<span class="nest ok">✓ Hecha${n.hechaSem?' · Sem '+n.hechaSem:''}</span>`
+    :n.semana>act?'<span class="nest">Próxima</span>':`<span class="nest pend">${n.semana<act?'Pendiente desde Sem '+n.semana:'Pendiente'}</span>`;
+  const acc=n=>notaHecha(n)?`<button class="nbtn" data-nreabrir="${esc(n.id)}" title="Volver a pendiente">Reabrir</button>`
+    :`<button class="nbtn ok" data-nhecha="${esc(n.id)}" title="Ya se tuvo en cuenta">✓ Hecha</button>`;
+  const fila=n=>`<div class="nrow${notaHecha(n)?' past':''}"><span class="nsem">Sem ${n.semana}${n.semana===act?' (esta)':''}<small>${rangoSem(n.semana)}</small></span><b>${esc(n.jugador)}</b><span class="ntxt">${esc(n.texto)}<small>${esc(n.autor||'')}${n.autor?' · ':''}${esc(fFecha(n.fecha))}${notaHecha(n)&&n.hechaFecha?' · hecha '+esc(fFecha(n.hechaFecha))+(n.hechaAutor?' ('+esc(n.hechaAutor)+')':''):''}</small>${estado(n)}</span><span class="nacc">${acc(n)}<button class="x" data-ndel="${esc(n.id)}" aria-label="Borrar nota">✕</button></span></div>`;
+  $('#notasLista').innerHTML=(fut.length?fut.map(fila).join(''):'<p class="note">No hay notas pendientes.</p>')
+    +(pas.length?`<details><summary>Hechas (${pas.length})</summary>${pas.map(fila).join('')}</details>`:'');
 }
 function abrirNotas(jug){
   if(!DATA)return;
@@ -536,6 +540,16 @@ $('#notaForm').onsubmit=async e=>{
 $('#notasLista').addEventListener('click',async e=>{const b=e.target.closest('[data-ndel]');if(!b)return;b.disabled=true;
   const id=b.dataset.ndel;if(await guardarNotas(l=>l.filter(x=>x.id!==id))){pintarNotas();if(!EDIT)render()}else b.disabled=false});
 $('#screen').addEventListener('click',e=>{const b=e.target.closest('[data-nota]');if(b&&!EDIT)abrirNotas(b.dataset.nota)});
+async function marcarNota(b,hecha){
+  b.disabled=true;const id=hecha?b.dataset.nhecha:b.dataset.nreabrir;
+  const sem=DATA.planes[PLAN].semana,autor=($('#nAut')?.value||ls.get('gym_autor')||'').trim();
+  const ok=await guardarNotas(l=>l.map(x=>{if(x.id!==id)return x;
+    if(hecha)return {...x,estado:'hecha',hechaSem:sem,hechaFecha:new Date().toISOString(),hechaAutor:autor};
+    const {estado,hechaSem,hechaFecha,hechaAutor,...r}=x;return r}));
+  if(ok){toast(hecha?'Nota marcada como hecha.':'Nota de nuevo pendiente.');pintarNotas();if(!EDIT)render()}else b.disabled=false;
+}
+$('#notasLista').addEventListener('click',e=>{const h=e.target.closest('[data-nhecha]'),r=e.target.closest('[data-nreabrir]');if(h)marcarNota(h,true);else if(r)marcarNota(r,false)});
+$('#screen').addEventListener('click',e=>{const h=e.target.closest('[data-nhecha]');if(h&&!EDIT)marcarNota(h,true)});
 /* ---------- semana completa de un jugador y su progresión ---------- */
 let SEM_N=4,SEM_JUG=null,SEM_MODO='jug';
 function semanaJugador(jug){
@@ -565,7 +579,7 @@ function semanaJugador(jug){
   if(pl)h+=`<p style="margin-top:12px"><button class="btn" data-semmas>Ver 4 semanas más</button></p>`;
   const sems=new Set(filas.map(f=>DATA.planes[f].semana));
   const ns=NOTAS.notas.filter(n=>nnN(n.jugador)===nnN(jug)&&sems.has(n.semana)).sort((a,b)=>b.semana-a.semana);
-  if(ns.length)h+=`<div class="spanel" style="margin-top:12px"><h3>Notas de estas semanas</h3><ul>${ns.map(n=>`<li><b>Sem ${n.semana}</b>${esc(n.texto)}<small>${esc(n.autor||'')}</small></li>`).join('')}</ul></div>`;
+  if(ns.length)h+=`<div class="spanel" style="margin-top:12px"><h3>Notas de estas semanas</h3><ul>${ns.map(n=>`<li><b>Sem ${n.semana}</b>${esc(n.texto)}<small>${notaHecha(n)?'✓ hecha · ':'pendiente · '}${esc(n.autor||'')}</small></li>`).join('')}</ul></div>`;
   return h;
 }
 /* rutina de gimnasio de toda la semana, con las semanas anteriores para ver la progresión */
