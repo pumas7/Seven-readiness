@@ -2257,6 +2257,16 @@
        "id": "F1",
        "ej": "PUENTE ISQUIO ELEVADO 2P",
        "dosis": "3X10 (5\" ARRIBA)"
+      },
+      {
+       "id": "F2",
+       "ej": "PUENTE GLUTEO C CARGA",
+       "dosis": "3X12"
+      },
+      {
+       "id": "F3",
+       "ej": "SENTADILLA GOBLET BANCO ",
+       "dosis": "3X12"
       }
      ]
     },
@@ -2519,7 +2529,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-06T11:10:09.369Z"
+   "fecha": "2026-11-06T11:11:54.825Z"
   },
   "Sem 16|3|cor": {
    "datos": [
