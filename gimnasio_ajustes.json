@@ -2166,11 +2166,11 @@
       {
        "id": "A1",
        "ej": "ISOS 1LS EN PARED (talón arriba)",
-       "dosis": "3 x 45\""
+       "dosis": "3 x 30\" (10kg)"
       },
       {
        "id": "FINISHER",
-       "ej": "BFR PRENSA + PISTOL EXCENTRICO TEMPO C CARGA",
+       "ej": "BFR PRENSA ",
        "dosis": "40KG / X8 DISCO 20KG"
       }
      ]
@@ -2564,7 +2564,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-02T23:17:22.767Z"
+   "fecha": "2026-11-06T11:07:13.670Z"
   },
   "Sem 16|3|cor": {
    "datos": [
