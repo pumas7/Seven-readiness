@@ -2933,6 +2933,439 @@
    ],
    "autor": "",
    "fecha": "2026-11-05T11:57:15.589Z"
+  },
+  "Sem 17|1|cor": {
+   "datos": [
+    {
+     "jugador": "GREGO",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ISOS EN CCA",
+       "dosis": "3 X 45\""
+      },
+      {
+       "id": "F1",
+       "ej": "DESCENSOS UNIPODALES PARED",
+       "dosis": "3 X 10+10 disco 10kg"
+      },
+      {
+       "id": "F2",
+       "ej": "LANDING 1P 45/60CM C CARGA",
+       "dosis": "3X 6+6"
+      }
+     ]
+    },
+    {
+     "jugador": "MARTI",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ISOS EN CCA",
+       "dosis": "3 X 45\""
+      },
+      {
+       "id": "F1",
+       "ej": "ISO PUSH DE RODILLA",
+       "dosis": "3 X 3-5\" x lado (máxima intensidad)"
+      }
+     ]
+    },
+    {
+     "jugador": "ALVA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "DESCENSOS CH C SB X2 + PTE ISQUIO ELEVADO 1P",
+       "dosis": "3 X 5+5 / X3-10\" x lado"
+      },
+      {
+       "id": "F1",
+       "ej": "ISOS CCA",
+       "dosis": "3 X 30\""
+      },
+      {
+       "id": "F2",
+       "ej": "PRESS PLANO A 1BR MANC + PRESS PLANO BARRA ( ADAPTADO)",
+       "dosis": "3 X 6 - 75KG"
+      },
+      {
+       "id": "F3",
+       "ej": "ISQUIO ISO CON SB",
+       "dosis": "3 X 3-10\" x lado"
+      }
+     ]
+    },
+    {
+     "jugador": "LBV",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ARMADO DE ARCO ISO",
+       "dosis": "3 X 6+6"
+      },
+      {
+       "id": "F1",
+       "ej": "ADUCTOR EN BANCO",
+       "dosis": "3 X 10+10"
+      },
+      {
+       "id": "F2",
+       "ej": "GEMELOS SENTADO",
+       "dosis": "4 X 15\""
+      },
+      {
+       "id": "F3",
+       "ej": "FLEXORES DE CADERA C/SB",
+       "dosis": "3 X 6"
+      }
+     ]
+    },
+    {
+     "jugador": "GARZA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "NEURODINAMIA + P. LAT SEPARANDO",
+       "dosis": "3x6+6 + 15\" x lado"
+      },
+      {
+       "id": "F1",
+       "ej": "MARCHA LAT C MB + ROTACIONES",
+       "dosis": "3X 10+10 + 10+10"
+      },
+      {
+       "id": "F2",
+       "ej": "EXTENSIONES LUMBARES",
+       "dosis": "3 X 3-10\""
+      }
+     ]
+    },
+    {
+     "jugador": "MATE FOSSATI",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "BICI",
+       "dosis": "5'"
+      },
+      {
+       "id": "F1",
+       "ej": "EXTENSIONES C SB X2 + MARCHA C DSICO",
+       "dosis": "3X 10+10 + 15mts"
+      },
+      {
+       "id": "F2",
+       "ej": "SENTADILLA GOBLET BANCO + GEMELO 1P",
+       "dosis": "3X 10 +12+12"
+      },
+      {
+       "id": "F3",
+       "ej": "CAMINATA DE ISQUIOS + OBELISCOS",
+       "dosis": "3X 8 + 10+10"
+      },
+      {
+       "id": "F4",
+       "ej": "EXTENSIONES SETNADA C SB",
+       "dosis": "4X 15+15"
+      }
+     ]
+    },
+    {
+     "jugador": "JCM",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "PTE ISQUIO ELEVADO 2P DINAMICO + OBELISCOS",
+       "dosis": "3X6 + 5+5"
+      },
+      {
+       "id": "F1",
+       "ej": "BUENOS DIAS C DISCO + SLR C BANDA",
+       "dosis": "3X10+10 10KG"
+      },
+      {
+       "id": "F2",
+       "ej": "SENTADILLA GOBLET PROF + NEURODINAMIA",
+       "dosis": "3X12 + 6+6"
+      }
+     ]
+    },
+    {
+     "jugador": "PELLAN",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "I-Y-T PARADO + HALOS C DISCO",
+       "dosis": "3 X 3-5\" por posición / +10 disco 10kg"
+      },
+      {
+       "id": "F1",
+       "ej": "ROT INT/EXT CODO PEGADO",
+       "dosis": "3 X 3-10\" x posición (máxima intensidad)"
+      },
+      {
+       "id": "F2",
+       "ej": "ADUCTORES PAL LARGA",
+       "dosis": "3 X 30\""
+      },
+      {
+       "id": "F3",
+       "ej": "ECCENTRICOS + COLGADO",
+       "dosis": "3 X 6 + 20\""
+      }
+     ]
+    },
+    {
+     "jugador": "TOTO ",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "LACROSSE + TOALLA",
+       "dosis": "3X15+15"
+      },
+      {
+       "id": "F1",
+       "ej": "PUENTE ISQUIO ELEVADO 1P",
+       "dosis": "3X3-10\" X LADO"
+      },
+      {
+       "id": "F2",
+       "ej": "CONTROLES UNIPODALES PARED C DISCO",
+       "dosis": "3X8+8 10KG"
+      }
+     ]
+    }
+   ],
+   "base": [
+    {
+     "jugador": "GREGO",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ISOS EN CCA",
+       "dosis": "3 X 45\""
+      },
+      {
+       "id": "F1",
+       "ej": "DESCENSOS UNIPODALES PARED",
+       "dosis": "3 X 10+10 disco 10kg"
+      },
+      {
+       "id": "F2",
+       "ej": "LANDING 1P 45/60CM C CARGA",
+       "dosis": "3X 6+6"
+      }
+     ]
+    },
+    {
+     "jugador": "MARTI",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ISOS EN CCA",
+       "dosis": "3 X 45\""
+      },
+      {
+       "id": "F1",
+       "ej": "ISO PUSH DE RODILLA",
+       "dosis": "3 X 3-5\" x lado (máxima intensidad)"
+      }
+     ]
+    },
+    {
+     "jugador": "ALVA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "DESCENSOS CH C SB X2 + PTE ISQUIO ELEVADO 1P",
+       "dosis": "3 X 5+5 / X3-10\" x lado"
+      },
+      {
+       "id": "F1",
+       "ej": "ISOS CCA",
+       "dosis": "3 X 30\""
+      },
+      {
+       "id": "F2",
+       "ej": "PRESS PLANO A 1BR MANC + PRESS PLANO BARRA ( ADAPTADO)",
+       "dosis": "3 X 6 - 75KG"
+      },
+      {
+       "id": "F3",
+       "ej": "ISQUIO ISO CON SB",
+       "dosis": "3 X 3-10\" x lado"
+      }
+     ]
+    },
+    {
+     "jugador": "LBV",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ARMADO DE ARCO ISO",
+       "dosis": "3 X 6+6"
+      },
+      {
+       "id": "F1",
+       "ej": "ADUCTOR EN BANCO",
+       "dosis": "3 X 10+10"
+      },
+      {
+       "id": "F2",
+       "ej": "GEMELOS SENTADO",
+       "dosis": "4 X 15\""
+      },
+      {
+       "id": "F3",
+       "ej": "FLEXORES DE CADERA C/SB",
+       "dosis": "3 X 6"
+      }
+     ]
+    },
+    {
+     "jugador": "GARZA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "NEURODINAMIA + P. LAT SEPARANDO",
+       "dosis": "3x6+6 + 15\" x lado"
+      },
+      {
+       "id": "F1",
+       "ej": "MARCHA LAT C MB + ROTACIONES",
+       "dosis": "3X 10+10 + 10+10"
+      },
+      {
+       "id": "F2",
+       "ej": "EXTENSIONES LUMBARES",
+       "dosis": "3 X 3-10\""
+      }
+     ]
+    },
+    {
+     "jugador": "MATE FOSSATI",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "BICI",
+       "dosis": "5'"
+      },
+      {
+       "id": "F1",
+       "ej": "EXTENSIONES C SB X2 + MARCHA C DSICO",
+       "dosis": "3X 10+10 + 15mts"
+      },
+      {
+       "id": "F2",
+       "ej": "SENTADILLA GOBLET BANCO + GEMELO 1P",
+       "dosis": "3X 10 +12+12"
+      },
+      {
+       "id": "F3",
+       "ej": "CAMINATA DE ISQUIOS + OBELISCOS",
+       "dosis": "3X 8 + 10+10"
+      },
+      {
+       "id": "F4",
+       "ej": "EXTENSIONES SETNADA C SB",
+       "dosis": "4X 15+15"
+      }
+     ]
+    },
+    {
+     "jugador": "JCM",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "PTE ISQUIO ELEVADO 2P DINAMICO + OBELISCOS",
+       "dosis": "3X6 + 5+5"
+      },
+      {
+       "id": "F1",
+       "ej": "BUENOS DIAS C DISCO + SLR C BANDA",
+       "dosis": "3X10+10 10KG"
+      },
+      {
+       "id": "F2",
+       "ej": "SENTADILLA GOBLET PROF + NEURODINAMIA",
+       "dosis": "3X12 + 6+6"
+      }
+     ]
+    },
+    {
+     "jugador": "PELLAN",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "I-Y-T PARADO + HALOS C DISCO",
+       "dosis": "3 X 3-5\" por posición / +10 disco 10kg"
+      },
+      {
+       "id": "F1",
+       "ej": "ROT INT/EXT CODO PEGADO",
+       "dosis": "3 X 3-10\" x posición (máxima intensidad)"
+      },
+      {
+       "id": "F2",
+       "ej": "ADUCTORES PAL LARGA",
+       "dosis": "3 X 30\""
+      },
+      {
+       "id": "F3",
+       "ej": "ECCENTRICOS + COLGADO",
+       "dosis": "3 X 6 + 20\""
+      }
+     ]
+    },
+    {
+     "jugador": "GUATU",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "CAMINATA DE ISQUIOS + CMJ",
+       "dosis": "3X8+5"
+      },
+      {
+       "id": "F1",
+       "ej": "PROBAR RUTINA",
+       "dosis": ""
+      },
+      {
+       "id": "F2",
+       "ej": "PESO MUERTO 1P ",
+       "dosis": "3X8"
+      },
+      {
+       "id": "F3",
+       "ej": "BROAD JUMP TRIPLE CONTINUO",
+       "dosis": "3X3"
+      }
+     ]
+    },
+    {
+     "jugador": "TOTO ",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "LACROSSE + TOALLA",
+       "dosis": "3X15+15"
+      },
+      {
+       "id": "F1",
+       "ej": "PUENTE ISQUIO ELEVADO 1P",
+       "dosis": "3X3-10\" X LADO"
+      },
+      {
+       "id": "F2",
+       "ej": "CONTROLES UNIPODALES PARED C DISCO",
+       "dosis": "3X8+8 10KG"
+      }
+     ]
+    }
+   ],
+   "autor": "jokin",
+   "fecha": "2026-11-09T12:40:25.510Z"
   }
  }
 }
