@@ -8,6 +8,11 @@ permissions:
   pages: write
   id-token: write
 
+# Misma cola que "Actualizar gimnasio": nunca publican los dos a la vez.
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
+
 jobs:
   actualizar-y-publicar:
     runs-on: ubuntu-latest
