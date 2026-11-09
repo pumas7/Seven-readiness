@@ -3076,8 +3076,8 @@
      "items": [
       {
        "id": "A1",
-       "ej": "PTE ISQUIO ELEVADO 2P DINAMICO + OBELISCOS",
-       "dosis": "3X6 + 5+5"
+       "ej": "PTE ISQUIO ELEVADO 2P ISO + OBELISCOS",
+       "dosis": "4 X 15\" + 5+5"
       },
       {
        "id": "F1",
@@ -3096,8 +3096,8 @@
      "items": [
       {
        "id": "A1",
-       "ej": "I-Y-T PARADO + HALOS C DISCO",
-       "dosis": "3 X 3-5\" por posición / +10 disco 10kg"
+       "ej": "I-Y-T PARADO DINAMICO+ HALOS C DISCO",
+       "dosis": "3 X 3 reps por posición / +10 disco 10kg"
       },
       {
        "id": "F1",
@@ -3365,7 +3365,7 @@
     }
    ],
    "autor": "jokin",
-   "fecha": "2026-11-09T12:40:27.907Z"
+   "fecha": "2026-11-09T13:49:31.366Z"
   }
  }
 }
