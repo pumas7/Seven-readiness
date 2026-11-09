@@ -3042,36 +3042,6 @@
      ]
     },
     {
-     "jugador": "MATE FOSSATI",
-     "items": [
-      {
-       "id": "A1",
-       "ej": "BICI",
-       "dosis": "5'"
-      },
-      {
-       "id": "F1",
-       "ej": "EXTENSIONES C SB X2 + MARCHA C DSICO",
-       "dosis": "3X 10+10 + 15mts"
-      },
-      {
-       "id": "F2",
-       "ej": "SENTADILLA GOBLET BANCO + GEMELO 1P",
-       "dosis": "3X 10 +12+12"
-      },
-      {
-       "id": "F3",
-       "ej": "CAMINATA DE ISQUIOS + OBELISCOS",
-       "dosis": "3X 8 + 10+10"
-      },
-      {
-       "id": "F4",
-       "ej": "EXTENSIONES SETNADA C SB",
-       "dosis": "4X 15+15"
-      }
-     ]
-    },
-    {
      "jugador": "JCM",
      "items": [
       {
@@ -3365,7 +3335,7 @@
     }
    ],
    "autor": "jokin",
-   "fecha": "2026-11-09T13:49:31.366Z"
+   "fecha": "2026-11-09T13:49:50.167Z"
   }
  }
 }
