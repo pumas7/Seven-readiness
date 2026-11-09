@@ -188,6 +188,7 @@ body.idle .pdfbtn{visibility:hidden}
   </div>
   <div class="seg" id="dlRut" role="group" aria-label="Rutina de la semana"><button data-rsem title="Ver la rutina de toda la semana y cómo progresa">Ver semana</button><button data-rpdf="dia" title="Rutina de este día en PDF">PDF día ↓</button><button data-rpdf="semana" title="Rutina de toda la semana en PDF">PDF semana ↓</button></div>
   <a class="btn ghost" id="otra" target="_blank" rel="noopener">Abrir la otra pantalla ↗</a>
+  <button class="btn" id="btnAct" title="Bajar ya la rutina y los correctivos de la hoja del PF">↻ Actualizar hoja</button>
   <button class="btn" id="btnNotas">Notas</button>
   <button class="btn" id="btnEdit">Editar</button>
   <div class="seg" role="group" aria-label="Tamaño de letra"><button id="zMenos" title="Letra más chica">A−</button><button id="zMas" title="Letra más grande">A+</button></div>
@@ -789,6 +790,42 @@ async function cargar(){
   const nv=notasVisibles(PLAN).length;
   if(nv&&!AVISO_NOTAS&&!document.fullscreenElement){AVISO_NOTAS=true;toast(nv===1?'Hay 1 nota para esta semana: tocá Notas.':`Hay ${nv} notas para esta semana: tocá Notas.`)}
 }
+// ===== Actualizar solo la hoja del PF (dispara gimnasio.yml) =====
+const GYM_WF='gimnasio.yml';
+let ACT_ON=false;
+async function actualizarHoja(){
+  if(ACT_ON)return;
+  const b=$('#btnAct');
+  let token=ls.get('gh_token');
+  if(!token){token=(prompt('Pegá el token de GitHub (el mismo de Carga). Queda guardado en esta compu.')||'').trim();if(!token)return;ls.set('gh_token',token)}
+  const listo=(txt,err)=>{ACT_ON=false;b.disabled=false;b.textContent='↻ Actualizar hoja';if(txt)toast(txt,err)};
+  const antes=DATA?.generated||'', planesAntes=Object.keys(DATA?.planes||{});
+  ACT_ON=true;b.disabled=true;b.textContent='Pidiendo…';
+  try{
+    const r=await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/actions/workflows/${GYM_WF}/dispatches`,{method:'POST',
+      headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},body:JSON.stringify({ref:'main'})});
+    if(r.status===401){try{localStorage.removeItem('gh_token')}catch(e){}return listo('El token no sirve. Tocá de nuevo y pegá uno válido.',true)}
+    if(r.status===403||r.status===404)return listo('Este token no tiene permiso para lanzar actualizaciones (Actions: lectura y escritura).',true);
+    if(r.status!==204)return listo('No se pudo pedir la actualización ('+r.status+').',true);
+  }catch(e){return listo('Sin conexión: '+e.message,true)}
+  b.textContent='Actualizando…';$('#fuente').textContent='Bajando la hoja del PF… suele tardar 1–3 min';
+  toast('Actualización pedida. La pantalla se refresca sola cuando esté.');
+  const t0=Date.now();
+  const mirar=async()=>{
+    const d=await fetch('../gimnasio.json?v='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
+    if(d?.planes&&d.generated&&d.generated!==antes){
+      DATA=d;guardarCache();$('#fuente').textContent='Hoja del PF · actualizada '+fFecha(DATA.generated);
+      const nuevos=Object.keys(d.planes).filter(p=>!planesAntes.includes(p));
+      if(nuevos.length&&!EDIT){PLAN=nuevos[nuevos.length-1];DIA=diaDeHoy(PLAN)}
+      arrancar();
+      return listo(nuevos.length?'Hoja actualizada. Nuevo: '+nuevos.join(', ')+'.':'Hoja actualizada.');
+    }
+    if(Date.now()-t0>12*60000){$('#fuente').textContent='Hoja del PF · actualizada '+fFecha(antes);return listo('Está tardando más de lo normal (GitHub puede estar demorado). Probá recargar en unos minutos.',true)}
+    setTimeout(mirar,15000);
+  };
+  setTimeout(mirar,30000);
+}
+$('#btnAct').addEventListener('click',actualizarHoja);
 cargar();
 </script>
 </body>
