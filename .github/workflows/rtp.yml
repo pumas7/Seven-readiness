@@ -1,0 +1,89 @@
+name: Actualizar jugador (RTP)
+run-name: RTP · ${{ inputs.jugador }}
+
+# Boton del tablero de Return to Play: baja VALD SOLO del jugador elegido y lo fusiona
+# en el data.json publicado (los demas quedan como estaban). Catapult se baja entero
+# porque trae las sesiones por semana y no se ahorra nada filtrando (~30 s).
+
+on:
+  workflow_dispatch:
+    inputs:
+      jugador:
+        description: 'Jugador (nombre como figura en el tablero)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Misma cola que las otras actualizaciones: nunca publican dos a la vez.
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
+
+jobs:
+  jugador:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Traer lo que ya está publicado
+        run: |
+          set -e
+          SITE="https://pumas7.github.io/Seven-readiness"
+          V=$(date +%s)
+          curl -fsSL --retry 3 "$SITE/data.json?v=$V" -o data.json
+          curl -fsSL --retry 3 "$SITE/carga.json?v=$V" -o carga.json
+          curl -fsSL --retry 3 "$SITE/plan.json?v=$V" -o plan.json || rm -f plan.json
+          curl -fsSL --retry 3 "$SITE/gimnasio.json?v=$V" -o gimnasio.json || rm -f gimnasio.json
+          python -c "import json; [json.load(open(f)) for f in ('data.json', 'carga.json')]"
+
+      - name: Bajar VALD (solo el jugador)
+        continue-on-error: true
+        env:
+          VALD_CLIENT_ID: ${{ secrets.VALD_CLIENT_ID }}
+          VALD_CLIENT_SECRET: ${{ secrets.VALD_CLIENT_SECRET }}
+          VALD_TENANT_ID: ${{ secrets.VALD_TENANT_ID }}
+          VALD_SOLO: ${{ inputs.jugador }}
+        run: python bajar.py
+
+      - name: Bajar Catapult
+        env:
+          CATAPULT_TOKEN: ${{ secrets.CATAPULT_TOKEN }}
+        run: python bajar_catapult.py
+
+      - name: Preparar sitio
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+          cp data.json _site/
+          cp carga.json _site/
+          cp -r carga _site/
+          cp -r readiness _site/
+          cp -r rtp _site/
+          cp -r gimnasio _site/
+          if [ -f gimnasio.json ]; then cp gimnasio.json _site/; fi
+          if [ -f plan.json ]; then cp plan.json _site/; fi
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy a GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
