@@ -3450,41 +3450,6 @@
      ]
     },
     {
-     "jugador": "MATE FOSSATI",
-     "items": [
-      {
-       "id": "",
-       "ej": "BICI",
-       "dosis": "5'"
-      },
-      {
-       "id": "",
-       "ej": "SENT ISO A 1 P EN PARED + EXT PARED",
-       "dosis": "4 X 2 -10\"+10\" + 5"
-      },
-      {
-       "id": "",
-       "ej": "CCA CUAD EXC + EXT DECUBITO PRONO",
-       "dosis": "4 X 8 (3\") + 5"
-      },
-      {
-       "id": "",
-       "ej": "EMPUJE DE TRINEO + EXT SB",
-       "dosis": "12+12 + 6"
-      },
-      {
-       "id": "",
-       "ej": "CAMINATA EXCENTRICA + OBELISCOS",
-       "dosis": "4 X 8 + 5+5"
-      },
-      {
-       "id": "",
-       "ej": "GEMELOS A 1P + ADUCTORES",
-       "dosis": "3 X 8+8 - 20\""
-      }
-     ]
-    },
-    {
      "jugador": "JCM",
      "items": [
       {
@@ -3509,8 +3474,8 @@
      "items": [
       {
        "id": "A1",
-       "ej": "I-Y-T PARADO + PLANCHA 3 AP.",
-       "dosis": "3 X 3-5\" x posición / x3-10\" x lado"
+       "ej": "APERTURA Y C SB + PLANCHA 3 AP.",
+       "dosis": "3 X 12 / x2-20\" x lado"
       },
       {
        "id": "F1",
@@ -3520,11 +3485,11 @@
       {
        "id": "F2",
        "ej": "ROT INT/EXT CODO 90",
-       "dosis": "3x3-10\" x posición"
+       "dosis": "3X12+12"
       },
       {
        "id": "F3",
-       "ej": "EXCENTRICOS + COLGADO",
+       "ej": "EXCENTRICOS BANCO + COLGADO",
        "dosis": "3 X 6 + 20\""
       }
      ]
@@ -3773,7 +3738,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-10T11:49:12.337Z"
+   "fecha": "2026-11-10T11:56:02.085Z"
   }
  }
 }
