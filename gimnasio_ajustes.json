@@ -3459,13 +3459,18 @@
       },
       {
        "id": "F1",
-       "ej": "RDL C/MANC + ELEVACION PIERNA RECTA",
-       "dosis": "4 X 6 + 5"
+       "ej": "PUENTE ISQUIO ELEVADO 2P + PUENTE GLUTEO 1P",
+       "dosis": "4 X 8(5¨) + 8+8"
       },
       {
        "id": "F2",
        "ej": "ESTOCADAS FIJAS + NEURODINAMIA",
-       "dosis": "4 X 5+5 + 5"
+       "dosis": "4 X 6+6 + 6+6"
+      },
+      {
+       "id": "F3",
+       "ej": "RDL C -MANCUENRA + SLR ",
+       "dosis": "4 X6 + 10"
       }
      ]
     },
@@ -3737,8 +3742,8 @@
      ]
     }
    ],
-   "autor": "",
-   "fecha": "2026-11-10T12:08:09.067Z"
+   "autor": "jokin",
+   "fecha": "2026-11-10T12:56:46.545Z"
   },
   "Sem 17|3|cor": {
    "datos": [
