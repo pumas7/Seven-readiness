@@ -389,8 +389,29 @@ def get_trial_metrics(testid, wanted, ctx=None, resolver_jh=False):
  
 print("Detectando plantel del grupo SEVENS desde VALD...")
 PLAYERS, dinamico = get_profiles()
+
+# --- Modo un jugador (boton del RTP) ---
+# VALD_SOLO="Nombre Apellido" -> baja solo ese jugador y lo fusiona en el data.json
+# que ya existe (el publicado), sin tocar a los demas.
+import unicodedata
+def _clave(n):
+    n = unicodedata.normalize("NFKD", n or "").encode("ascii", "ignore").decode()
+    return " ".join(n.lower().split())
+SOLO = [x for x in (os.environ.get("VALD_SOLO") or "").split(",") if x.strip()]
+if SOLO:
+    pedidos = {_clave(x): x.strip() for x in SOLO}
+    PLAYERS = {n: pid for n, pid in PLAYERS.items() if _clave(n) in pedidos}
+    faltan = [v for k, v in pedidos.items() if k not in {_clave(n) for n in PLAYERS}]
+    if faltan:
+        print(f"ERROR: no encontre en VALD a: {', '.join(faltan)} "
+              f"(revisar que el nombre coincida con el de VALD y que tenga External ID).")
+        sys.exit(1)
+    if not os.path.exists("data.json"):
+        print("ERROR: modo un jugador sin data.json previo; no lo genero para no borrar al resto.")
+        sys.exit(1)
 print(f"Plantel a procesar: {len(PLAYERS)} jugadores "
-      f"({'dinamico' if dinamico else 'fallback fijo'})\n")
+      f"({'dinamico' if dinamico else 'fallback fijo'})"
+      f"{' [solo: ' + ', '.join(PLAYERS) + ']' if SOLO else ''}\n")
 
 out = {"generated": datetime.datetime.now().isoformat(), "players": {}}
 _FALTANTES = []
@@ -456,6 +477,25 @@ if _FALTANTES:
 else:
     print("OK: se extrajeron las metricas de TODOS los tests encontrados en VALD.")
  
+if SOLO:
+    with open("data.json") as f:
+        prev = json.load(f)
+    antes = len(prev.get("players", {}))
+    prev.setdefault("players", {})
+    ahora = datetime.datetime.now().isoformat()
+    for n, pdata in out["players"].items():
+        # si VALD lo nombra distinto que el data.json previo, piso esa misma entrada
+        viejo = next((k for k in prev["players"] if _clave(k) == _clave(n)), n)
+        prev["players"].pop(viejo, None)
+        prev["players"][n] = pdata
+        prev.setdefault("parcial", {})[n] = ahora
+    if len(prev["players"]) < antes:
+        print("ERROR: la fusion perdio jugadores; no escribo data.json.")
+        sys.exit(1)
+    out = prev
+    print(f"Fusionado en data.json: {', '.join(PLAYERS)} "
+          f"({len(prev['players'])} jugadores en total, 'generated' del resto sin cambios)")
+
 with open("data.json", "w") as f:
     json.dump(out, f, indent=2)
  
