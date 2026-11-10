@@ -83,6 +83,15 @@ body.idle .ctrl{opacity:0;transform:translateY(-100%);pointer-events:none}
 .ex .d{font-family:var(--f-display);font-weight:700;font-size:var(--s-dose);color:var(--gold);font-variant-numeric:tabular-nums;text-align:right;white-space:pre-line}
 .ex .l{grid-column:1/-1;font-size:clamp(11px,.8vw,15px);color:var(--muted)}
 
+/* correctivos: rutina del mismo día arriba, para planificar (solo staff) */
+.gymday{background:#0B2238;border:1px solid var(--line);border-left:4px solid var(--sky);border-radius:12px;padding:12px 16px}
+.gymday h3{font-family:var(--f-display);font-size:15px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--sky);margin-bottom:8px}
+.gymday h3 span{color:var(--muted);font-weight:600;letter-spacing:.03em;margin-left:8px;text-transform:none;font-family:var(--f-body)}
+.gymday .gb{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px 18px}
+.gymday .gbl b{font-family:var(--f-display);font-weight:800;color:var(--gold);font-size:16px;margin-right:6px}
+.gymday .gbl small{color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.gymday .gi{display:flex;justify-content:space-between;gap:10px;font-family:var(--f-display);font-size:15px;text-transform:uppercase;padding:3px 0;border-top:1px solid var(--line)}
+.gymday .gi i{font-style:normal;color:var(--gold);font-weight:700;text-align:right;white-space:pre-line}
 /* correctivos: una tarjeta por jugador */
 .players{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:clamp(12px,1.2vw,24px);align-items:start}
 .player{background:var(--panel);border-radius:16px;overflow:hidden;min-width:0}
@@ -325,6 +334,7 @@ function render(){
     if(day?.previo?.length&&!EDIT)h+=`<div class="previo">${day.previo.map((t,i)=>`<span><b>${i+1}</b>${esc(t)}</span>`).join('')}</div>`;
     h+=EDIT?rutEdit(datos):rutView(datos);
   }else{
+    h+=gymDelDia();
     h+=EDIT?corEdit(datos):corView(datos);
   }
   $('#screen').innerHTML=h;tick();ajustar();
@@ -336,6 +346,13 @@ function render(){
   $('#dlRut').hidden=VISTA!=='rut'||!!EDIT;
 }
 const NOMBRE_BLOQUE={A:'Activación',F:'Fuerza'};
+function gymDelDia(){
+  const bl=seccion(PLAN,DIA,'rut').datos||[];const prev=DATA.planes[PLAN]?.dias?.[DIA]?.previo||[];
+  if(!bl.length)return `<div class="gymday staff"><h3>Gimnasio de este día<span>no hay rutina cargada en la hoja para el día ${esc(DIA)}</span></h3></div>`;
+  return `<div class="gymday staff"><h3>Gimnasio de este día<span>Día ${esc(DIA)}${prev.length?' · '+prev.map(esc).join(' · '):''} · solo staff, no sale en la tele</span></h3>
+    <div class="gb">${bl.map(b=>`<div class="gbl"><div><b>${esc(b.id||'—')}</b><small>${esc(NOMBRE_BLOQUE[(b.id||'')[0]]||'Bloque')}</small></div>
+      ${b.items.map(it=>`<div class="gi"><span>${esc(it.ej)}</span><i>${esc(it.dosis)}</i></div>`).join('')}</div>`).join('')}</div></div>`;
+}
 function rutView(bl){
   if(!bl?.length)return `<div class="empty">No hay rutina de gimnasio cargada para este día en la hoja.</div>`;
   return `<div class="blocks">${bl.map(b=>`<section class="block"><div class="bh"><b>${esc(b.id||'—')}</b><span>${esc(NOMBRE_BLOQUE[(b.id||'')[0]]||'Bloque')}</span></div>
