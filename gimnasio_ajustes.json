@@ -3739,6 +3739,469 @@
    ],
    "autor": "",
    "fecha": "2026-11-10T11:56:02.085Z"
+  },
+  "Sem 17|3|cor": {
+   "datos": [
+    {
+     "jugador": "GREGO",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ISOS EN CCA",
+       "dosis": "3 X 45\""
+      },
+      {
+       "id": "F1",
+       "ej": "CONTROLES UNIPODALES",
+       "dosis": "3 X 10+10, disco 10kg"
+      },
+      {
+       "id": "F2",
+       "ej": "KNEE ISO PUSH  1P",
+       "dosis": "3 X 3-5\""
+      }
+     ]
+    },
+    {
+     "jugador": "MARTI",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ISOS EN CCA",
+       "dosis": "3 X 30\" (10KG)"
+      },
+      {
+       "id": "F1",
+       "ej": "CONTROLES UNIPODALES",
+       "dosis": "3 X 10+10, disco 10kg"
+      },
+      {
+       "id": "F2 ",
+       "ej": "KNEE ISO PUSH 1P",
+       "dosis": "3 X 3-5\""
+      }
+     ]
+    },
+    {
+     "jugador": "ALVA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "DESCENSOS CH C SB X2 + ISQUIO ISO PUSH 90GRADOS",
+       "dosis": "3 X 10+10 / x3-10\" x lado (máxima intensidad)"
+      },
+      {
+       "id": "F1",
+       "ej": "ISOS CCA",
+       "dosis": "3 X 30\""
+      },
+      {
+       "id": "F2",
+       "ej": "ISOS GRANJERO Y MOZO C KB",
+       "dosis": "3 X 3-10\" x posición (9/12kg)"
+      },
+      {
+       "id": "FINISHER",
+       "ej": "PRENSA 1P",
+       "dosis": "3 X 8-10 (RIR 1-2)"
+      },
+      {
+       "id": "FINISHER",
+       "ej": "ISQUIO 30",
+       "dosis": "3 X 3-10\""
+      }
+     ]
+    },
+    {
+     "jugador": "LBV",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ARMADO DE ARCO ISO",
+       "dosis": "3 X 6+6"
+      },
+      {
+       "id": "F1",
+       "ej": "ADUCTOR EN BANCO",
+       "dosis": "3 X 10+10"
+      },
+      {
+       "id": "F2",
+       "ej": "GEMELOS SENTADO",
+       "dosis": "4 X 15\""
+      },
+      {
+       "id": "F3",
+       "ej": "FLEXORES DE CADERA C/SB",
+       "dosis": ""
+      }
+     ]
+    },
+    {
+     "jugador": "GARZA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "NEURODINAMIA + P. LAT SEPARANDO",
+       "dosis": "3x6+6 + 15\" x lado"
+      },
+      {
+       "id": "F1",
+       "ej": "MARCHA LAT C MB + ROTACIONES",
+       "dosis": "3X 10+10 + 10+10"
+      },
+      {
+       "id": "F2",
+       "ej": "EXTENSIONES LUMBARES",
+       "dosis": "3 X 3-10\""
+      }
+     ]
+    },
+    {
+     "jugador": "MATE FOSSATI",
+     "items": [
+      {
+       "id": "",
+       "ej": "BICI",
+       "dosis": "10'"
+      },
+      {
+       "id": "",
+       "ej": "EXTENSION C/SB + OBELISCOS",
+       "dosis": "4 X 12+12 + 10+10"
+      },
+      {
+       "id": "",
+       "ej": "MARCHA C DISCO + SENTADILLA ISO PARED 1P",
+       "dosis": "4 X 15mts + 20\"+20\""
+      },
+      {
+       "id": "",
+       "ej": "PUENTE ISQUIO 2P + GEMELO 1P",
+       "dosis": "4 X 12 + 12"
+      },
+      {
+       "id": "",
+       "ej": "TRINEO + PRENSA 1P",
+       "dosis": "4 X 15mts + 12"
+      },
+      {
+       "id": "",
+       "ej": "EXTENSIONES C SB",
+       "dosis": "4 X 15"
+      }
+     ]
+    },
+    {
+     "jugador": "JCM",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "PTE ISQUIO 1P + SLR ACTIVO",
+       "dosis": "3X12+12 + 10+10"
+      },
+      {
+       "id": "F1",
+       "ej": "SENTADILLA PROFUNDA + NEURODINAMIA",
+       "dosis": "3X10 + 6+6"
+      },
+      {
+       "id": "F2",
+       "ej": "SUBIDAS AL BANCO + OBELISCOS",
+       "dosis": "3X8+8 + 10+10"
+      },
+      {
+       "id": "F3",
+       "ej": "RECEP 2P + CMJ + BROAD",
+       "dosis": "3X10+5+5"
+      }
+     ]
+    },
+    {
+     "jugador": "PELLAN",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "I-Y-T ACOSTADO + HALOS C DISCO",
+       "dosis": "3 X 3-5\" por posición (máxima intensidad) / +10"
+      },
+      {
+       "id": "F1",
+       "ej": "ADUCT BANCO C BANDA",
+       "dosis": "3 X 8+8"
+      },
+      {
+       "id": "F2",
+       "ej": "ROT INT/EXT CODO PEGADO",
+       "dosis": "3 X 15+15"
+      },
+      {
+       "id": "F3",
+       "ej": "EXCENTRICOS + COLGADO",
+       "dosis": "3 X 6 + 20\""
+      }
+     ]
+    },
+    {
+     "jugador": "TOTO",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "LACROSSE + TOALLA",
+       "dosis": "3 X 2' + 15"
+      },
+      {
+       "id": "F1",
+       "ej": "EQUILIBRIO 1P C KB",
+       "dosis": "3X5+5"
+      },
+      {
+       "id": "F2",
+       "ej": "PTE ISQUIO ISO 1P",
+       "dosis": "3X3-10\""
+      },
+      {
+       "id": "F3",
+       "ej": "CONTROLES UNIPODALES C DISCO",
+       "dosis": "3X8+8 (10kg)"
+      }
+     ]
+    }
+   ],
+   "base": [
+    {
+     "jugador": "GREGO",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ISOS EN CCA",
+       "dosis": "3 X 45\""
+      },
+      {
+       "id": "F1",
+       "ej": "CONTROLES UNIPODALES",
+       "dosis": "3 X 10+10, disco 10kg"
+      },
+      {
+       "id": "F2",
+       "ej": "KNEE ISO PUSH  1P",
+       "dosis": "3 X 3-5\""
+      },
+      {
+       "id": "FINISH",
+       "ej": "PRENSA 1P",
+       "dosis": "3X8-10 (RIR 1-2)"
+      }
+     ]
+    },
+    {
+     "jugador": "MARTI",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ISOS EN CCA",
+       "dosis": "3 X 30\" (10KG)"
+      },
+      {
+       "id": "F1",
+       "ej": "CONTROLES UNIPODALES",
+       "dosis": "3 X 10+10, disco 10kg"
+      },
+      {
+       "id": "F2 ",
+       "ej": "KNEE ISO PUSH 1P",
+       "dosis": "3 X 3-5\""
+      }
+     ]
+    },
+    {
+     "jugador": "ALVA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "DESCENSOS CH C SB X2 + ISQUIO ISO PUSH 90GRADOS",
+       "dosis": "3 X 10+10 / x3-10\" x lado (máxima intensidad)"
+      },
+      {
+       "id": "F1",
+       "ej": "ISOS CCA",
+       "dosis": "3 X 30\""
+      },
+      {
+       "id": "F2",
+       "ej": "ISOS GRANJERO Y MOZO C KB",
+       "dosis": "3 X 3-10\" x posición (9/12kg)"
+      },
+      {
+       "id": "FINISHER",
+       "ej": "PRENSA 1P",
+       "dosis": "3 X 8-10 (RIR 1-2)"
+      },
+      {
+       "id": "FINISHER",
+       "ej": "ISQUIO 30",
+       "dosis": "3 X 3-10\""
+      }
+     ]
+    },
+    {
+     "jugador": "LBV",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "ARMADO DE ARCO ISO",
+       "dosis": "3 X 6+6"
+      },
+      {
+       "id": "F1",
+       "ej": "ADUCTOR EN BANCO",
+       "dosis": "3 X 10+10"
+      },
+      {
+       "id": "F2",
+       "ej": "GEMELOS SENTADO",
+       "dosis": "4 X 15\""
+      },
+      {
+       "id": "F3",
+       "ej": "FLEXORES DE CADERA C/SB",
+       "dosis": ""
+      }
+     ]
+    },
+    {
+     "jugador": "GARZA",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "NEURODINAMIA + P. LAT SEPARANDO",
+       "dosis": "3x6+6 + 15\" x lado"
+      },
+      {
+       "id": "F1",
+       "ej": "MARCHA LAT C MB + ROTACIONES",
+       "dosis": "3X 10+10 + 10+10"
+      },
+      {
+       "id": "F2",
+       "ej": "EXTENSIONES LUMBARES",
+       "dosis": "3 X 3-10\""
+      }
+     ]
+    },
+    {
+     "jugador": "MATE FOSSATI",
+     "items": [
+      {
+       "id": "",
+       "ej": "BICI",
+       "dosis": "10'"
+      },
+      {
+       "id": "",
+       "ej": "EXTENSION C/SB + OBELISCOS",
+       "dosis": "4 X 12+12 + 10+10"
+      },
+      {
+       "id": "",
+       "ej": "MARCHA C DISCO + SENTADILLA ISO PARED 1P",
+       "dosis": "4 X 15mts + 20\"+20\""
+      },
+      {
+       "id": "",
+       "ej": "PUENTE ISQUIO 2P + GEMELO 1P",
+       "dosis": "4 X 12 + 12"
+      },
+      {
+       "id": "",
+       "ej": "TRINEO + PRENSA 1P",
+       "dosis": "4 X 15mts + 12"
+      },
+      {
+       "id": "",
+       "ej": "EXTENSIONES C SB",
+       "dosis": "4 X 15"
+      }
+     ]
+    },
+    {
+     "jugador": "JCM",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "PTE ISQUIO 1P + SLR ACTIVO",
+       "dosis": "3X12+12 + 10+10"
+      },
+      {
+       "id": "F1",
+       "ej": "SENTADILLA PROFUNDA + NEURODINAMIA",
+       "dosis": "3X10 + 6+6"
+      },
+      {
+       "id": "F2",
+       "ej": "SUBIDAS AL BANCO + OBELISCOS",
+       "dosis": "3X8+8 + 10+10"
+      },
+      {
+       "id": "F3",
+       "ej": "RECEP 2P + CMJ + BROAD",
+       "dosis": "3X10+5+5"
+      }
+     ]
+    },
+    {
+     "jugador": "PELLAN",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "I-Y-T ACOSTADO + HALOS C DISCO",
+       "dosis": "3 X 3-5\" por posición (máxima intensidad) / +10"
+      },
+      {
+       "id": "F1",
+       "ej": "ADUCT BANCO C BANDA",
+       "dosis": "3 X 8+8"
+      },
+      {
+       "id": "F2",
+       "ej": "ROT INT/EXT CODO PEGADO",
+       "dosis": "3 X 15+15"
+      },
+      {
+       "id": "F3",
+       "ej": "EXCENTRICOS + COLGADO",
+       "dosis": "3 X 6 + 20\""
+      }
+     ]
+    },
+    {
+     "jugador": "TOTO",
+     "items": [
+      {
+       "id": "A1",
+       "ej": "LACROSSE + TOALLA",
+       "dosis": "3 X 2' + 15"
+      },
+      {
+       "id": "F1",
+       "ej": "EQUILIBRIO 1P C KB",
+       "dosis": "3X5+5"
+      },
+      {
+       "id": "F2",
+       "ej": "PTE ISQUIO ISO 1P",
+       "dosis": "3X3-10\""
+      },
+      {
+       "id": "F3",
+       "ej": "CONTROLES UNIPODALES C DISCO",
+       "dosis": "3X8+8 (10kg)"
+      }
+     ]
+    }
+   ],
+   "autor": "",
+   "fecha": "2026-11-10T12:02:45.002Z"
   }
  }
 }
