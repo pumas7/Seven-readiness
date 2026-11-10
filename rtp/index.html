@@ -23,6 +23,7 @@ header{background:linear-gradient(135deg,var(--navy),var(--steel));color:#fff;pa
 .head-right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .hbtn{background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 14px;border-radius:8px;font-size:12.5px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
 .hbtn:hover{background:rgba(255,255,255,.24)}
+.hbtn:disabled{opacity:.6;cursor:default}
 .hbtn.save{background:var(--gold);color:var(--navy);font-weight:700}
 .hbtn.save:disabled{background:rgba(255,255,255,.15);color:rgba(255,255,255,.6);font-weight:400;cursor:default}
 .demo-badge{background:#FCF2DD;color:#7A5F14;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:20px}
@@ -136,6 +137,7 @@ tr.sub td{background:#FAFCFE;color:var(--grey);font-size:11.5px}
       <div class="head-titles"><h1>Return to Play</h1><p>Rehabilitación de campo contra el objetivo semanal del grupo</p></div>
       <div class="head-right">
         <span class="demo-badge" id="demoBadge" hidden>Modo demo: datos de prueba</span>
+        <button class="hbtn" id="btnAct" hidden title="Bajar VALD de este jugador y la carga de Catapult">↻ Actualizar datos</button>
         <button class="hbtn save" id="btnSave" disabled>Guardar cambios</button>
         <a class="hbtn" href="../">← Inicio</a>
       </div>
@@ -715,7 +717,7 @@ function informeHTML(c,k,final){
 }
 
 function refresh(){
-  renderCases();renderFollow();
+  renderCases();renderFollow();actLabel();
   const c=caso(SEL); if(!c||c.estado==='alta'||VIEW!=='case')return;
   const k=calcular(c);
   $('#hMeta').textContent=`${c.puesto||'Sin puesto'} · ${lesionTxt(c)} · ${c.lado||''} · lesión ${fLarga(k.L)} · día ${diffD(k.L,hoy())}`;
@@ -763,7 +765,7 @@ function renderHist(){
       :'<tr><td colspan="6" class="muted">Todavía no hay altas registradas.</td></tr>'}
     </tbody></table></div></div><div class="sec" id="snapBox" hidden></div>`;
 }
-function showView(v){VIEW=v;$('#viewCase').hidden=v!=='case';$('#viewHist').hidden=v!=='hist';if(v==='hist')renderHist();renderCases()}
+function showView(v){VIEW=v;$('#viewCase').hidden=v!=='case';$('#viewHist').hidden=v!=='hist';if(v==='hist')renderHist();renderCases();actLabel()}
 
 function renderNew(){
   const act=new Set(activos().map(c=>c.jugador));
@@ -894,6 +896,53 @@ async function cargar(){
   }
   SEL=activos()[0]?.id||null;showView('case');renderCase();refresh();
 }
+/* ================= Actualizar datos del jugador activo (dispara rtp.yml) ================= */
+const RTP_WF='rtp.yml';
+let ACT=null; // {jugador} mientras corre
+const clave=n=>String(n||'').normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase().split(/\s+/).filter(Boolean).join(' ');
+const valdDe=(d,n)=>{const k=Object.keys(d?.players||{}).find(x=>clave(x)===clave(n));return k?{k,p:d.players[k],t:d.parcial?.[k]||null}:null};
+function actLabel(){
+  const b=$('#btnAct');if(!b)return;
+  const c=caso(SEL);const ok=!DEMO&&c&&c.estado!=='alta'&&VIEW==='case';
+  b.hidden=!ok&&!ACT;
+  if(ACT){b.disabled=true;b.textContent='Actualizando '+ACT.jugador.split(' ')[0]+'…';return}
+  b.disabled=false;if(c)b.textContent='↻ Actualizar datos de '+c.jugador.split(' ')[0];
+}
+async function actualizarJugador(){
+  if(ACT)return;
+  const c=caso(SEL);if(!c||DEMO)return;
+  const token=getToken();if(!token){msg('Falta el token de GitHub.','error');return}
+  const jugador=c.jugador;
+  const cargaAntes=CARGA?.generated||'', valdAntes=valdDe(DATA,jugador)?.t||'';
+  ACT={jugador};actLabel();
+  const fin=(t,cls)=>{ACT=null;actLabel();if(t)msg(t,cls)};
+  try{
+    const r=await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/actions/workflows/${RTP_WF}/dispatches`,{method:'POST',
+      headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},
+      body:JSON.stringify({ref:'main',inputs:{jugador}})});
+    if(r.status===401){try{localStorage.removeItem('gh_token')}catch(e){}return fin('Token inválido: se borró. Volvé a tocar el botón y pegá uno válido.','error')}
+    if(r.status===403||r.status===404)return fin('Este token no tiene permiso para lanzar actualizaciones (Actions: lectura y escritura).','error');
+    if(r.status!==204)return fin('No se pudo pedir la actualización ('+r.status+').','error');
+  }catch(e){return fin('Sin conexión: '+e.message,'error')}
+  msg('Actualizando VALD y Catapult de '+jugador+'… suele tardar 1–2 min. La página se refresca sola.');
+  const t0=Date.now();
+  const js=u=>fetch(u+'?v='+Date.now(),{cache:'no-store'}).then(x=>x.ok?x.json():null).catch(()=>null);
+  const mirar=async()=>{
+    const [cg,d]=await Promise.all([js('../carga.json'),js('../data.json')]);
+    if(cg?.generated&&cg.generated!==cargaAntes){
+      CARGA=cg;
+      const v=valdDe(d,jugador),valdOk=!!(v&&v.t&&v.t!==valdAntes);
+      if(d)DATA=d;
+      refresh();
+      return fin(valdOk?`Datos de ${jugador} actualizados (VALD y Catapult).`
+        :`Catapult actualizado. VALD de ${jugador} no se pudo bajar: revisar que figure en VALD con el mismo nombre y External ID.`,valdOk?'ok':'error');
+    }
+    if(Date.now()-t0>12*60000)return fin('Está tardando más de lo normal (GitHub puede estar demorado). Recargá la página en unos minutos.','error');
+    setTimeout(mirar,15000);
+  };
+  setTimeout(mirar,30000);
+}
+$('#btnAct').addEventListener('click',actualizarJugador);
 cargar();
 
 </script>
