@@ -1,4 +1,13 @@
 {
  "version": 1,
- "notas": []
+ "notas": [
+  {
+   "id": "mwaqe33owpa0",
+   "jugador": "ALVA",
+   "semana": 18,
+   "texto": "PONER DINAMICOS",
+   "autor": "jokin",
+   "fecha": "2026-11-10T13:33:53.845Z"
+  }
+ ]
 }
