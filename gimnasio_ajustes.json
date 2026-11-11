@@ -3946,11 +3946,6 @@
        "dosis": "3X5+5"
       },
       {
-       "id": "F2",
-       "ej": "PTE ISQUIO ISO 1P",
-       "dosis": "3X3-10\""
-      },
-      {
        "id": "F3",
        "ej": "CONTROLES UNIPODALES C DISCO",
        "dosis": "3X8+8 (10kg)"
@@ -4191,7 +4186,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-11T21:31:18.697Z"
+   "fecha": "2026-11-11T21:36:08.096Z"
   },
   "Sem 17|4|cor": {
    "datos": [
