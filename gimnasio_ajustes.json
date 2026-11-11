@@ -2986,18 +2986,13 @@
       },
       {
        "id": "F1",
-       "ej": "ISOS CCA",
-       "dosis": "3 X 30\""
+       "ej": "CONTROLES UNIPODALES PARED",
+       "dosis": "3X8+8 (10KG)"
       },
       {
        "id": "F2",
-       "ej": "PRESS PLANO A 1BR MANC + PRESS PLANO BARRA ( ADAPTADO)",
-       "dosis": "3 X 6 - 75KG"
-      },
-      {
-       "id": "F3",
-       "ej": "ISQUIO ISO CON SB",
-       "dosis": "3 X 3-10\" x lado"
+       "ej": "PLANO C BARRA (ADAPTADO)",
+       "dosis": "SEGUN PLAN"
       }
      ]
     },
@@ -3340,7 +3335,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-11T21:04:39.132Z"
+   "fecha": "2026-11-11T21:13:37.571Z"
   },
   "Sem 17|2|cor": {
    "datos": [
