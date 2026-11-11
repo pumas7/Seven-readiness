@@ -2947,12 +2947,12 @@
       {
        "id": "F1",
        "ej": "DESCENSOS UNIPODALES PARED",
-       "dosis": "3 X 10+10 disco 10kg"
+       "dosis": "3 X 8+8 disco 10kg"
       },
       {
        "id": "F2",
-       "ej": "LANDING 1P 45/60CM C CARGA",
-       "dosis": "3X 6+6"
+       "ej": "LANDING 1P 45CM C CARGA",
+       "dosis": "3X 6+6 (20KG)"
       }
      ]
     },
@@ -3335,7 +3335,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-10T11:45:49.275Z"
+   "fecha": "2026-11-11T21:00:28.450Z"
   },
   "Sem 17|2|cor": {
    "datos": [
