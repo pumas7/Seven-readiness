@@ -64,6 +64,17 @@
           "resp": "sin sintomas",
           "plan": "",
           "creado": "2026-11-10T11:51:04.767Z"
+        },
+        {
+          "id": "e1794429979322",
+          "fecha": "2026-11-10",
+          "autor": "Tucha",
+          "dolor": "0",
+          "hizo": "Terapia manual + monitoreo con grupo.\nRutina específica kinésica.",
+          "fisico": "Ingoal a pelota muerta en 21\", recupero el resto del minuto y vuelvo a salir. \n3 bloques de 5 reps.",
+          "resp": "Sin molestias.",
+          "plan": "",
+          "creado": "2026-11-11T20:46:19.322Z"
         }
       ],
       "objind": {
