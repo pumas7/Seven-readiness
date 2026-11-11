@@ -4330,8 +4330,8 @@
      "items": [
       {
        "id": "A1",
-       "ej": "I-Y-T REVERSO + FLEXORES DE CADERAS C SB",
-       "dosis": "3 X 3-5\" x posición (máxima intensidad) / 3X8+8"
+       "ej": "I-Y-T REVERSO DINAMICO + FLEXORES DE CADERAS C SB",
+       "dosis": "3 X 3-3 x posición (máxima intensidad) / 3X8+8"
       },
       {
        "id": "A1",
@@ -4345,7 +4345,7 @@
       },
       {
        "id": "F2",
-       "ej": "EXCENTRICOS + COLGADO",
+       "ej": "EXCENTRICOS BANCO+ COLGADO",
        "dosis": "3 X 6 + 20\""
       }
      ]
@@ -4549,7 +4549,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-11T21:25:32.297Z"
+   "fecha": "2026-11-11T21:32:27.679Z"
   }
  }
 }
