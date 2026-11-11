@@ -3788,27 +3788,17 @@
       {
        "id": "A1",
        "ej": "DESCENSOS CH C SB X2 + ISQUIO ISO PUSH 90GRADOS",
-       "dosis": "3 X 10+10 / x3-10\" x lado (máxima intensidad)"
+       "dosis": "3 X 10+10 / x3-5\" x lado (máxima intensidad)"
       },
       {
        "id": "F1",
-       "ej": "ISOS CCA",
-       "dosis": "3 X 30\""
+       "ej": "DESCENSOS UNIPODALES",
+       "dosis": "3X 6+6 (20KG)"
       },
       {
        "id": "F2",
        "ej": "ISOS GRANJERO Y MOZO C KB",
        "dosis": "3 X 3-10\" x posición (9/12kg)"
-      },
-      {
-       "id": "FINISHER",
-       "ej": "PRENSA 1P",
-       "dosis": "3 X 8-10 (RIR 1-2)"
-      },
-      {
-       "id": "FINISHER",
-       "ej": "ISQUIO 30",
-       "dosis": "3 X 3-10\""
       }
      ]
     },
@@ -4201,7 +4191,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-11T21:07:15.351Z"
+   "fecha": "2026-11-11T21:19:58.678Z"
   },
   "Sem 17|4|cor": {
    "datos": [
