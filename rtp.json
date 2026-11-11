@@ -11,7 +11,11 @@
       "lado": "Derecho",
       "fecha": "2026-10-20",
       "bateria": "isquio",
-      "checks": {},
+      "checks": {
+        "v1": true,
+        "v2": false,
+        "e1": false
+      },
       "pct": {},
       "contacto": 0,
       "previas": "",
