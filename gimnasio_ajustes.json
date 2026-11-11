@@ -3912,13 +3912,13 @@
      "items": [
       {
        "id": "A1",
-       "ej": "I-Y-T ACOSTADO + HALOS C DISCO",
-       "dosis": "3 X 3-5\" por posición (máxima intensidad) / +10"
+       "ej": "FACEPULL PRESS C SB + HALOS C DISCO",
+       "dosis": "3 X 12 / +10"
       },
       {
        "id": "F1",
        "ej": "ADUCT BANCO C BANDA",
-       "dosis": "3 X 8+8"
+       "dosis": "3 X 12+12"
       },
       {
        "id": "F2",
@@ -3927,7 +3927,7 @@
       },
       {
        "id": "F3",
-       "ej": "EXCENTRICOS + COLGADO",
+       "ej": "EXCENTRICOS BANCO+ COLGADO",
        "dosis": "3 X 6 + 20\""
       }
      ]
@@ -4191,7 +4191,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-11T21:23:38.478Z"
+   "fecha": "2026-11-11T21:31:18.697Z"
   },
   "Sem 17|4|cor": {
    "datos": [
