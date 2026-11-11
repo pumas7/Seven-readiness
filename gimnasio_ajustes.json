@@ -3385,22 +3385,17 @@
       {
        "id": "F1",
        "ej": "I - Y - T DINAMICO",
-       "dosis": "3 X 3-3"
+       "dosis": "3 X 3-3-3"
       },
       {
        "id": "F2",
-       "ej": "ISO PUSH CCA",
-       "dosis": "3 X 3-5\" x lado (máxima intensidad)"
+       "ej": "PRENSA 1P",
+       "dosis": "3X8+8 (RIR 1)"
       },
       {
        "id": "F3",
-       "ej": "ROT EXT C/SB CODO PEGADO",
-       "dosis": "3 X 3-10\" x lado"
-      },
-      {
-       "id": "FINISHER",
-       "ej": "ISO 60 + PRENSA 1P",
-       "dosis": "3 X 3-10\" + 10+10 (RIR 1)"
+       "ej": "ROT EXT/INT DINAMICA PEGADO",
+       "dosis": "3 X 12+12"
       }
      ]
     },
@@ -3743,7 +3738,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-11T21:05:08.799Z"
+   "fecha": "2026-11-11T21:16:17.033Z"
   },
   "Sem 17|3|cor": {
    "datos": [
