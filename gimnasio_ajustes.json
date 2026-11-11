@@ -2946,7 +2946,7 @@
       },
       {
        "id": "F1",
-       "ej": "DESCENSOS UNIPODALES PARED",
+       "ej": "CONTROLES UNIPODALES PARED",
        "dosis": "3 X 8+8 disco 10kg"
       },
       {
@@ -2966,8 +2966,13 @@
       },
       {
        "id": "F1",
-       "ej": "ISO PUSH DE RODILLA",
-       "dosis": "3 X 3-5\" x lado (máxima intensidad)"
+       "ej": "CONTROLES UNIPODALES PARED",
+       "dosis": "3X8+8 (10KG)"
+      },
+      {
+       "id": "F2",
+       "ej": "KNEE ISO PUSH",
+       "dosis": "3X3-5\" X LADO"
       }
      ]
     },
@@ -3335,7 +3340,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-11T21:00:28.450Z"
+   "fecha": "2026-11-11T21:04:39.132Z"
   },
   "Sem 17|2|cor": {
    "datos": [
