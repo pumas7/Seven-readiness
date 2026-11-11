@@ -3783,11 +3783,11 @@
       {
        "id": "F1",
        "ej": "CONTROLES UNIPODALES",
-       "dosis": "3 X 10+10, disco 10kg"
+       "dosis": "3 X 8+8, disco 10kg"
       },
       {
        "id": "F2 ",
-       "ej": "KNEE ISO PUSH 1P",
+       "ej": "KNEE ISO PUSH ",
        "dosis": "3 X 3-5\""
       }
      ]
@@ -4211,7 +4211,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-11T21:01:04.981Z"
+   "fecha": "2026-11-11T21:05:47.048Z"
   },
   "Sem 17|4|cor": {
    "datos": [
