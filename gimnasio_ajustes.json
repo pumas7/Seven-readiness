@@ -3516,11 +3516,6 @@
        "id": "F2",
        "ej": "ISO ISQUIO 90 PISO",
        "dosis": "3 X 3-5\" (máxima)"
-      },
-      {
-       "id": "F3",
-       "ej": "PRENSA 1P",
-       "dosis": "3 X 8+8 (RIR 1-2) 60KG"
       }
      ]
     }
@@ -3743,7 +3738,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-11T21:29:29.378Z"
+   "fecha": "2026-11-11T21:34:45.113Z"
   },
   "Sem 17|3|cor": {
    "datos": [
