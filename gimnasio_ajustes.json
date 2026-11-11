@@ -3071,8 +3071,8 @@
       },
       {
        "id": "F1",
-       "ej": "ROT INT/EXT CODO PEGADO",
-       "dosis": "3 X 3-10\" x posición (máxima intensidad)"
+       "ej": "ROT INT/EXT CODO PEGADO DINAMICO",
+       "dosis": "3X12+12"
       },
       {
        "id": "F2",
@@ -3335,7 +3335,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-11T21:13:37.571Z"
+   "fecha": "2026-11-11T21:27:43.595Z"
   },
   "Sem 17|2|cor": {
    "datos": [
