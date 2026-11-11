@@ -4230,18 +4230,18 @@
      "items": [
       {
        "id": "A1",
-       "ej": "APOYO FACIAL A 1 BR C/PESO + V. LAT ISO C SB",
-       "dosis": "3 X 3-10\" x lado / x3-10\" x lado"
+       "ej": "TGU + V. LAT ISO C SB",
+       "dosis": "3 X 5 x lado / x3-10\" x lado"
       },
       {
        "id": "F1",
-       "ej": "Y - T - W REVERSO",
-       "dosis": "3 X 3-5\" x posición (máxima intensidad)"
+       "ej": "Y - T - W REVERSO DINAMICO",
+       "dosis": "3 X3  x posición"
       },
       {
        "id": "F2",
-       "ej": "ROT EXT C/SB CODO PEGADO",
-       "dosis": "3 X 3-10\" x lado"
+       "ej": "ROT EXT/INT DINAMICO 90",
+       "dosis": "3X12+12"
       },
       {
        "id": "FINISH",
@@ -4549,7 +4549,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-11T21:02:20.598Z"
+   "fecha": "2026-11-11T21:21:42.612Z"
   }
  }
 }
