@@ -3758,7 +3758,7 @@
       {
        "id": "F1",
        "ej": "CONTROLES UNIPODALES",
-       "dosis": "3 X 10+10, disco 10kg"
+       "dosis": "3 X 8+8, disco 10kg"
       },
       {
        "id": "F2",
@@ -4206,7 +4206,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-10T12:02:45.002Z"
+   "fecha": "2026-11-11T21:01:04.981Z"
   }
  }
 }
