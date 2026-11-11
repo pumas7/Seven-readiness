@@ -3370,7 +3370,7 @@
       {
        "id": "F1",
        "ej": "LANDING 1P C CARGA 45/60CM",
-       "dosis": "3X6+6"
+       "dosis": "3X6+6 (20KG)"
       },
       {
        "id": "FINISH",
@@ -3747,8 +3747,8 @@
      ]
     }
    ],
-   "autor": "jokin",
-   "fecha": "2026-11-10T14:00:37.453Z"
+   "autor": "",
+   "fecha": "2026-11-11T21:05:08.799Z"
   },
   "Sem 17|3|cor": {
    "datos": [
