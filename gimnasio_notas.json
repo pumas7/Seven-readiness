@@ -19,7 +19,11 @@
    "semana": 18,
    "texto": "progresar x",
    "autor": "jokin",
-   "fecha": "2026-11-11T21:39:52.374Z"
+   "fecha": "2026-11-11T21:39:52.374Z",
+   "estado": "hecha",
+   "hechaSem": 17,
+   "hechaFecha": "2026-11-11T21:41:25.888Z",
+   "hechaAutor": "jokin"
   }
  ]
 }
