@@ -7,7 +7,11 @@
    "semana": 18,
    "texto": "PONER DINAMICOS",
    "autor": "jokin",
-   "fecha": "2026-11-10T13:33:53.845Z"
+   "fecha": "2026-11-10T13:33:53.845Z",
+   "estado": "hecha",
+   "hechaSem": 17,
+   "hechaFecha": "2026-11-11T21:39:08.340Z",
+   "hechaAutor": "jokin"
   }
  ]
 }
