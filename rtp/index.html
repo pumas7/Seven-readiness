@@ -770,8 +770,8 @@ function refresh(){
   // semanas
   $('#semBody').innerHTML=k.semanas.map(w=>{
     const tag=w.sin?'<span class="pill p-n">no entrenó</span>':w.pre?'<span class="pill p-n">pre-lesión</span>':w.lesion?'<span class="pill p-n">semana de lesión</span>':w.curso?`<span class="pill p-b">en curso · ${w.ob?w.ob._dias+'/'+w.ob._total+' días del plan':''}</span>`:'';
-    if(w.sin)return `<tr><td>S${w.n} · ${fCorta(lunesDe(w.n))}</td><td colspan="${VARS.length}" class="muted">Sin sesiones en Catapult esta semana.</td><td>${tag}</td></tr>`;
-    return `<tr><td>S${w.n} · ${fCorta(lunesDe(w.n))}</td>${VARS.map(v=>{const p=w.pre?w.pct[v.k]:w.pcti[v.k],pl=w.pre?w.ob?.[v.k]:w.obi?.[v.k],d=w.inc[v.k];
+    if(w.sin)return `<tr><td><b>S${w.n}</b></td><td colspan="${VARS.length}" class="muted">Sin sesiones en Catapult esta semana.</td><td>${tag}</td></tr>`;
+    return `<tr><td><b>S${w.n}</b></td>${VARS.map(v=>{const p=w.pre?w.pct[v.k]:w.pcti[v.k],pl=w.pre?w.ob?.[v.k]:w.obi?.[v.k],d=w.inc[v.k];
       const full=w.obiF?.[v.k];const extra=[pl?(w.curso&&full&&Math.round(full)!==Math.round(pl)?'plan a hoy '+fmt(pl)+' de '+fmt(full)+' de la semana':'plan '+fmt(pl)):'sin plan',d===null||w.lesion?null:(d>=0?'▲':'▼')+fmt(Math.abs(d))+'% vs S'+w.pn].filter(Boolean).join(' · ');
       return `<td class="num">${fmt(w.tot[v.k])} <span class="pill ${w.pre||w.lesion?'p-n':pctCls(p)}">${pp(p)}</span><span class="g">${extra}</span></td>`}).join('')}
       <td>${tag}</td></tr>`}).join('');
