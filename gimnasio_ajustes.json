@@ -3103,6 +3103,11 @@
        "id": "F2",
        "ej": "CONTROLES UNIPODALES PARED C DISCO",
        "dosis": "3X8+8 10KG"
+      },
+      {
+       "id": "F3",
+       "ej": "PRENSA 1P",
+       "dosis": "3X8+8 (RIR 1)"
       }
      ]
     }
@@ -3335,7 +3340,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-11T21:27:56.911Z"
+   "fecha": "2026-11-11T21:34:33.862Z"
   },
   "Sem 17|2|cor": {
    "datos": [
