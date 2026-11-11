@@ -3484,7 +3484,7 @@
       },
       {
        "id": "F2",
-       "ej": "ROT INT/EXT CODO 90",
+       "ej": "ROT INT/EXT CODO 90 MANCUERNAS",
        "dosis": "3X12+12"
       },
       {
@@ -3738,7 +3738,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-11T21:16:17.033Z"
+   "fecha": "2026-11-11T21:29:10.996Z"
   },
   "Sem 17|3|cor": {
    "datos": [
