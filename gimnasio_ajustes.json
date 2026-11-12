@@ -3848,62 +3848,27 @@
      ]
     },
     {
-     "jugador": "MATE FOSSATI",
-     "items": [
-      {
-       "id": "",
-       "ej": "BICI",
-       "dosis": "10'"
-      },
-      {
-       "id": "",
-       "ej": "EXTENSION C/SB + OBELISCOS",
-       "dosis": "4 X 12+12 + 10+10"
-      },
-      {
-       "id": "",
-       "ej": "MARCHA C DISCO + SENTADILLA ISO PARED 1P",
-       "dosis": "4 X 15mts + 20\"+20\""
-      },
-      {
-       "id": "",
-       "ej": "PUENTE ISQUIO 2P + GEMELO 1P",
-       "dosis": "4 X 12 + 12"
-      },
-      {
-       "id": "",
-       "ej": "TRINEO + PRENSA 1P",
-       "dosis": "4 X 15mts + 12"
-      },
-      {
-       "id": "",
-       "ej": "EXTENSIONES C SB",
-       "dosis": "4 X 15"
-      }
-     ]
-    },
-    {
      "jugador": "JCM",
      "items": [
       {
        "id": "A1",
-       "ej": "PTE ISQUIO 1P + SLR ACTIVO",
-       "dosis": "3X12+12 + 10+10"
+       "ej": "PUENTE CHINO 2P + PUENTE GLUTEO 1P",
+       "dosis": "3X20\" / 8+8"
       },
       {
        "id": "F1",
-       "ej": "SENTADILLA PROFUNDA + NEURODINAMIA",
-       "dosis": "3X10 + 6+6"
+       "ej": "SENTADILLA GOBLET PROFUNDA + SLR ASIST",
+       "dosis": "3X8 /10+10"
       },
       {
        "id": "F2",
-       "ej": "SUBIDAS AL BANCO + OBELISCOS",
-       "dosis": "3X8+8 + 10+10"
+       "ej": "RDL BARRA + OBELISCOS",
+       "dosis": "3X8 / 10+10"
       },
       {
        "id": "F3",
-       "ej": "RECEP 2P + CMJ + BROAD",
-       "dosis": "3X10+5+5"
+       "ej": "CAMINATAS EXCENTRICAS + NEURODINAMIA",
+       "dosis": "3X8 /10+10"
       }
      ]
     },
@@ -4186,7 +4151,7 @@
     }
    ],
    "autor": "",
-   "fecha": "2026-11-11T21:36:08.096Z"
+   "fecha": "2026-11-12T11:47:10.304Z"
   },
   "Sem 17|4|cor": {
    "datos": [
