@@ -3856,13 +3856,8 @@
        "dosis": "3X20\" / 8+8"
       },
       {
-       "id": "F1",
-       "ej": "SENTADILLA GOBLET PROFUNDA + SLR ASIST",
-       "dosis": "3X8 /10+10"
-      },
-      {
        "id": "F2",
-       "ej": "RDL BARRA + OBELISCOS",
+       "ej": "RDL BARRA + SLR ASIST",
        "dosis": "3X8 / 10+10"
       },
       {
@@ -4151,7 +4146,7 @@
     }
    ],
    "autor": "jokin",
-   "fecha": "2026-11-12T13:06:53.459Z"
+   "fecha": "2026-11-12T13:08:01.775Z"
   },
   "Sem 17|4|cor": {
    "datos": [
