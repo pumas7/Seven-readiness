@@ -883,10 +883,10 @@ function renderIC(c,k){
     C.push([ok.length?`Cumplió ${ref} en ${nom(ok)}`:'',bajo.length?`quedó por debajo en ${bajo.map(f=>`${f.v.t} (${fmt(f.pc)}%)`).join(', ')}`:'',alto.length?`excedió en ${alto.map(f=>`${f.v.t} (${fmt(f.pc)}%)`).join(', ')}`:''].filter(Boolean).join('; ').replace(/^./,x=>x.toUpperCase())+'.');
   }
   if(pic.length){
-    C.push(`Pico de carga en ${nom(pic)}: ${pic.map(f=>`${f.v.t} ${f.picos.join(' y ')}`).join('; ')}. Un salto de esta magnitud respecto de lo que venía tolerando aumenta el riesgo de nueva lesión o recidiva.`);
+    C.push(`Pico de carga en ${nom(pic)}: ${pic.map(f=>`${f.v.t} ${f.picos.join(', ').replace(/, ([^,]*)$/,' y $1')}`).join('; ')}. Un salto de esta magnitud respecto de lo que venía tolerando aumenta el riesgo de nueva lesión o recidiva.`);
     if(picVel.length&&muscular)C.push(`El pico es en alta velocidad (${nom(picVel)}), que es la demanda más específica para una lesión muscular ${reg==='post'?'de la cadena posterior':reg==='ant'?'del cuádriceps':'de aductores'}: riesgo de recidiva elevado si se repite.`);
     else if(picMec.length&&reg==='art')C.push(`El pico es en aceleraciones/desaceleraciones (${nom(picMec)}), la demanda de mayor carga articular y de cambio de dirección para esta lesión.`);
-    C.push(`Para la semana siguiente: no volver a subir ${nom(pic)}; sostener en torno a lo hecho esta semana hasta que el ACWR vuelva a 0,8–1,3, y sin incrementos semanales mayores al ${TOPE_INC}%.`);
+    C.push(`Para la semana siguiente: no superar en ${nom(pic)} lo hecho esta semana (${pic.map(f=>`${f.v.t} ${fmt(f.t)}`).join(', ')}) y llevarlo hacia el objetivo planificado, hasta que el ACWR quede en 0,8–1,3; después progresar sin incrementos semanales mayores al ${TOPE_INC}%.`);
   }else if(!w.lesion&&conObj.length){
     if(!bajo.length&&!alto.length)C.push('Toleró la carga planificada sin picos: en condiciones de progresar según el plan.');
     else if(bajo.length&&!alto.length)C.push(`Sin picos. ${w.curso?'Lo que falta conviene repartirlo en los días que quedan, sin compensarlo en una sola sesión.':`Progresar hacia el objetivo en ${nom(bajo)} de forma gradual${sub.length?'':`, sin incrementos semanales mayores al ${TOPE_INC}%`}.`}`);
