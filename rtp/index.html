@@ -144,11 +144,12 @@ tr.sub td{background:#FAFCFE;color:var(--grey);font-size:11.5px}
   body.print-snap main>#viewHist{display:block!important}
   body.print-snap #viewHist>*{display:none!important}
   body.print-snap #viewHist>#snapBox{display:block!important;border:0;padding:0}
-  body.print-carga main>#viewCase{display:block!important}
-  body.print-carga #viewCase>*{display:none!important}
-  body.print-carga #viewCase>#secCarga{display:block!important;border:0;padding:0}
-  body.print-carga #secCarga .printonly{display:flex!important}
-  body.print-carga #acwrBox{display:block!important}
+  body.print-ic main>#viewCase{display:block!important}
+  body.print-ic #viewCase>*{display:none!important}
+  body.print-ic #viewCase>#secCarga{display:block!important;border:0;padding:0}
+  body.print-ic #secCarga>*{display:none!important}
+  body.print-ic #secCarga>#icBox{display:block!important}
+  body.print-ic #icBox .report{border:0;padding:0}
   .bar i,.bar u,.f-g,.f-a,.f-r,.f-b,.pill{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   table{font-size:10.5px}
   .actions,.noprint{display:none!important}
@@ -275,7 +276,7 @@ const valObj=v=>{if(v===null||v===undefined||v==='')return null;
 const pctCls=p=>p===null?'p-n':(p>=90&&p<=110)?'p-g':(p>=80&&p<=120)?'p-a':'p-r';
 // ACWR contra su carga habitual pre-lesión: < 0,8 por debajo (esperable en rehab) · 0,8–1,3 · 1,3–1,5 · > 1,5 pico
 const acwrCls=x=>x===null?'p-n':x>1.5?'p-r':x>1.3?'p-a':x>=0.8?'p-g':'p-b';
-let ACWR_OPEN=false;
+let ACWR_OPEN=false,IC_OPEN=false,IC_SEM=null;
 // seguimiento post-alta: carga vs su baseline pre-lesión
 const segCls=x=>x===null?'p-n':x>=90?'p-g':x>=70?'p-a':'p-r';
 const OFFSET_DIA={lunes:0,martes:1,miercoles:2,jueves:3,viernes:4,sabado:5,domingo:6};
@@ -706,7 +707,6 @@ function renderCase(){
   </div>
 
   <div class="sec" id="secCarga">
-    <div class="rep-head printonly" id="cargaHead"></div>
     <h3>Carga de campo</h3><p class="hint">Sesiones del jugador en Catapult desde la lesión, por semana. El número de color es el % de <b>su</b> objetivo de ese día (el que le pusiste arriba); abajo, en gris, el % del objetivo del grupo cuando son distintos.
       <span class="pill p-g">90–110%</span> en objetivo · <span class="pill p-a">80–90% / 110–120%</span> cerca · <span class="pill p-r">&lt; 80% / &gt; 120%</span> lejos del objetivo · <span class="pill p-n">—</span> ese día el plan no tiene objetivo para esa variable</p>
     <div class="scroll"><table><thead><tr><th>Fecha</th><th>Sesión</th><th>Día del plan</th>${VARS.map(v=>`<th>${v.t}</th>`).join('')}<th>%Vmax</th></tr></thead><tbody id="sesBody"></tbody></table></div>
@@ -714,7 +714,8 @@ function renderCase(){
     <p class="hint">Contra el objetivo semanal que le pusiste arriba. La barra es lo hecho sobre el objetivo de toda la semana; la rayita marca hasta dónde tendría que ir a hoy. El color es el % contra lo planificado hasta hoy (semana cerrada: contra la semana entera). Las semanas previas a la lesión quedan de referencia, contra el objetivo del grupo.</p>
     <div id="cursoBox"></div>
     <div class="scroll"><table><thead><tr><th>Semana</th>${VARS.map(v=>`<th>${v.t}<br><span style="font-weight:400">hecho · objetivo · falta</span></th>`).join('')}<th></th></tr></thead><tbody id="semBody"></tbody></table></div>
-    <div class="actions noprint" style="margin-top:10px"><button class="btn ghost" id="btnAcwr">${ACWR_OPEN?'Ocultar':'Ver'} ACWR vs. pre-lesión</button><button class="btn ghost" id="btnPrintCarga">Informe de carga</button></div>
+    <div class="actions noprint" style="margin-top:10px"><button class="btn ghost" id="btnAcwr">${ACWR_OPEN?'Ocultar':'Ver'} ACWR vs. pre-lesión</button><label class="f" style="margin-left:auto">Semana del informe<select id="icSem"></select></label><button class="btn ghost" id="btnIC">${IC_OPEN?'Ocultar':'Ver'} informe de carga</button></div>
+    <div id="icBox" ${IC_OPEN?'':'hidden'}></div>
     <div id="acwrBox" ${ACWR_OPEN?'':'hidden'}></div>
   </div>
 
@@ -813,8 +814,7 @@ function refresh(){
     return `<tr><td><b>S${w.n}</b></td>${VARS.map(v=>semCelda(w,v.k,pp)).join('')}
       <td>${tag}</td></tr>`}).join('');
   renderCurso(c,k);
-  $('#cargaHead').innerHTML=`<div><b style="font-size:15px">${esc(c.jugador)}</b> · ${esc(c.puesto||'')}<br><span class="muted">${esc(lesionTxt(c))} · ${esc(c.lado||'')} · lesión ${fLarga(k.L)} · día ${diffD(k.L,hoy())}</span></div>
-    <div style="text-align:right"><img src="${CREST}" alt=""><br><span class="muted">Informe de carga · ${fLarga(hoy())}</span></div>`;
+  renderIC(c,k);
   renderAcwr(k);
   // tests
   k.tests.forEach(r=>{const id=r.t.id;
@@ -848,6 +848,71 @@ function semCelda(w,key,pp){
   const lin=w.curso?`<span class="g">a hoy ${fmt(aHoy)} · semana ${fmt(full)} (${fmt(pf)}%)</span>`:`<span class="g">objetivo ${fmt(full)}</span>`;
   const f=falta>0?`<span class="falta no">${w.curso?'faltan':'faltó'} ${fmt(falta)}</span>`:`<span class="falta ok">cumplido${falta<0?' · +'+fmt(-falta):''}</span>`;
   return `<td class="num"><b>${fmt(tot)}</b> <span class="pill ${cls}">${pp(p)}</span>${bar}${lin}${f}${inc}</td>`;
+}
+/* ===== Informe de carga de una semana: objetivo, lo hecho, picos y conclusión clínica ===== */
+const VEL=['hsr','ds'],MEC=['accel','deccel'];
+const f2=x=>x==null?'—':x.toFixed(2).replace('.',',');
+function renderIC(c,k){
+  const sel=$('#icSem'),box=$('#icBox');if(!sel||!box)return;
+  const ws=k.semanas.filter(w=>w.n>=k.semL&&!w.sin);
+  if(!ws.length){sel.innerHTML='';box.innerHTML='<p class="muted" style="font-size:12.5px">Todavía no hay semanas con carga desde la lesión.</p>';return}
+  if(!ws.some(w=>w.n===IC_SEM))IC_SEM=ws[ws.length-1].n;
+  sel.innerHTML=ws.map(w=>`<option value="${w.n}" ${w.n===IC_SEM?'selected':''}>S${w.n} · ${fCorta(lunesDe(w.n))}${w.curso?' (en curso)':''}</option>`).join('');
+  const w=ws.find(x=>x.n===IC_SEM);
+  const fila=VARS.map(v=>{const full=w.curso?w.obiF?.[v.k]:w.obi?.[v.k],aHoy=w.obi?.[v.k],t=w.tot[v.k];
+    const pc=w.curso?(aHoy?t/aHoy*100:null):(full?t/full*100:null);
+    const picos=[];
+    if(w.acwr[v.k]!=null&&w.acwr[v.k]>1.5)picos.push(`${f2(w.acwr[v.k])} veces su crónico de las 3 semanas previas`);
+    if(w.acwrPre[v.k]!=null&&w.acwrPre[v.k]>1.5)picos.push(`${f2(w.acwrPre[v.k])} veces su habitual pre-lesión`);
+    // suba semanal > tope: es pico si ya está en su habitual; si viene de una base baja (reintroducción) es solo una suba rápida
+    let suba=null;
+    if(w.inc[v.k]!=null&&!w.lesion&&w.inc[v.k]>TOPE_INC&&!w.curso){const txt=`+${fmt(w.inc[v.k])}% vs S${w.pn}`;
+      if(w.acwrPre[v.k]!=null&&w.acwrPre[v.k]<0.8)suba=txt;else picos.push(txt)}
+    return {v,full,aHoy,t,pc,picos,suba,acwr:w.acwr[v.k],pre:w.acwrPre[v.k],inc:w.inc[v.k]}});
+  // --- conclusión clínica (reglas sobre lo de arriba) ---
+  const nom=a=>a.map(f=>f.v.t).join(', ');
+  const conObj=fila.filter(f=>f.full&&f.pc!=null);
+  const ok=conObj.filter(f=>f.pc>=90&&f.pc<=110),bajo=conObj.filter(f=>f.pc<90),alto=conObj.filter(f=>f.pc>110),pic=fila.filter(f=>f.picos.length),sub=fila.filter(f=>f.suba&&!f.picos.length);
+  const picVel=pic.filter(f=>VEL.includes(f.v.k)),picMec=pic.filter(f=>MEC.includes(f.v.k));
+  const reg=c.region||LESIONES[c.tipo]?.region,muscular=['post','ant','add'].includes(reg);
+  const C=[];
+  if(w.lesion)C.push('Semana de la lesión: la carga es la previa al evento y la de las primeras sesiones; no se usa para juzgar cumplimiento.');
+  else if(!conObj.length)C.push('La semana no tiene objetivo cargado para él: no se puede valorar cumplimiento.');
+  else{
+    const ref=w.curso?`a hoy (${w.ob?w.ob._dias+' de '+w.ob._total+' días del plan':'semana en curso'})`:'en la semana';
+    C.push([ok.length?`Cumplió ${ref} en ${nom(ok)}`:'',bajo.length?`quedó por debajo en ${bajo.map(f=>`${f.v.t} (${fmt(f.pc)}%)`).join(', ')}`:'',alto.length?`excedió en ${alto.map(f=>`${f.v.t} (${fmt(f.pc)}%)`).join(', ')}`:''].filter(Boolean).join('; ').replace(/^./,x=>x.toUpperCase())+'.');
+  }
+  if(pic.length){
+    C.push(`Pico de carga en ${nom(pic)}: ${pic.map(f=>`${f.v.t} ${f.picos.join(' y ')}`).join('; ')}. Un salto de esta magnitud respecto de lo que venía tolerando aumenta el riesgo de nueva lesión o recidiva.`);
+    if(picVel.length&&muscular)C.push(`El pico es en alta velocidad (${nom(picVel)}), que es la demanda más específica para una lesión muscular ${reg==='post'?'de la cadena posterior':reg==='ant'?'del cuádriceps':'de aductores'}: riesgo de recidiva elevado si se repite.`);
+    else if(picMec.length&&reg==='art')C.push(`El pico es en aceleraciones/desaceleraciones (${nom(picMec)}), la demanda de mayor carga articular y de cambio de dirección para esta lesión.`);
+    C.push(`Para la semana siguiente: no volver a subir ${nom(pic)}; sostener en torno a lo hecho esta semana hasta que el ACWR vuelva a 0,8–1,3, y sin incrementos semanales mayores al ${TOPE_INC}%.`);
+  }else if(!w.lesion&&conObj.length){
+    if(!bajo.length&&!alto.length)C.push('Toleró la carga planificada sin picos: en condiciones de progresar según el plan.');
+    else if(bajo.length&&!alto.length)C.push(`Sin picos. ${w.curso?'Lo que falta conviene repartirlo en los días que quedan, sin compensarlo en una sola sesión.':`Progresar hacia el objetivo en ${nom(bajo)} de forma gradual${sub.length?'':`, sin incrementos semanales mayores al ${TOPE_INC}%`}.`}`);
+    else C.push(`Sin picos según ACWR, pero por encima de lo planificado en ${nom(alto)}: ajustar la dosis de campo al objetivo para que la progresión sea la prevista.`);
+  }
+  if(sub.length)C.push(`Subas semanales fuertes en ${sub.map(f=>`${f.v.t} (${f.suba})`).join(', ')}, desde una base todavía por debajo de su habitual pre-lesión (ACWR pre-lesión < 0,8): esperable en la reintroducción, no se considera pico, pero conviene sostener la progresión escalonada.`);
+  if(w.curso&&conObj.length){
+    const pw=PLAN?.semanas?.[w.n],h=hoy();
+    const resto=Object.keys(pw?.dias||{}).filter(d=>addD(lunesDe(w.n),OFFSET_DIA[sinTilde(pw.dias[d])]??0)>h);
+    const deuda=fila.filter(f=>f.full&&f.full-f.t>0).filter(f=>{const r=resto.reduce((a,d)=>a+(objIndDia(c,w.n,d)?.[f.v.k]||0),0);return f.full-f.t>r});
+    if(deuda.length)C.push(`Semana en curso: en ${nom(deuda)} lo que falta supera lo que el plan tiene para los días que quedan${resto.length?'':' (no quedan días)'}; no compensarlo de golpe.`);
+  }
+  box.innerHTML=`<div class="report" style="margin-top:12px">
+    <div class="rep-head"><div><b style="font-size:15px">${esc(c.jugador)}</b> · ${esc(c.puesto||'')}<br><span class="muted">${esc(lesionTxt(c))} · ${esc(c.lado||'')} · lesión ${fLarga(k.L)} · día ${diffD(k.L,hoy())}</span></div>
+      <div style="text-align:right"><img src="${CREST}" alt=""><br><span class="muted">Informe de carga · Semana ${w.n} (${fCorta(lunesDe(w.n))} al ${fCorta(addD(lunesDe(w.n),6))})${w.curso?' · en curso':''}</span></div></div>
+    <h4>Objetivo y lo que hizo</h4>
+    <table><thead><tr><th>Variable</th><th>Objetivo semana</th>${w.curso?'<th>Objetivo a hoy</th>':''}<th>Hizo</th><th>% ${w.curso?'a hoy':'del objetivo'}</th><th>${w.curso?'Le falta':'Diferencia'}</th></tr></thead><tbody>
+    ${fila.map(f=>{const d=f.full?f.t-f.full:null;return `<tr><td><b>${f.v.t}</b></td><td class="num">${f.full?fmt(f.full):'—'}</td>${w.curso?`<td class="num">${f.aHoy?fmt(f.aHoy):'—'}</td>`:''}<td class="num"><b>${fmt(f.t)}</b></td>
+      <td><span class="pill ${f.pc==null||w.lesion?'p-n':pctCls(f.pc)}">${f.pc==null?'—':fmt(f.pc)+'%'}</span></td>
+      <td class="num">${d==null?'—':w.curso?(d<0?fmt(-d):'cumplido'):(d>=0?'+':'−')+fmt(Math.abs(d))}</td></tr>`}).join('')}</tbody></table>
+    <h4>Picos de carga</h4>
+    ${pic.length||sub.length?`<ul>${pic.map(f=>`<li><b>${f.v.t}:</b> <span class="pill p-r">pico</span> ${f.picos.join(' · ')}</li>`).join('')}${sub.map(f=>`<li><b>${f.v.t}:</b> <span class="pill p-b">suba desde base baja</span> ${f.suba} (ACWR pre-lesión ${f2(f.pre)})</li>`).join('')}</ul>`:`<p>Sin picos: ACWR ≤ 1,5 contra sus 3 semanas previas y contra su habitual pre-lesión${w.curso?'':`, y sin subas semanales mayores al ${TOPE_INC}%`}.</p>`}
+    <h4>Conclusión clínica</h4>
+    <div contenteditable="true" style="outline:none">${C.map(x=>`<p>${esc(x)}</p>`).join('')}</div>
+  </div>
+  <div class="actions noprint"><button class="btn" id="btnPrintIC">Imprimir / PDF</button><span class="muted" style="font-size:12px;align-self:center">La conclusión se puede editar antes de imprimir (no se guarda).</span></div>`;
 }
 /* recuadro de la semana en curso: cuánto cumplió hasta hoy y cuánto le queda para su objetivo */
 function renderCurso(c,k){
@@ -988,6 +1053,7 @@ document.addEventListener('input',e=>{
   dirty();refresh();
 });
 document.addEventListener('change',e=>{const el=e.target;
+  if(el.id==='icSem'){IC_SEM=+el.value;const c=caso(SEL);if(c)renderIC(c,calcular(c));return}
   if(el.id==='oiSem'){OI_SEM=+el.value;const c=caso(SEL);if(c)renderOi(c);return}
   if(el.dataset.f==='puesto'){const c=caso(SEL);if(c){c.puesto=el.value;dirty();renderOi(c);refresh()}return}
   if(el.dataset.rerender){const c=caso(SEL);if(!c)return;c[el.dataset.f]=el.value;
@@ -1004,7 +1070,8 @@ document.addEventListener('click',e=>{
   if(b.dataset.reopen){const c=caso(b.dataset.reopen);if(!confirm(`¿Reabrir el tratamiento de ${c.jugador}? Vuelve a tratamientos activos y se descarta la fecha de alta.`))return;
     c.estado='activo';delete c.fecha_alta;delete c.dias_baja;delete c.informe_final;SEL=c.id;dirty();showView('case');renderCase();return}
   switch(b.id){
-    case 'btnPrintCarga':imprimir('print-carga');break;
+    case 'btnIC':IC_OPEN=!IC_OPEN;$('#icBox').hidden=!IC_OPEN;b.textContent=(IC_OPEN?'Ocultar':'Ver')+' informe de carga';break;
+    case 'btnPrintIC':imprimir('print-ic');break;
     case 'btnAcwr':ACWR_OPEN=!ACWR_OPEN;$('#acwrBox').hidden=!ACWR_OPEN;b.textContent=(ACWR_OPEN?'Ocultar':'Ver')+' ACWR vs. pre-lesión';break;
     case 'btnNew':renderNew();break;
     case 'btnHist':showView(VIEW==='hist'?'case':'hist');break;
