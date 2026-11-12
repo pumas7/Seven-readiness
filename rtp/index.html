@@ -247,8 +247,11 @@ const valObj=v=>{if(v===null||v===undefined||v==='')return null;
   if(Array.isArray(v)){const[a,b]=v.map(Number);return RANGO==='min'?a:RANGO==='max'?b:(a+b)/2}
   if(typeof v==='string'&&v.includes('-')){const[a,b]=v.split('-').map(Number);return valObj([a,b])}
   return +v};
-// % contra objetivo: verde = objetivo cumplido; azul = en progreso (no es alerta); gris = sin objetivo ese día
-const pctCls=p=>p===null?'p-n':p>=100?'p-g':'p-b';
+// % contra objetivo: verde 90–110 · amarillo 80–90 y 110–120 · rojo < 80 o > 120 · gris = sin objetivo ese día
+const pctCls=p=>p===null?'p-n':(p>=90&&p<=110)?'p-g':(p>=80&&p<=120)?'p-a':'p-r';
+// ACWR contra su carga habitual pre-lesión: < 0,8 por debajo (esperable en rehab) · 0,8–1,3 · 1,3–1,5 · > 1,5 pico
+const acwrCls=x=>x===null?'p-n':x>1.5?'p-r':x>1.3?'p-a':x>=0.8?'p-g':'p-b';
+let ACWR_OPEN=false;
 // seguimiento post-alta: carga vs su baseline pre-lesión
 const segCls=x=>x===null?'p-n':x>=90?'p-g':x>=70?'p-a':'p-r';
 const OFFSET_DIA={lunes:0,martes:1,miercoles:2,jueves:3,viernes:4,sabado:5,domingo:6};
@@ -498,6 +501,11 @@ function calcular(c){
     });
     semanas.push({n,tot,ob,obi,obiF:curso?objSemanaInd(c,n,null):null,acwr,pct,pcti,inc,pn,pre:n<semL,lesion:n===semL,curso,sin:!entreno(n)});
   }
+  // Base pre-lesión: promedio de las 3 últimas semanas que entrenó antes de la semana de la lesión (fija)
+  const semsPre=[];for(let i=semL-1;i>=Math.max(1,semL-8)&&semsPre.length<3;i--)if(entreno(i))semsPre.push(i);
+  const basePre={};VARS.forEach(v=>{basePre[v.k]=semsPre.length?semsPre.reduce((a,n)=>a+totalSemana(c.jugador,n)[v.k],0)/semsPre.length:null});
+  semanas.forEach(w=>{const fr=w.curso?fracSemana(w.n):1;w.frPre=fr;w.acwrPre={};
+    VARS.forEach(v=>{const b=basePre[v.k];w.acwrPre[v.k]=w.n>=semL&&b&&fr?w.tot[v.k]/(b*fr):null})});
   const post=semanas.filter(w=>w.n>semL);
   const tests=evalTests(c,L);
   const mca=evalMCA(c,L);
@@ -546,7 +554,7 @@ function calcular(c){
     if(fase[4]<1)flags.push(['Semana completa sin cumplir','no toleró todavía una semana al 100% del objetivo.']);
     if((c.contacto||0)<2)flags.push(['Contacto insuficiente',`habilitado en "${CONTACTO[c.contacto||0]}".`]);
   }
-  return {L,fin,semL,ses,semanas,post,tests,mca,preBest,ev,fase,cur,estado,pend,flags,total:tot?ok/tot:0};
+  return {L,fin,semL,ses,semanas,post,semsPre:semsPre.sort((a,b)=>a-b),basePre,tests,mca,preBest,ev,fase,cur,estado,pend,flags,total:tot?ok/tot:0};
 }
 const ESTADO_TXT={no:'No disponible',dr:'Disponible con riesgo',rec:'Recuperado',alta:'Alta'};
 const ESTADO_PILL={no:'p-r',dr:'p-a',rec:'p-g',alta:'p-b'};
@@ -668,15 +676,20 @@ function renderCase(){
     <h3>Objetivos de la semana</h3><p class="hint">Objetivo del grupo para su puesto, día por día (hoja del PF), y el % que le ponés a él. Las métricas se calculan solas y la carga de abajo se compara contra esto. Si no ponés nada, va al 100% (igual que el grupo).</p>
     <div class="actions" style="margin:0 0 10px;align-items:flex-end"><label class="f">Semana<select id="oiSem"></select></label><span class="muted" id="oiNota" style="font-size:12px"></span></div>
     <div class="scroll"><table><thead><tr><th>Día</th><th>% para él</th>${VARS.map(v=>`<th>${v.t}</th>`).join('')}</tr></thead><tbody id="oiBody"></tbody></table></div>
+    <h3 style="margin-top:16px;font-size:14px">Físico de la semana</h3>
+    <p class="hint">Lo que hace el grupo en campo esa semana (tabla FISICO de la hoja del PF). Cambia con la semana elegida arriba.</p>
+    <div class="scroll" id="fisBox"></div>
   </div>
 
   <div class="sec">
     <h3>Carga de campo</h3><p class="hint">Sesiones del jugador en Catapult desde la lesión, por semana. El número de color es el % de <b>su</b> objetivo de ese día (el que le pusiste arriba); abajo, en gris, el % del objetivo del grupo cuando son distintos.
-      <span class="pill p-b">en progreso</span> todavía debajo del objetivo (no es alerta: en rehab es lo esperable) · <span class="pill p-g">objetivo cumplido</span> ≥ 100% · <span class="pill p-n">—</span> ese día el plan no tiene objetivo para esa variable</p>
+      <span class="pill p-g">90–110%</span> en objetivo · <span class="pill p-a">80–90% / 110–120%</span> cerca · <span class="pill p-r">&lt; 80% / &gt; 120%</span> lejos del objetivo · <span class="pill p-n">—</span> ese día el plan no tiene objetivo para esa variable</p>
     <div class="scroll"><table><thead><tr><th>Fecha</th><th>Sesión</th><th>Día del plan</th>${VARS.map(v=>`<th>${v.t}</th>`).join('')}<th>%Vmax</th></tr></thead><tbody id="sesBody"></tbody></table></div>
     <h3 style="margin-top:16px;font-size:14px">Resumen por semana</h3>
     <p class="hint">Total que hizo en la semana contra lo planificado para él (la semana en curso, solo los días ya pasados). Abajo: el plan y cuánto cambió respecto de la última semana que entrenó. Las 2 semanas previas a la lesión quedan de referencia de lo que venía haciendo.</p>
     <div class="scroll"><table><thead><tr><th>Semana</th>${VARS.map(v=>`<th>${v.t}<br><span style="font-weight:400">hecho · % del plan</span></th>`).join('')}<th></th></tr></thead><tbody id="semBody"></tbody></table></div>
+    <div class="actions noprint" style="margin-top:10px"><button class="btn ghost" id="btnAcwr">${ACWR_OPEN?'Ocultar':'Ver'} ACWR vs. pre-lesión</button></div>
+    <div id="acwrBox" ${ACWR_OPEN?'':'hidden'}></div>
   </div>
 
   <div class="sec">
@@ -775,6 +788,7 @@ function refresh(){
       const full=w.obiF?.[v.k];const extra=[pl?(w.curso&&full&&Math.round(full)!==Math.round(pl)?'plan a hoy '+fmt(pl)+' de '+fmt(full)+' de la semana':'plan '+fmt(pl)):'sin plan',d===null||w.lesion?null:(d>=0?'▲':'▼')+fmt(Math.abs(d))+'% vs S'+w.pn].filter(Boolean).join(' · ');
       return `<td class="num">${fmt(w.tot[v.k])} <span class="pill ${w.pre||w.lesion?'p-n':pctCls(p)}">${pp(p)}</span><span class="g">${extra}</span></td>`}).join('')}
       <td>${tag}</td></tr>`}).join('');
+  renderAcwr(k);
   // tests
   k.tests.forEach(r=>{const id=r.t.id;
     if(r.t.auto){const set=(x,v,d)=>{const e=document.getElementById(`tv_${id}_${x}`);if(e)e.textContent=v===null?'—':fmt(v,d)};
@@ -793,16 +807,48 @@ function refresh(){
   $('#report').innerHTML=informeHTML(c,k,false);
 }
 
+function renderAcwr(k){
+  const box=$('#acwrBox');if(!box)return;
+  if(!k.semsPre.length){box.innerHTML='<p class="muted" style="font-size:12.5px">No hay semanas con sesiones en Catapult antes de la lesión: no se puede armar la base.</p>';return}
+  const ws=k.semanas.filter(w=>w.n>=k.semL);
+  const rango=k.semsPre.length>1?`S${k.semsPre[0]}–S${k.semsPre[k.semsPre.length-1]}`:`S${k.semsPre[0]}`;
+  box.innerHTML=`<p class="hint" style="margin-top:10px">Crónico fijo = promedio de las ${k.semsPre.length} semanas que entrenó antes de la lesión (${k.semsPre.map(n=>'S'+n).join(', ')}). Agudo = lo que hizo cada semana desde la lesión. La semana en curso se compara contra la parte de la base que corresponde a los días ya pasados.
+    <span class="pill p-b">&lt; 0,8</span> por debajo de su habitual · <span class="pill p-g">0,8–1,3</span> · <span class="pill p-a">1,3–1,5</span> · <span class="pill p-r">&gt; 1,5</span> pico</p>
+    <div class="scroll"><table><thead><tr><th>Semana</th>${VARS.map(v=>`<th>${v.t}</th>`).join('')}<th></th></tr></thead><tbody>
+    <tr class="wk"><td>Base ${rango}</td>${VARS.map(v=>`<td class="num">${fmt(k.basePre[v.k])}</td>`).join('')}<td><span class="pill p-n">promedio pre-lesión</span></td></tr>
+    ${ws.map(w=>`<tr><td><b>S${w.n}</b></td>${VARS.map(v=>{const x=w.acwrPre[v.k];return `<td class="num"><span class="pill ${acwrCls(x)}">${x===null?'—':x.toFixed(2).replace('.',',')}</span><span class="g">${fmt(w.tot[v.k])}</span></td>`}).join('')}
+      <td>${w.lesion?'<span class="pill p-n">semana de lesión</span>':w.curso?`<span class="pill p-b">en curso · ${Math.round(w.frPre*100)}% de la semana</span>`:w.sin?'<span class="pill p-n">no entrenó</span>':''}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+let GYM=null;
+function fisicoSemana(n){
+  const pl=GYM?.planes;if(!pl)return null;const pest=PLAN?.semanas?.[n]?.pestana;
+  const e=Object.entries(pl).find(([k,p])=>pest&&sinTilde(k)===sinTilde(pest)&&p.fisico)||Object.entries(pl).find(([k,p])=>p.semana===n&&p.fisico);
+  return e?{pestana:e[0],dias:e[1].fisico}:null;
+}
+function renderFisico(n){
+  const box=$('#fisBox');if(!box)return;
+  if(!GYM){box.innerHTML='<p class="muted" style="font-size:12.5px">Todavía no se leyó la tabla FISICO de la hoja (gimnasio.json).</p>';return}
+  const f=fisicoSemana(n);
+  if(!f){box.innerHTML=`<p class="muted" style="font-size:12.5px">La hoja no tiene tabla FISICO para la semana ${n}.</p>`;return}
+  const w=PLAN?.semanas?.[n],ds=Object.keys(f.dias).sort((a,b)=>a-b);
+  box.innerHTML=`<table><thead><tr><th>Día</th><th>Trabajo</th><th>Explicación</th><th>Repeticiones</th></tr></thead><tbody>${ds.map(d=>{
+    const wd=w?.dias?.[d],fe=wd?addD(lunesDe(n),OFFSET_DIA[sinTilde(wd)]??0):null;
+    return f.dias[d].map((it,i)=>`<tr>${i===0?`<td rowspan="${f.dias[d].length}" style="vertical-align:top"><b>Día ${esc(d)}</b>${wd?`<br><span class="muted">${esc(wd)} ${fCorta(fe)}</span>`:''}</td>`:''}
+      <td><b>${esc(it.ej)}</b></td><td>${esc(it.exp)||'<span class="muted">—</span>'}</td>
+      <td>${(it.dosis||[]).length?it.dosis.map(x=>`${x.lab?`<span class="muted">${esc(x.lab)}:</span> `:''}${esc(x.v)}`).join('<br>'):'<span class="muted">—</span>'}</td></tr>`).join('')}).join('')}</tbody></table>
+    <p class="muted" style="font-size:11.5px;margin-top:6px">Pestaña ${esc(f.pestana)}.</p>`;
+}
 let OI_SEM=null;
 function oiSemanas(c){const L=parseD(c.fecha)||hoy();const semL=semanaDe(L);
   return Object.keys(PLAN?.semanas||{}).map(Number).filter(n=>n>=semL).sort((a,b)=>a-b)}
 function renderOi(c){
   const sel=$('#oiSem');if(!sel)return;
   const ns=oiSemanas(c),act=semanaDe(hoy());
-  if(!ns.length){sel.innerHTML='';$('#oiBody').innerHTML=`<tr><td colspan="${VARS.length+2}" class="muted">${PLAN?'La hoja del PF todavía no tiene semanas desde la lesión.':'Todavía no hay objetivo semanal de la hoja del PF.'}</td></tr>`;return}
+  if(!ns.length){sel.innerHTML='';renderFisico(act);$('#oiBody').innerHTML=`<tr><td colspan="${VARS.length+2}" class="muted">${PLAN?'La hoja del PF todavía no tiene semanas desde la lesión.':'Todavía no hay objetivo semanal de la hoja del PF.'}</td></tr>`;return}
   if(!ns.includes(OI_SEM))OI_SEM=ns.includes(act)?act:ns.filter(n=>n<=act).pop()??ns[0];
   sel.innerHTML=ns.map(n=>`<option value="${n}" ${n===OI_SEM?'selected':''}>Semana ${n} · ${fCorta(lunesDe(n))}${n===act?' (actual)':''}</option>`).join('');
-  const w=PLAN.semanas[OI_SEM];
+  const w=PLAN.semanas[OI_SEM];renderFisico(OI_SEM);
   if(!c.puesto){$('#oiBody').innerHTML=`<tr><td colspan="${VARS.length+2}" class="muted">Elegí el puesto en "Datos del tratamiento" para ver el objetivo.</td></tr>`;return}
   const dias=Object.keys(w.dias||{}).sort((a,b)=>a-b);
   $('#oiBody').innerHTML=dias.map(d=>{const f=addD(lunesDe(OI_SEM),OFFSET_DIA[sinTilde(w.dias[d])]??0);const g=objDia(OI_SEM,d,c.puesto);
@@ -896,6 +942,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.reopen){const c=caso(b.dataset.reopen);if(!confirm(`¿Reabrir el tratamiento de ${c.jugador}? Vuelve a tratamientos activos y se descarta la fecha de alta.`))return;
     c.estado='activo';delete c.fecha_alta;delete c.dias_baja;delete c.informe_final;SEL=c.id;dirty();showView('case');renderCase();return}
   switch(b.id){
+    case 'btnAcwr':ACWR_OPEN=!ACWR_OPEN;$('#acwrBox').hidden=!ACWR_OPEN;b.textContent=(ACWR_OPEN?'Ocultar':'Ver')+' ACWR vs. pre-lesión';break;
     case 'btnNew':renderNew();break;
     case 'btnHist':showView(VIEW==='hist'?'case':'hist');break;
     case 'btnSave':guardar(false);break;
@@ -958,10 +1005,10 @@ async function cargar(){
     let t=null;try{t=localStorage.getItem('gh_token')}catch(e){}
     const js=u=>fetch(u).then(x=>x.ok?x.json():null).catch(()=>null);
     const RAW=`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/`,v='?v='+Date.now();
-    const [c,d,p,rt,bt]=await Promise.all([js('../carga.json'+v),js('../data.json'+v),js('../plan.json'+v),
-      t?leerRTPapi(t).catch(()=>js(RAW+'rtp.json'+v)):js(RAW+'rtp.json'+v),js(RAW+'rtp_baterias.json'+v)]);
+    const [c,d,p,rt,bt,gy]=await Promise.all([js('../carga.json'+v),js('../data.json'+v),js('../plan.json'+v),
+      t?leerRTPapi(t).catch(()=>js(RAW+'rtp.json'+v)):js(RAW+'rtp.json'+v),js(RAW+'rtp_baterias.json'+v),js('../gimnasio.json'+v)]);
     if(!c)throw 0;
-    CARGA=c;DATA=d;PLAN=p;RTP=rt||{version:1,casos:[]};
+    CARGA=c;DATA=d;PLAN=p;GYM=gy;RTP=rt||{version:1,casos:[]};
     if(bt){BATERIAS={...(bt.baterias||{}),otra:{t:'Sin batería',tests:[]}};if(bt.lesiones)LESIONES={...LESIONES,...bt.lesiones}}
     RTP.casos=RTP.casos||[];
   }catch(e){

@@ -119,6 +119,21 @@ body.idle .staff,:fullscreen .staff{display:none!important}
 .spanel .sbtn{background:transparent;border:0;color:var(--sky);font-weight:700;cursor:pointer;padding:0;font-size:13px}
 .nchip{font-family:var(--f-body);font-size:12px;font-weight:700;letter-spacing:.02em;text-transform:none;background:var(--gold);color:#04192A;border-radius:999px;padding:3px 9px;flex:none}
 #btnNotas.hay{background:var(--gold);border-color:var(--gold);color:#04192A}
+#btnNotas.alarma{background:#E5484D;border-color:#E5484D;color:#fff;animation:latido 1.6s ease-in-out infinite}
+@keyframes latido{0%,100%{box-shadow:0 0 0 0 rgba(229,72,77,.55)}50%{box-shadow:0 0 0 7px rgba(229,72,77,0)}}
+@media (prefers-reduced-motion:reduce){#btnNotas.alarma{animation:none}}
+.nchip.alarma{background:#E5484D;color:#fff}
+.spanel.alarma{border-left-color:#E5484D}
+.spanel h3.a{color:#FF8A8D}
+.ndia{display:inline-block;font-size:11.5px;font-weight:700;background:var(--panel-2);border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin-left:6px;color:var(--fg)}
+.semtab .cnota{background:rgba(229,72,77,.14);border:1px solid rgba(229,72,77,.5);border-radius:8px;padding:6px 8px;margin-bottom:8px;font-size:13px;line-height:1.35}
+.semtab .cnota b{color:#FF8A8D;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;display:block}
+.semtab .cnota.ok{opacity:.55;border-color:var(--line);background:transparent}
+.sed .r{display:grid;grid-template-columns:52px minmax(0,1fr) minmax(0,.8fr) auto;gap:4px;margin-bottom:6px}
+.sed input{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:5px 6px;font-size:13px;color:var(--fg)}
+.sed .addrow{font-size:12.5px;padding:5px 8px}
+.sedbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:4px 0 10px}
+.sedbar input{background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:5px 8px;width:140px;color:var(--fg)}
 .mbox.wide{width:min(1500px,100%)}
 .semtab{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-top:6px}
 .semtab table{border-collapse:collapse;width:100%;min-width:760px}
@@ -143,7 +158,7 @@ body.idle .staff,:fullscreen .staff{display:none!important}
 .mbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:min(760px,100%);padding:20px clamp(16px,2vw,26px)}
 .mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .mhead h2{font-family:var(--f-display);font-weight:800;font-size:26px;text-transform:uppercase;letter-spacing:.03em}
-.nform{display:grid;grid-template-columns:1fr 110px 1fr;gap:10px 12px;align-items:end;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.nform{display:grid;grid-template-columns:1fr 110px 150px 1fr;gap:10px 12px;align-items:end;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:12px}
 .nform label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600}
 .nform .wide{grid-column:1/-1}
 .nform input,.nform textarea{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:15px;color:var(--fg);resize:vertical}
@@ -218,6 +233,7 @@ body.idle .pdfbtn{visibility:hidden}
   <form class="nform" id="notaForm">
     <label>Jugador<input id="nJug" list="nJugs" required autocomplete="off"></label><datalist id="nJugs"></datalist>
     <label>Semana<input id="nSem" type="number" min="1" max="80" required></label>
+    <label>Día a modificar<select id="nDia" style="background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:15px;color:var(--fg)"></select></label>
     <label>Quién la deja<input id="nAut"></label>
     <label class="wide">Nota (la ves vos en el panel; no sale en la tele ni en el PDF)<textarea id="nTxt" rows="2" required></textarea></label>
     <label class="wide" id="nTokL" hidden>Token de GitHub (el mismo de Carga; queda guardado en esta compu)<input id="nTok" type="password"></label>
@@ -342,7 +358,9 @@ function render(){
   $('#otra').textContent=VISTA==='rut'?'Abrir correctivos en otra pantalla ↗':'Abrir rutina en otra pantalla ↗';
   $('#vRut').setAttribute('aria-pressed',VISTA==='rut');$('#vCor').setAttribute('aria-pressed',VISTA==='cor');
   $('#btnReset').hidden=!(EDIT&&Object.keys(S.marc).length);
-  const nv=notasVisibles(PLAN).length;$('#btnNotas').textContent=nv?`Notas (${nv})`:'Notas';$('#btnNotas').classList.toggle('hay',!!nv);
+  const nv=notasVisibles(PLAN).length,na=notasDelDia(PLAN,DIA).length;$('#btnNotas').textContent=na?`⚠ Notas (${nv})`:nv?`Notas (${nv})`:'Notas';
+  $('#btnNotas').classList.toggle('hay',!!nv&&!na);$('#btnNotas').classList.toggle('alarma',!!na);
+  $('#btnNotas').title=na?`${na} nota${na>1?'s':''} para modificar en el Día ${DIA}`:'';
   $('#dlRut').hidden=VISTA!=='rut'||!!EDIT;
 }
 const NOMBRE_BLOQUE={A:'Activación',F:'Fuerza'};
@@ -360,7 +378,7 @@ function rutView(bl){
 }
 function corView(ps){
   if(!ps?.length)return `<div class="empty">No hay correctivos cargados para este día.</div>`;
-  return `<div class="players">${ps.map(pl=>`<section class="player"><div class="ph"><span>${esc(pl.jugador)}</span>${notasVisibles(PLAN,pl.jugador).length?'<span class="nchip staff" title="Tiene nota para esta semana">NOTA</span>':''}<span class="pacts"><button class="pdfbtn" data-semana="${esc(pl.jugador)}" title="Ver toda la semana y la progresión">Semana</button><button class="pdfbtn" data-nota="${esc(pl.jugador)}" title="Dejar una nota para una semana siguiente">+ Nota</button><button class="pdfbtn" data-pdf="${esc(pl.jugador)}" title="Bajar sus correctivos de la semana en PDF">PDF ↓</button></span></div>
+  return `<div class="players">${ps.map(pl=>`<section class="player"><div class="ph"><span>${esc(pl.jugador)}</span>${notasDelDia(PLAN,DIA,pl.jugador).length?'<span class="nchip alarma staff" title="Tiene una nota para modificar este día">⚠ MODIFICAR</span>':notasVisibles(PLAN,pl.jugador).filter(n=>!n.dia).length?'<span class="nchip staff" title="Tiene nota para esta semana">NOTA</span>':''}<span class="pacts"><button class="pdfbtn" data-semana="${esc(pl.jugador)}" title="Ver toda la semana y la progresión">Semana</button><button class="pdfbtn" data-nota="${esc(pl.jugador)}" title="Dejar una nota para una semana siguiente">+ Nota</button><button class="pdfbtn" data-pdf="${esc(pl.jugador)}" title="Bajar sus correctivos de la semana en PDF">PDF ↓</button></span></div>
 
     ${pl.items.length?pl.items.map(it=>`<div class="row"><span class="chip ${/^FIN/i.test(it.id)?'fin':it.id?'':'none'}">${esc(/^FIN/i.test(it.id)?'FIN':it.id||'·')}</span><div class="n">${esc(it.ej)}</div><div class="d">${esc(it.dosis)}</div></div>`).join('')
       :`<div class="empty">Sin correctivo para este día.</div>`}</section>`).join('')}</div>`;
@@ -514,12 +532,21 @@ function notaVisibleEn(n,plan){
   return !notaHecha(n);
 }
 const notasVisibles=(plan,jug)=>DATA&&DATA.planes[plan]?NOTAS.notas.filter(n=>(!jug||nnN(n.jugador)===nnN(jug))&&notaVisibleEn(n,plan)):[];
+/* nota con día: es para modificar ese día del plan (Día 1, 2...). Sin día: vale para toda la semana */
+const notasDelDia=(plan,dia,jug)=>notasVisibles(plan,jug).filter(n=>n.dia&&String(n.dia)===String(dia));
+const diaTxt=n=>n.dia?`<span class="ndia">Día ${esc(n.dia)}</span>`:'';
+function diasDeSemana(sem){const k=planesDe(sem)[0]||PLAN,p=DATA.planes[k];return Object.keys(p?.dias||{}).sort((a,b)=>a-b).map(d=>[d,p.dias_semana?.[d]||''])}
+function llenarDias(){const sem=+$('#nSem').value,v=$('#nDia').value;
+  $('#nDia').innerHTML='<option value="">Toda la semana</option>'+diasDeSemana(sem).map(([d,w])=>`<option value="${d}">Día ${d}${w?' · '+w:''}</option>`).join('');
+  if([...$('#nDia').options].some(o=>o.value===v))$('#nDia').value=v}
 /* panel solo para el staff (no sale en la tele ni en pantalla completa) */
 function panelStaff(S){
-  const sem=DATA.planes[PLAN].semana,ns=notasVisibles(PLAN);let h='';
-  if(ns.length)h+=`<h3>Notas para esta semana (${ns.length}) <button class="sbtn" data-abrir-notas>ver todas</button></h3><ul>${ns.map(n=>`<li><b>${esc(n.jugador)}</b>${esc(n.texto)}<small>${n.semana<sem?'pendiente desde Sem '+n.semana+' · ':''}${esc(n.autor||'')}</small> <button class="sbtn" data-nhecha="${esc(n.id)}" title="Marcar que ya se tuvo en cuenta">✓ Hecha</button></li>`).join('')}</ul>`;
+  const sem=DATA.planes[PLAN].semana,hoyD=notasDelDia(PLAN,DIA),ns=notasVisibles(PLAN).filter(n=>!hoyD.includes(n));let h='';
+  const li=n=>`<li><b>${esc(n.jugador)}</b>${diaTxt(n)} ${esc(n.texto)}<small>${n.semana<sem?'pendiente desde Sem '+n.semana+' · ':''}${esc(n.autor||'')}</small> <button class="sbtn" data-nhecha="${esc(n.id)}" title="Marcar que ya se tuvo en cuenta">✓ Hecha</button></li>`;
+  if(hoyD.length)h+=`<h3 class="a">⚠ Modificar en este día (Día ${esc(DIA)}) · ${hoyD.length}</h3><ul>${hoyD.map(li).join('')}</ul>`;
+  if(ns.length)h+=`<h3>Notas para esta semana (${ns.length}) <button class="sbtn" data-abrir-notas>ver todas</button></h3><ul>${ns.map(li).join('')}</ul>`;
   if(S.avisos.length)h+=`<h3 class="w">El PF cambió esto en la hoja</h3><ul>${S.avisos.map(a=>`<li><b>${esc(a.nombre)}</b>tu ajuste de ${esc(a.plan)} no se aplicó: se muestra lo de la hoja.</li>`).join('')}</ul>`;
-  return h?`<div class="spanel staff">${h}</div>`:'';
+  return h?`<div class="spanel staff${hoyD.length?' alarma':''}">${h}</div>`:'';
 }
 const fDMn=d=>d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});
 const rangoSem=s=>{const l=new Date(INICIO.getTime()+(s-1)*7*864e5);return `${fDMn(l)} al ${fDMn(new Date(l.getTime()+6*864e5))}`};
@@ -532,17 +559,18 @@ function pintarNotas(){
     :n.semana>act?'<span class="nest">Próxima</span>':`<span class="nest pend">${n.semana<act?'Pendiente desde Sem '+n.semana:'Pendiente'}</span>`;
   const acc=n=>notaHecha(n)?`<button class="nbtn" data-nreabrir="${esc(n.id)}" title="Volver a pendiente">Reabrir</button>`
     :`<button class="nbtn ok" data-nhecha="${esc(n.id)}" title="Ya se tuvo en cuenta">✓ Hecha</button>`;
-  const fila=n=>`<div class="nrow${notaHecha(n)?' past':''}"><span class="nsem">Sem ${n.semana}${n.semana===act?' (esta)':''}<small>${rangoSem(n.semana)}</small></span><b>${esc(n.jugador)}</b><span class="ntxt">${esc(n.texto)}<small>${esc(n.autor||'')}${n.autor?' · ':''}${esc(fFecha(n.fecha))}${notaHecha(n)&&n.hechaFecha?' · hecha '+esc(fFecha(n.hechaFecha))+(n.hechaAutor?' ('+esc(n.hechaAutor)+')':''):''}</small>${estado(n)}</span><span class="nacc">${acc(n)}<button class="x" data-ndel="${esc(n.id)}" aria-label="Borrar nota">✕</button></span></div>`;
+  const fila=n=>`<div class="nrow${notaHecha(n)?' past':''}"><span class="nsem">Sem ${n.semana}${n.semana===act?' (esta)':''}<small>${rangoSem(n.semana)}</small></span><b>${esc(n.jugador)}</b><span class="ntxt">${diaTxt(n)}${n.dia?' ':''}${esc(n.texto)}<small>${esc(n.autor||'')}${n.autor?' · ':''}${esc(fFecha(n.fecha))}${notaHecha(n)&&n.hechaFecha?' · hecha '+esc(fFecha(n.hechaFecha))+(n.hechaAutor?' ('+esc(n.hechaAutor)+')':''):''}</small>${estado(n)}</span><span class="nacc">${acc(n)}<button class="x" data-ndel="${esc(n.id)}" aria-label="Borrar nota">✕</button></span></div>`;
   $('#notasLista').innerHTML=(fut.length?fut.map(fila).join(''):'<p class="note">No hay notas pendientes.</p>')
     +(pas.length?`<details><summary>Hechas (${pas.length})</summary>${pas.map(fila).join('')}</details>`:'');
 }
 function abrirNotas(jug){
   if(!DATA)return;
   $('#nJugs').innerHTML=jugadoresConocidos().map(j=>`<option value="${esc(j)}">`).join('');
-  $('#nJug').value=jug||'';$('#nSem').value=semanaDe(hoy())+1;$('#nTxt').value='';$('#nAut').value=ls.get('gym_autor')||'';
+  $('#nJug').value=jug||'';$('#nSem').value=semanaDe(hoy())+1;$('#nDia').value='';llenarDias();$('#nTxt').value='';$('#nAut').value=ls.get('gym_autor')||'';
   $('#nTokL').hidden=!!ls.get('gh_token');pintarNotas();$('#notasModal').hidden=false;(jug?$('#nTxt'):$('#nJug')).focus();
 }
 $('#btnNotas').onclick=()=>abrirNotas('');
+$('#nSem').addEventListener('input',llenarDias);
 $('#screen').addEventListener('click',e=>{if(e.target.closest('[data-abrir-notas]'))abrirNotas('')});
 $('#notasCerrar').onclick=()=>{$('#notasModal').hidden=true};
 $('#notasModal').addEventListener('click',e=>{if(e.target.id==='notasModal')$('#notasModal').hidden=true});
@@ -550,9 +578,10 @@ addEventListener('keydown',e=>{if(e.key==='Escape')$('#notasModal').hidden=true}
 $('#notaForm').onsubmit=async e=>{
   e.preventDefault();
   const n={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),jugador:$('#nJug').value.trim().toUpperCase(),semana:+$('#nSem').value,texto:$('#nTxt').value.trim(),autor:$('#nAut').value.trim(),fecha:new Date().toISOString()};
+  if($('#nDia').value)n.dia=$('#nDia').value;
   if(!n.jugador||!n.semana||!n.texto)return;ls.set('gym_autor',n.autor);
   const b=e.submitter;if(b)b.disabled=true;
-  if(await guardarNotas(l=>[...l,n])){toast(`Nota guardada: ${n.jugador} · Sem ${n.semana}.`);$('#nTxt').value='';pintarNotas();if(!EDIT)render()}
+  if(await guardarNotas(l=>[...l,n])){toast(`Nota guardada: ${n.jugador} · Sem ${n.semana}${n.dia?' · Día '+n.dia:''}.`);$('#nTxt').value='';pintarNotas();if(!EDIT)render()}
   if(b)b.disabled=false;
 };
 $('#notasLista').addEventListener('click',async e=>{const b=e.target.closest('[data-ndel]');if(!b)return;b.disabled=true;
@@ -577,15 +606,18 @@ function semanaJugador(jug){
   const itemsDe=(plan,d)=>DATA.planes[plan]?.dias?.[d]?(unidades(seccion(plan,d,'cor').datos,'cor').get(k)?.items||[]):null;
   const clave=i=>nk(i.id)+'|'+nk(i.ej);
   const cap1=s=>s?s.charAt(0).toUpperCase()+s.slice(1).replace('miercoles','miércoles').replace('sabado','sábado'):'';
-  let h=`<div class="semtab"><table><thead><tr><th>Semana</th>${dias.map(d=>`<th>Día ${esc(d)}${p0.dias_semana?.[d]?' · '+esc(cap1(p0.dias_semana[d])):''}</th>`).join('')}</tr></thead><tbody>`;
+  let h=`<div class="sedbar"><button class="btn gold" data-sedit>✎ Editar la semana de ${esc(jug)} (${esc(PLAN)})</button><span class="note">Cambiás todos los días juntos; se guarda como ajuste del tablero, igual que Editar.</span></div>`;
+  h+=`<div class="semtab"><table><thead><tr><th>Semana</th>${dias.map(d=>`<th>Día ${esc(d)}${p0.dias_semana?.[d]?' · '+esc(cap1(p0.dias_semana[d])):''}</th>`).join('')}</tr></thead><tbody>`;
   filas.forEach((plan,ri)=>{
     const p=DATA.planes[plan],prev=filas[ri+1];
     h+=`<tr class="${ri===0?'actual':''}"><th>${esc(plan)}<small>${esc(rangoSem(p.semana))}</small></th>`;
     dias.forEach(d=>{
       const it=itemsDe(plan,d),old=prev?itemsDe(prev,d):null,om=new Map((old||[]).map(i=>[clave(i),i]));
-      if(it===null){h+='<td class="vacio">Sin día en este plan</td>';return}
-      if(!it.length){h+='<td class="vacio">Sin correctivo</td>';return}
-      h+='<td>'+it.map(i=>{
+      const cn=NOTAS.notas.filter(n=>nnN(n.jugador)===nnN(jug)&&n.dia&&String(n.dia)===String(d)&&(n.semana===p.semana||(ri===0&&!notaHecha(n)&&n.semana<p.semana)));
+      const cnH=cn.map(n=>`<div class="cnota${notaHecha(n)?' ok':''}"><b>${notaHecha(n)?'✓ Nota hecha':'⚠ Nota'}${n.semana!==p.semana?' · desde Sem '+n.semana:''}</b>${esc(n.texto)}</div>`).join('');
+      if(it===null){h+=`<td class="vacio">${cnH}Sin día en este plan</td>`;return}
+      if(!it.length){h+=`<td class="vacio">${cnH}Sin correctivo</td>`;return}
+      h+='<td>'+cnH+it.map(i=>{
         const o=om.get(clave(i)),cls=old===null?'':!o?'new':nk(o.dosis)!==nk(i.dosis)?'chg':'';
         const fin=/^FIN/i.test(i.id);
         return `<div class="it ${cls}"><span class="chip ${fin?'fin':i.id?'':'none'}">${esc(fin?'FIN':i.id||'·')}</span><span class="ej">${esc(i.ej)}${cls==='new'?'<em class="mk">nuevo</em>':''}</span><span class="dz">${esc(i.dosis)||'—'}${cls==='chg'?`<em class="mk">antes: ${esc(o.dosis||'—')}</em>`:''}</span></div>`;
@@ -597,7 +629,7 @@ function semanaJugador(jug){
   if(pl)h+=`<p style="margin-top:12px"><button class="btn" data-semmas>Ver 4 semanas más</button></p>`;
   const sems=new Set(filas.map(f=>DATA.planes[f].semana));
   const ns=NOTAS.notas.filter(n=>nnN(n.jugador)===nnN(jug)&&sems.has(n.semana)).sort((a,b)=>b.semana-a.semana);
-  if(ns.length)h+=`<div class="spanel" style="margin-top:12px"><h3>Notas de estas semanas</h3><ul>${ns.map(n=>`<li><b>Sem ${n.semana}</b>${esc(n.texto)}<small>${notaHecha(n)?'✓ hecha · ':'pendiente · '}${esc(n.autor||'')}</small></li>`).join('')}</ul></div>`;
+  if(ns.length)h+=`<div class="spanel" style="margin-top:12px"><h3>Notas de estas semanas</h3><ul>${ns.map(n=>`<li><b>Sem ${n.semana}</b>${diaTxt(n)} ${esc(n.texto)}<small>${notaHecha(n)?'✓ hecha · ':'pendiente · '}${esc(n.autor||'')}</small></li>`).join('')}</ul></div>`;
   return h;
 }
 /* rutina de gimnasio de toda la semana, con las semanas anteriores para ver la progresión */
@@ -635,7 +667,53 @@ function abrirSemanaRutina(){
   $('#semBody').innerHTML=semanaRutina();$('#semModal').hidden=false;
 }
 $('#dlRut').addEventListener('click',e=>{if(e.target.closest('[data-rsem]')&&!EDIT){SEM_N=4;abrirSemanaRutina()}});
-function abrirSemana(jug){SEM_MODO='jug';
+/* ---------- edición semanal de los correctivos de un jugador (todos los días del plan de una vez) ---------- */
+let SED=null; // {jug, dias:{d:[items]}}
+function semanaEditor(){
+  const p=DATA.planes[PLAN],dias=Object.keys(p.dias).sort((a,b)=>a-b);
+  const cap1=s=>s?s.charAt(0).toUpperCase()+s.slice(1).replace('miercoles','miércoles').replace('sabado','sábado'):'';
+  const cn=d=>notasVisibles(PLAN,SED.jug).filter(n=>n.dia&&String(n.dia)===String(d)).map(n=>`<div class="cnota"><b>⚠ Nota</b>${esc(n.texto)}</div>`).join('');
+  return `<div class="sedbar"><b>Editando ${esc(SED.jug)} · ${esc(PLAN)}</b><label class="note" style="display:flex;gap:6px;align-items:center">Quién edita <input id="sedAut" value="${esc(ls.get('gym_autor')||'')}"></label>
+    ${!DEMO&&!ls.get('gh_token')?'<input id="tok" type="password" placeholder="Token de GitHub (el de Carga)" aria-label="Token de GitHub" style="width:230px">':''}
+    <button class="btn ghost" data-scancel>Descartar</button><button class="btn gold" data-ssave>Guardar semana</button></div>
+    <div class="semtab sed"><table><thead><tr>${dias.map(d=>`<th>Día ${esc(d)}${p.dias_semana?.[d]?' · '+esc(cap1(p.dias_semana[d])):''}</th>`).join('')}</tr></thead><tbody><tr class="actual">
+    ${dias.map(d=>`<td>${cn(d)}${(SED.dias[d]||[]).map((it,j)=>`<div class="r"><input data-sp="${d}.${j}.id" value="${esc(it.id)}" placeholder="A1" aria-label="Etiqueta"><input data-sp="${d}.${j}.ej" value="${esc(it.ej)}" placeholder="Ejercicio" aria-label="Ejercicio"><input data-sp="${d}.${j}.dosis" value="${esc(it.dosis)}" placeholder="Dosis" aria-label="Dosis"><button class="x" data-sdel="${d}.${j}" aria-label="Borrar ejercicio">✕</button></div>`).join('')}
+      <button class="addrow" data-sadd="${d}">+ Agregar ejercicio</button></td>`).join('')}</tr></tbody></table></div>`;
+}
+function editarSemana(jug){
+  const k=nk(jug),p=DATA.planes[PLAN];SED={jug,dias:{}};
+  Object.keys(p.dias).forEach(d=>{SED.dias[d]=clone(unidades(seccion(PLAN,d,'cor').datos,'cor').get(k)?.items||[])});
+  $('#semSub').textContent='Editá los correctivos de toda la semana. Lo que dejes vacío se borra de ese día.';
+  $('#semBody').innerHTML=semanaEditor();
+}
+async function guardarSemana(){
+  const autor=($('#sedAut')?.value||'').trim();ls.set('gym_autor',autor);
+  const k=nk(SED.jug),fecha=new Date().toISOString();PEND.set={};PEND.del=[];
+  for(const d of Object.keys(SED.dias)){
+    const items=SED.dias[d].map(i=>({id:(i.id||'').trim().toUpperCase(),ej:(i.ej||'').trim(),dosis:(i.dosis||'').trim()})).filter(i=>i.ej||i.dosis);
+    const cur=clone(seccion(PLAN,d,'cor').datos),ix=cur.findIndex(u=>nk(u.jugador)===k);
+    const antes=ix>=0?cur[ix].items:[];
+    if(JSON.stringify(antes.map(i=>[nk(i.id),nk(i.ej),nk(i.dosis)]))===JSON.stringify(items.map(i=>[nk(i.id),nk(i.ej),nk(i.dosis)])))continue;
+    if(ix>=0){if(items.length)cur[ix]={...cur[ix],items};else cur.splice(ix,1)}
+    else if(items.length)cur.push({jugador:SED.jug,items});
+    const key=ajKey(PLAN,d,'cor'),v={datos:cur,base:seccion(PLAN,d,'cor',true).datos,autor,fecha};
+    PEND.set[key]=v;AJ.ajustes[key]=v;
+  }
+  if(!Object.keys(PEND.set).length){toast('No cambiaste nada.');SED=null;abrirSemana(SEM_JUG);return}
+  if(!DEMO&&!ls.get('gh_token')&&!$('#tok')?.value?.trim()){toast('Pegá el token de GitHub para guardar.',true);return}
+  const n=Object.keys(PEND.set).length;
+  if(await persistir()){toast(`Guardado: ${n} día${n>1?'s':''} de ${SED.jug}.`);SED=null;bc?.postMessage({t:'aj',aj:AJ});if(!EDIT)render();abrirSemana(SEM_JUG)}
+}
+$('#semBody').addEventListener('click',e=>{
+  if(e.target.closest('[data-sedit]')){if(EDIT){toast('Terminá primero la edición de la pantalla.',true);return}editarSemana(SEM_JUG);return}
+  if(!SED)return;const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.sdel){const [d,j]=b.dataset.sdel.split('.');SED.dias[d].splice(+j,1);$('#semBody').innerHTML=semanaEditor()}
+  else if(b.dataset.sadd){const d=b.dataset.sadd;(SED.dias[d]=SED.dias[d]||[]).push({id:'',ej:'',dosis:''});$('#semBody').innerHTML=semanaEditor()}
+  else if('scancel' in b.dataset){SED=null;abrirSemana(SEM_JUG)}
+  else if('ssave' in b.dataset){b.disabled=true;guardarSemana().finally(()=>{b.disabled=false})}
+});
+$('#semBody').addEventListener('input',e=>{const p=e.target.dataset.sp;if(!p||!SED)return;const [d,j,f]=p.split('.');SED.dias[d][+j][f]=e.target.value});
+function abrirSemana(jug){SEM_MODO='jug';SED=null;
   if(!DATA)return;SEM_JUG=jug;
   $('#semTit').textContent=jug+' · semana completa';
   $('#semSub').textContent=`Arriba ${PLAN}, abajo las semanas anteriores. En verde, lo que cambió respecto de la semana anterior.`;
@@ -804,8 +882,9 @@ async function cargar(){
   if(!arrancar())return;
   // otra compu: refresca ajustes y notas cada 30 s
   setInterval(async()=>{if(EDIT)return;const t=ls.get('gh_token');try{const a=t?await leerAjustesApi(t):null;if(a)AJ=a;await cargarNotas();guardarCache();render()}catch(e){}},30000);
-  const nv=notasVisibles(PLAN).length;
-  if(nv&&!AVISO_NOTAS&&!document.fullscreenElement){AVISO_NOTAS=true;toast(nv===1?'Hay 1 nota para esta semana: tocá Notas.':`Hay ${nv} notas para esta semana: tocá Notas.`)}
+  const nv=notasVisibles(PLAN).length,na=notasDelDia(PLAN,DIA).length;
+  if(nv&&!AVISO_NOTAS&&!document.fullscreenElement){AVISO_NOTAS=true;
+    toast(na?`⚠ ${na===1?'Hay 1 nota':'Hay '+na+' notas'} para modificar hoy (Día ${DIA}): tocá Notas.`:nv===1?'Hay 1 nota para esta semana: tocá Notas.':`Hay ${nv} notas para esta semana: tocá Notas.`,!!na)}
 }
 // ===== Actualizar solo la hoja del PF (dispara gimnasio.yml) =====
 const GYM_WF='gimnasio.yml';

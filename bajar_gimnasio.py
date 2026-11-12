@@ -180,7 +180,56 @@ def parsear_gimnasio(g, pestana=""):
                 items = emparejar(lineas_etiquetadas(cel(g, r, c + 1)), lineas_etiquetadas(cel(g, r, c + 3)))
                 corrs.append({"jugador": re.sub(r"\s+", " ", nom).strip(), "items": items})
         res["dias"][n] = {"previo": previo, "bloques": bloques, "correctivos": corrs}
+    res["fisico"] = parsear_fisico(g, fis, avisos, pestana)
     return res
+
+
+def parsear_fisico(g, fis, avisos, pestana=""):
+    """Tabla FISICO: DIA | nombre | EXPLICACION | REPETICIONES (una o más columnas: BUENOS AIRES, INTERIOR...).
+    Devuelve {"1": [{"ej", "exp", "dosis": [{"lab", "v"}]}], ...} o None."""
+    if not fis:
+        return None
+    rf, cf = fis
+    hdr = None
+    for r in range(rf, rf + 4):
+        if norm(cel(g, r, cf)).startswith("dia"):
+            hdr = r
+            break
+    if hdr is None:
+        avisos.append(f"{pestana}: no encontré la fila DIA / EXPLICACION / REPETICIONES debajo de FISICO.")
+        return None
+    fila = {c: norm(cel(g, hdr, c)) for c in range(cf, cf + 20)}
+    cexp = next((c for c, v in fila.items() if v.startswith("explicacion")), cf + 3)
+    crep = next((c for c, v in fila.items() if v.startswith("repeticion")), cf + 7)
+    # subencabezados de REPETICIONES (BUENOS AIRES / INTERIOR / SEM 15...)
+    sub = {c: txt(cel(g, hdr + 1, c)) for c in range(crep, crep + 10) if txt(cel(g, hdr + 1, c))}
+    if crep not in sub:
+        sub[crep] = ""
+    r0 = hdr + (2 if any(sub.values()) else 1)
+    filas, dia, vacias = [], None, 0
+    for r in range(r0, min(len(g), r0 + 60)):
+        if not any(txt(cel(g, r, c)) for c in range(cf, cf + 16)):
+            vacias += 1
+            if vacias >= 6:  # las celdas de cada día vienen combinadas: hay filas vacías dentro de la tabla
+                break
+            continue
+        vacias = 0
+        k = txt(cel(g, r, cf))
+        m = re.search(r"\d+", k)
+        if m:
+            dia = str(int(m.group()))
+        nom = txt(cel(g, r, cf + 1))
+        if not nom or dia is None:
+            continue
+        filas.append((dia, nom, txt(cel(g, r, cexp)), {c: txt(cel(g, r, c)) for c in sub}))
+    # solo las columnas de repeticiones que tienen algo; "SEM 15" es el título de la semana, no una variante
+    usadas = [c for c in sorted(sub) if any(f[3][c] for f in filas)]
+    dias = {}
+    for dia, nom, exp, reps in filas:
+        dosis = [{"lab": "" if len(usadas) == 1 or re.match(r"sem\b", norm(sub[c])) else sub[c].strip().capitalize(), "v": reps[c]}
+                 for c in usadas if reps[c]]
+        dias.setdefault(dia, []).append({"ej": re.sub(r"\s+", " ", nom).strip(), "exp": re.sub(r"\s+", " ", exp).strip(), "dosis": dosis})
+    return dias or None
 
 
 def armar_planes(pestanas):
@@ -208,6 +257,8 @@ def armar_planes(pestanas):
             "dias_semana": ds,
             "dias": res["dias"],
         }
+        if res.get("fisico"):
+            planes[nombre.strip()]["fisico"] = res["fisico"]
     return planes, avisos
 
 

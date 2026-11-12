@@ -39,6 +39,18 @@ main{max-width:1180px;margin:-32px auto 0;padding:0 20px 60px}
 .hub-card.soon{opacity:.72}
 .hub-card.soon:hover{transform:none;box-shadow:0 2px 10px rgba(20,66,114,.05);border-color:var(--line)}
 footer{text-align:center;color:var(--grey);font-size:12px;padding:20px 0 40px}
+.alarma{max-width:1180px;margin:0 auto 18px;padding:0 20px}
+.alarma-box{background:#fff;border:1px solid #F3C2C4;border-left:5px solid #D93A40;border-radius:14px;padding:14px 18px;display:flex;flex-direction:column;gap:8px;box-shadow:0 2px 10px rgba(217,58,64,.08)}
+.alarma-box.semana{border-color:var(--line);border-left-color:var(--gold)}
+.alarma-box h3{font-size:14.5px;color:#B3262C;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.alarma-box.semana h3{color:#7A6300}
+.alarma-box h3 a{margin-left:auto;font-size:12.5px;color:var(--steel);font-weight:600}
+.alarma-box ul{list-style:none;display:flex;flex-direction:column;gap:4px;font-size:13.5px;color:var(--navy)}
+.alarma-box li b{margin-right:6px}
+.alarma-box li .d{display:inline-block;font-size:11.5px;font-weight:700;border-radius:20px;padding:1px 8px;margin-right:6px;background:#EDF0F4;color:var(--grey)}
+.alarma-box li .d.hoy{background:#FBE4E4;color:#B3262C}
+.hub-card .badge{position:absolute;top:14px;right:14px;background:#D93A40;color:#fff;font-size:11.5px;font-weight:700;border-radius:20px;padding:3px 10px}
+.hub-card .badge.sem{background:var(--gold);color:#3A2F07}
 .fuentes{max-width:1180px;margin:34px auto 0;padding:0 20px}
 .fuentes-box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 20px;font-size:12.5px;color:var(--grey);line-height:1.6}
 .fuentes-box b{color:var(--steel)}
@@ -52,6 +64,7 @@ footer{text-align:center;color:var(--grey);font-size:12px;padding:20px 0 40px}
   </div>
 
   <main>
+    <div class="alarma" id="alarma" hidden></div>
     <div class="cards">
       <a class="hub-card readiness" href="./readiness/">
         <div class="top-bar"></div>
@@ -93,6 +106,29 @@ footer{text-align:center;color:var(--grey);font-size:12px;padding:20px 0 40px}
     </div>
   </main>
 
+  <script>
+  /* Alarma de correctivos: notas pendientes del gimnasio (gimnasio_notas.json) para esta semana; en rojo las que son para hoy */
+  (async()=>{
+    const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const INICIO=new Date(2026,6,20),hoy=new Date();hoy.setHours(0,0,0,0);
+    const sem=Math.floor((hoy-INICIO)/864e5/7)+1;
+    const DIAS=['domingo','lunes','martes','miercoles','jueves','viernes','sabado'],hoyN=DIAS[hoy.getDay()];
+    const js=u=>fetch(u).then(r=>r.ok?r.json():null).catch(()=>null),v='?v='+Date.now();
+    const [n,g]=await Promise.all([js('https://raw.githubusercontent.com/pumas7/Seven-readiness/main/gimnasio_notas.json'+v),js('./gimnasio.json'+v)]);
+    const ns=(n?.notas||[]).filter(x=>x.estado!=='hecha'&&x.semana<=sem);if(!ns.length)return;
+    // plan de esta semana (el de más días de gimnasio) para saber qué día de la semana es cada "Día N"
+    const pl=Object.values(g?.planes||{}).filter(p=>p.semana===sem).sort((a,b)=>Object.keys(b.dias_semana||{}).length-Object.keys(a.dias_semana||{}).length)[0];
+    const wd=x=>x.dia?pl?.dias_semana?.[x.dia]||'':'';
+    const deHoy=ns.filter(x=>x.dia&&wd(x)===hoyN),resto=ns.filter(x=>!deHoy.includes(x));
+    const li=x=>`<li>${x.dia?`<span class="d${deHoy.includes(x)?' hoy':''}">Día ${esc(x.dia)}${wd(x)?' · '+esc(wd(x)):''}</span>`:'<span class="d">Toda la semana</span>'}<b>${esc(x.jugador)}</b>${esc(x.texto)}${x.semana<sem?` <span style="color:var(--grey);font-size:12px">(pendiente desde Sem ${x.semana})</span>`:''}</li>`;
+    let h='';
+    if(deHoy.length)h+=`<div class="alarma-box"><h3>⚠ Correctivos para modificar hoy (${deHoy.length})<a href="./gimnasio/#correctivos">Ir a correctivos →</a></h3><ul>${deHoy.map(li).join('')}</ul></div>`;
+    if(resto.length)h+=`<div class="alarma-box semana"${deHoy.length?' style="margin-top:10px"':''}><h3>Notas de correctivos de esta semana (${resto.length})${deHoy.length?'':'<a href="./gimnasio/#correctivos">Ir a correctivos →</a>'}</h3><ul>${resto.map(li).join('')}</ul></div>`;
+    const a=document.getElementById('alarma');a.innerHTML=h;a.hidden=false;
+    const card=document.querySelector('.hub-card.gym');
+    if(card)card.insertAdjacentHTML('beforeend',deHoy.length?`<span class="badge">⚠ ${deHoy.length} para hoy</span>`:`<span class="badge sem">${ns.length} nota${ns.length>1?'s':''}</span>`);
+  })();
+  </script>
   <footer>Pumas 7s — Unión Argentina de Rugby · Uso interno del cuerpo técnico</footer>
 </body>
 </html>
