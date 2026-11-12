@@ -95,6 +95,23 @@ tr:last-child td{border-bottom:0}
 tr.hide{display:none}
 tr.wk td{background:#EAF1F8;color:var(--navy);font-weight:600;font-size:12px;padding:6px 9px}
 .g{display:block;font-size:10.5px;color:var(--grey);font-weight:400;margin-top:2px}
+.bar{height:7px;background:#EDF0F4;border-radius:4px;position:relative;margin:5px 0 3px;min-width:96px}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;max-width:100%}
+.bar u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--navy);border-radius:1px}
+.f-g{background:var(--green)}.f-a{background:var(--amber)}.f-r{background:var(--red)}.f-b{background:var(--sky)}.f-n{background:#C9D2DC}
+.falta{display:block;font-size:11px;font-weight:700;margin-top:2px}.falta.ok{color:var(--green)}.falta.no{color:var(--navy)}
+.curso{border:1px solid var(--line);border-left:4px solid var(--sky);border-radius:12px;padding:12px 14px;margin:4px 0 14px;background:#F7FAFD}
+.curso h4{font-size:13.5px;color:var(--navy);margin-bottom:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ctiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.ctile{background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:12px}
+.ctile .t{color:var(--grey);font-weight:600;font-size:11.5px}
+.ctile .v{font-size:19px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
+.ctile .v small{font-size:12px;color:var(--grey);font-weight:500}
+.ctile .l{display:flex;justify-content:space-between;gap:6px;font-variant-numeric:tabular-nums;margin-top:2px}
+.ctile .l span:first-child{color:var(--grey)}
+.cresto{font-size:11.5px;color:var(--grey);margin-top:8px}
+.printonly{display:none}
+@media(max-width:900px){.ctiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .oi-in{width:64px;padding:5px 6px;border:1px solid var(--line);border-radius:6px;font:inherit;text-align:right}
 tr.tot td{background:#F4F7FB;font-weight:600}
 tr.sub td{background:#FAFCFE;color:var(--grey);font-size:11.5px}
@@ -127,6 +144,13 @@ tr.sub td{background:#FAFCFE;color:var(--grey);font-size:11.5px}
   body.print-snap main>#viewHist{display:block!important}
   body.print-snap #viewHist>*{display:none!important}
   body.print-snap #viewHist>#snapBox{display:block!important;border:0;padding:0}
+  body.print-carga main>#viewCase{display:block!important}
+  body.print-carga #viewCase>*{display:none!important}
+  body.print-carga #viewCase>#secCarga{display:block!important;border:0;padding:0}
+  body.print-carga #secCarga .printonly{display:flex!important}
+  body.print-carga #acwrBox{display:block!important}
+  .bar i,.bar u,.f-g,.f-a,.f-r,.f-b,.pill{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  table{font-size:10.5px}
   .actions,.noprint{display:none!important}
   .report{border:0;padding:0}
 }
@@ -681,14 +705,16 @@ function renderCase(){
     <div class="scroll" id="fisBox"></div>
   </div>
 
-  <div class="sec">
+  <div class="sec" id="secCarga">
+    <div class="rep-head printonly" id="cargaHead"></div>
     <h3>Carga de campo</h3><p class="hint">Sesiones del jugador en Catapult desde la lesión, por semana. El número de color es el % de <b>su</b> objetivo de ese día (el que le pusiste arriba); abajo, en gris, el % del objetivo del grupo cuando son distintos.
       <span class="pill p-g">90–110%</span> en objetivo · <span class="pill p-a">80–90% / 110–120%</span> cerca · <span class="pill p-r">&lt; 80% / &gt; 120%</span> lejos del objetivo · <span class="pill p-n">—</span> ese día el plan no tiene objetivo para esa variable</p>
     <div class="scroll"><table><thead><tr><th>Fecha</th><th>Sesión</th><th>Día del plan</th>${VARS.map(v=>`<th>${v.t}</th>`).join('')}<th>%Vmax</th></tr></thead><tbody id="sesBody"></tbody></table></div>
     <h3 style="margin-top:16px;font-size:14px">Resumen por semana</h3>
-    <p class="hint">Total que hizo en la semana contra lo planificado para él (la semana en curso, solo los días ya pasados). Abajo: el plan y cuánto cambió respecto de la última semana que entrenó. Las 2 semanas previas a la lesión quedan de referencia de lo que venía haciendo.</p>
-    <div class="scroll"><table><thead><tr><th>Semana</th>${VARS.map(v=>`<th>${v.t}<br><span style="font-weight:400">hecho · % del plan</span></th>`).join('')}<th></th></tr></thead><tbody id="semBody"></tbody></table></div>
-    <div class="actions noprint" style="margin-top:10px"><button class="btn ghost" id="btnAcwr">${ACWR_OPEN?'Ocultar':'Ver'} ACWR vs. pre-lesión</button></div>
+    <p class="hint">Contra el objetivo semanal que le pusiste arriba. La barra es lo hecho sobre el objetivo de toda la semana; la rayita marca hasta dónde tendría que ir a hoy. El color es el % contra lo planificado hasta hoy (semana cerrada: contra la semana entera). Las semanas previas a la lesión quedan de referencia, contra el objetivo del grupo.</p>
+    <div id="cursoBox"></div>
+    <div class="scroll"><table><thead><tr><th>Semana</th>${VARS.map(v=>`<th>${v.t}<br><span style="font-weight:400">hecho · objetivo · falta</span></th>`).join('')}<th></th></tr></thead><tbody id="semBody"></tbody></table></div>
+    <div class="actions noprint" style="margin-top:10px"><button class="btn ghost" id="btnAcwr">${ACWR_OPEN?'Ocultar':'Ver'} ACWR vs. pre-lesión</button><button class="btn ghost" id="btnPrintCarga">Informe de carga</button></div>
     <div id="acwrBox" ${ACWR_OPEN?'':'hidden'}></div>
   </div>
 
@@ -784,10 +810,11 @@ function refresh(){
   $('#semBody').innerHTML=k.semanas.map(w=>{
     const tag=w.sin?'<span class="pill p-n">no entrenó</span>':w.pre?'<span class="pill p-n">pre-lesión</span>':w.lesion?'<span class="pill p-n">semana de lesión</span>':w.curso?`<span class="pill p-b">en curso · ${w.ob?w.ob._dias+'/'+w.ob._total+' días del plan':''}</span>`:'';
     if(w.sin)return `<tr><td><b>S${w.n}</b></td><td colspan="${VARS.length}" class="muted">Sin sesiones en Catapult esta semana.</td><td>${tag}</td></tr>`;
-    return `<tr><td><b>S${w.n}</b></td>${VARS.map(v=>{const p=w.pre?w.pct[v.k]:w.pcti[v.k],pl=w.pre?w.ob?.[v.k]:w.obi?.[v.k],d=w.inc[v.k];
-      const full=w.obiF?.[v.k];const extra=[pl?(w.curso&&full&&Math.round(full)!==Math.round(pl)?'plan a hoy '+fmt(pl)+' de '+fmt(full)+' de la semana':'plan '+fmt(pl)):'sin plan',d===null||w.lesion?null:(d>=0?'▲':'▼')+fmt(Math.abs(d))+'% vs S'+w.pn].filter(Boolean).join(' · ');
-      return `<td class="num">${fmt(w.tot[v.k])} <span class="pill ${w.pre||w.lesion?'p-n':pctCls(p)}">${pp(p)}</span><span class="g">${extra}</span></td>`}).join('')}
+    return `<tr><td><b>S${w.n}</b></td>${VARS.map(v=>semCelda(w,v.k,pp)).join('')}
       <td>${tag}</td></tr>`}).join('');
+  renderCurso(c,k);
+  $('#cargaHead').innerHTML=`<div><b style="font-size:15px">${esc(c.jugador)}</b> · ${esc(c.puesto||'')}<br><span class="muted">${esc(lesionTxt(c))} · ${esc(c.lado||'')} · lesión ${fLarga(k.L)} · día ${diffD(k.L,hoy())}</span></div>
+    <div style="text-align:right"><img src="${CREST}" alt=""><br><span class="muted">Informe de carga · ${fLarga(hoy())}</span></div>`;
   renderAcwr(k);
   // tests
   k.tests.forEach(r=>{const id=r.t.id;
@@ -807,6 +834,41 @@ function refresh(){
   $('#report').innerHTML=informeHTML(c,k,false);
 }
 
+/* celda del resumen semanal: hecho, % (semáforo), barra contra el objetivo de la semana entera y cuánto falta */
+const fillCls=c=>c.replace('p-','f-');
+function semCelda(w,key,pp){
+  const d=w.inc[key],tot=w.tot[key];
+  const inc=d===null||w.lesion?'':`<span class="g">${d>=0?'▲':'▼'}${fmt(Math.abs(d))}% vs S${w.pn}</span>`;
+  if(w.pre){const p=w.pct[key],pl=w.ob?.[key];
+    return `<td class="num">${fmt(tot)} <span class="pill p-n">${pp(p)}</span><span class="g">${pl?'plan del grupo '+fmt(pl):'sin plan'}</span>${inc}</td>`}
+  const full=w.curso?w.obiF?.[key]:w.obi?.[key],aHoy=w.obi?.[key],p=w.pcti[key];
+  if(!full)return `<td class="num">${fmt(tot)} <span class="pill p-n">—</span><span class="g">sin objetivo esta semana</span>${inc}</td>`;
+  const cls=w.lesion?'p-n':pctCls(p),pf=tot/full*100,falta=full-tot;
+  const bar=`<div class="bar"><i class="${fillCls(cls)}" style="width:${Math.min(100,pf).toFixed(1)}%"></i>${w.curso&&aHoy<full?`<u style="left:${(aHoy/full*100).toFixed(1)}%" title="Objetivo a hoy"></u>`:''}</div>`;
+  const lin=w.curso?`<span class="g">a hoy ${fmt(aHoy)} · semana ${fmt(full)} (${fmt(pf)}%)</span>`:`<span class="g">objetivo ${fmt(full)}</span>`;
+  const f=falta>0?`<span class="falta no">${w.curso?'faltan':'faltó'} ${fmt(falta)}</span>`:`<span class="falta ok">cumplido${falta<0?' · +'+fmt(-falta):''}</span>`;
+  return `<td class="num"><b>${fmt(tot)}</b> <span class="pill ${cls}">${pp(p)}</span>${bar}${lin}${f}${inc}</td>`;
+}
+/* recuadro de la semana en curso: cuánto cumplió hasta hoy y cuánto le queda para su objetivo */
+function renderCurso(c,k){
+  const box=$('#cursoBox');if(!box)return;
+  const w=k.semanas.find(x=>x.curso&&!x.pre);
+  if(!w||!w.obiF||!VARS.some(v=>w.obiF[v.k])){box.innerHTML='';return}
+  const pw=PLAN?.semanas?.[w.n],h=hoy();
+  const resto=Object.keys(pw?.dias||{}).sort((a,b)=>a-b).filter(d=>addD(lunesDe(w.n),OFFSET_DIA[sinTilde(pw.dias[d])]??0)>h);
+  const restoTxt=resto.map(d=>{const o=objIndDia(c,w.n,d),f=addD(lunesDe(w.n),OFFSET_DIA[sinTilde(pw.dias[d])]??0);
+    return `Día ${d} (${esc(pw.dias[d])} ${fCorta(f)}): ${o?VARS.filter(v=>o[v.k]).map(v=>`${v.t} ${fmt(o[v.k])}`).join(' · ')||'sin objetivo':'sin objetivo'}`}).join(' — ');
+  box.innerHTML=`<div class="curso"><h4>Semana ${w.n} en curso <span class="pill p-b">${w.ob?w.ob._dias+' de '+w.ob._total+' días del plan':''}</span><span class="muted" style="font-weight:400;font-size:12px">objetivo individual que le pusiste arriba</span></h4>
+    <div class="ctiles">${VARS.map(v=>{const full=w.obiF[v.k],a=w.obi?.[v.k]||0,t=w.tot[v.k];
+      if(!full)return `<div class="ctile"><div class="t">${v.t}</div><div class="v">${fmt(t)}</div><div class="g">sin objetivo esta semana</div></div>`;
+      const p=w.pcti[v.k],cls=pctCls(p),pf=t/full*100,falta=full-t;
+      return `<div class="ctile"><div class="t">${v.t}</div><div class="v">${fmt(t)} <small>/ ${fmt(full)}</small></div>
+        <div class="bar"><i class="${fillCls(cls)}" style="width:${Math.min(100,pf).toFixed(1)}%"></i>${a<full?`<u style="left:${(a/full*100).toFixed(1)}%"></u>`:''}</div>
+        <div class="l"><span>A hoy (${fmt(a)})</span><span class="pill ${cls}">${p===null?'—':fmt(p)+'%'}</span></div>
+        <div class="l"><span>Semana</span><b>${fmt(pf)}%</b></div>
+        <div class="l"><span>${falta>0?'Le faltan':'Cumplido'}</span><b style="color:${falta>0?'var(--navy)':'var(--green)'}">${falta>0?fmt(falta):falta<0?'+'+fmt(-falta):'✓'}</b></div></div>`}).join('')}</div>
+    <div class="cresto">${resto.length?'Resta del plan: '+restoTxt:'No quedan días del plan esta semana.'}</div></div>`;
+}
 function renderAcwr(k){
   const box=$('#acwrBox');if(!box)return;
   if(!k.semsPre.length){box.innerHTML='<p class="muted" style="font-size:12.5px">No hay semanas con sesiones en Catapult antes de la lesión: no se puede armar la base.</p>';return}
@@ -942,6 +1004,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.reopen){const c=caso(b.dataset.reopen);if(!confirm(`¿Reabrir el tratamiento de ${c.jugador}? Vuelve a tratamientos activos y se descarta la fecha de alta.`))return;
     c.estado='activo';delete c.fecha_alta;delete c.dias_baja;delete c.informe_final;SEL=c.id;dirty();showView('case');renderCase();return}
   switch(b.id){
+    case 'btnPrintCarga':imprimir('print-carga');break;
     case 'btnAcwr':ACWR_OPEN=!ACWR_OPEN;$('#acwrBox').hidden=!ACWR_OPEN;b.textContent=(ACWR_OPEN?'Ocultar':'Ver')+' ACWR vs. pre-lesión';break;
     case 'btnNew':renderNew();break;
     case 'btnHist':showView(VIEW==='hist'?'case':'hist');break;
