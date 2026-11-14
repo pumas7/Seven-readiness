@@ -113,6 +113,9 @@ tr.wk td{background:#EAF1F8;color:var(--navy);font-weight:600;font-size:12px;pad
 .printonly{display:none}
 @media(max-width:900px){.ctiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .oi-in{width:64px;padding:5px 6px;border:1px solid var(--line);border-radius:6px;font:inherit;text-align:right}
+.oi-v{width:54px;padding:3px 5px;font-size:12px;margin-bottom:3px}
+.oi-v:not(:placeholder-shown){border-color:var(--navy);font-weight:700;background:#F2F6FB}
+.oi-pc{font-size:11px;color:var(--grey);margin-left:2px}
 tr.tot td{background:#F4F7FB;font-weight:600}
 tr.sub td{background:#FAFCFE;color:var(--grey);font-size:11.5px}
 .num{font-variant-numeric:tabular-nums}
@@ -429,10 +432,20 @@ function objSemana(n,puesto,hasta){
 function fracSemana(n){const w=PLAN?.semanas?.[n];if(!w)return 1;const ds=Object.values(w.dias||{});if(!ds.length)return 1;
   const h=hoy();return ds.filter(d=>addD(lunesDe(n),OFFSET_DIA[sinTilde(d)]??0)<=h).length/ds.length}
 /* ===== Objetivo individual: % del objetivo del grupo, por semana y día (c.objind[sem][dia]) ===== */
-const pctInd=(c,n,dia)=>{const v=num(c.objind?.[n]?.[dia]);return v===null?100:v};
-const tienePct=(c,n,dia)=>num(c.objind?.[n]?.[dia])!==null;
+// c.objind[sem][dia] = número (mismo % para todo) o {_: % general, distancia: %, accel: %...} (% por métrica)
+const oiRaw=(c,n,d)=>c.objind?.[n]?.[d];
+const oiGen=(c,n,d)=>{const r=oiRaw(c,n,d);return num(r&&typeof r==='object'?r._:r)};
+const oiVar=(c,n,d,k)=>{const r=oiRaw(c,n,d);return r&&typeof r==='object'?num(r[k]):null};
+const oiTieneVar=(c,n,d)=>VARS.some(v=>oiVar(c,n,d,v.k)!==null);
+const pctInd=(c,n,dia,k)=>{const x=k?oiVar(c,n,dia,k):null;if(x!==null)return x;const v=oiGen(c,n,dia);return v===null?100:v};
+const tienePct=(c,n,dia)=>oiGen(c,n,dia)!==null||oiTieneVar(c,n,dia);
+function setOi(c,n,d,k,v){c.objind=c.objind||{};const sem=c.objind[n]=c.objind[n]||{};
+  let r=sem[d];r=r&&typeof r==='object'?{...r}:(num(r)!==null?{_:num(r)}:{});
+  if(v===null)delete r[k];else r[k]=v;
+  const ks=Object.keys(r);if(!ks.length)delete sem[d];else if(ks.length===1&&ks[0]==='_')sem[d]=r._;else sem[d]=r;
+  if(!Object.keys(sem).length)delete c.objind[n]}
 function objDia(n,dia,puesto){const o=PLAN?.semanas?.[n]?.objetivo?.[dia]?.[puesto];if(!o)return null;const r={};VARS.forEach(v=>r[v.k]=valObj(o[v.k]));return r}
-function objIndDia(c,n,dia){const g=objDia(n,dia,c.puesto);if(!g)return null;const f=pctInd(c,n,dia)/100;const r={};VARS.forEach(v=>r[v.k]=g[v.k]==null?null:g[v.k]*f);return r}
+function objIndDia(c,n,dia){const g=objDia(n,dia,c.puesto);if(!g)return null;const r={};VARS.forEach(v=>r[v.k]=g[v.k]==null?null:g[v.k]*pctInd(c,n,dia,v.k)/100);return r}
 function objSemanaInd(c,n,hasta){
   const w=PLAN?.semanas?.[n]; if(!w||!c.puesto)return null;
   const r={};VARS.forEach(v=>r[v.k]=0);
@@ -504,7 +517,7 @@ function calcular(c){
     const o=objSesion(s.fecha,c.puesto);const p={},pi={};const n=semanaDe(s.fecha);
     const oi=o?.dia?objIndDia(c,n,o.dia):null;
     VARS.forEach(v=>{const ob=o?.obj?.[v.k];p[v.k]=ob?s.m[v.k]/ob*100:null;const b=oi?.[v.k];pi[v.k]=b?s.m[v.k]/b*100:null});
-    return {...s,n,dia:o?.dia||null,obj:o?.obj||null,p,pi,ind:o?.dia?tienePct(c,n,o.dia):false,pctDia:o?.dia?pctInd(c,n,o.dia):null};
+    return {...s,n,dia:o?.dia||null,obj:o?.obj||null,p,pi,ind:o?.dia?tienePct(c,n,o.dia):false,pctDia:o?.dia?pctInd(c,n,o.dia):null,pctVar:o?.dia?oiTieneVar(c,n,o.dia):false};
   });
   const semanas=[];
   const entreno=n=>totalSemana(c.jugador,n).distancia>0;
@@ -698,7 +711,7 @@ function renderCase(){
   </div>
 
   <div class="sec">
-    <h3>Objetivos de la semana</h3><p class="hint">Objetivo del grupo para su puesto, día por día (hoja del PF), y el % que le ponés a él. Las métricas se calculan solas y la carga de abajo se compara contra esto. Si no ponés nada, va al 100% (igual que el grupo).</p>
+    <h3>Objetivos de la semana</h3><p class="hint">Objetivo del grupo para su puesto, día por día (hoja del PF), y el % que le ponés a él. "% para él" vale para todo el día; el casillero chico de cada métrica la pisa solo a ella (ej.: 100% de distancia y 0% de aceleraciones). Vacío = el % del día; si no ponés nada, va al 100% (igual que el grupo). La carga de abajo se compara contra esto.</p>
     <div class="actions" style="margin:0 0 10px;align-items:flex-end"><label class="f">Semana<select id="oiSem"></select></label><span class="muted" id="oiNota" style="font-size:12px"></span></div>
     <div class="scroll"><table><thead><tr><th>Día</th><th>% para él</th>${VARS.map(v=>`<th>${v.t}</th>`).join('')}</tr></thead><tbody id="oiBody"></tbody></table></div>
     <h3 style="margin-top:16px;font-size:14px">Físico de la semana</h3>
@@ -804,7 +817,7 @@ function refresh(){
   $('#sesBody').innerHTML=k.ses.length?k.ses.map(s=>{
     let h='';if(s.n!==semAnt){semAnt=s.n;const cant=k.ses.filter(x=>x.n===s.n).length;
       h=`<tr class="wk"><td colspan="9">Semana ${s.n} · ${fCorta(lunesDe(s.n))} al ${fCorta(addD(lunesDe(s.n),6))} · ${cant} sesi${cant===1?'ón':'ones'}${s.n===k.semL?' · semana de la lesión':''}</td></tr>`}
-    return h+`<tr><td>${fCorta(s.fecha)}</td><td>${esc(s.nombre)}</td><td>${s.dia?'Día '+s.dia+(s.ind?` · <b>${fmt(s.pctDia)}%</b>`:''):'<span class="muted">fuera del plan</span>'}</td>
+    return h+`<tr><td>${fCorta(s.fecha)}</td><td>${esc(s.nombre)}</td><td>${s.dia?'Día '+s.dia+(s.ind?` · <b>${fmt(s.pctDia)}%</b>${s.pctVar?' <span class="muted" title="Tiene % distinto en alguna métrica">*</span>':''}`:''):'<span class="muted">fuera del plan</span>'}</td>
     ${VARS.map(v=>`<td class="num">${fmt(s.m[v.k])} <span class="pill ${pctCls(s.pi[v.k])}">${pp(s.pi[v.k])}</span>${s.ind&&s.p[v.k]!==null?`<span class="g">grupo ${pp(s.p[v.k])}</span>`:''}</td>`).join('')}<td class="num">${fmt(s.m.pct,1)}%</td></tr>`}).join('')
     :'<tr><td colspan="9" class="muted">Todavía no hay sesiones del jugador en Catapult desde la lesión.</td></tr>';
   // semanas
@@ -980,8 +993,8 @@ function renderOi(c){
   const dias=Object.keys(w.dias||{}).sort((a,b)=>a-b);
   $('#oiBody').innerHTML=dias.map(d=>{const f=addD(lunesDe(OI_SEM),OFFSET_DIA[sinTilde(w.dias[d])]??0);const g=objDia(OI_SEM,d,c.puesto);
     return `<tr><td>Día ${d} · ${esc(w.dias[d])} ${fCorta(f)}</td>
-      <td>${g?`<input class="oi-in" type="number" min="0" max="200" step="5" data-oi="${d}" value="${esc(c.objind?.[OI_SEM]?.[d]??'')}" placeholder="100"> %`:'<span class="muted">—</span>'}</td>
-      ${VARS.map(v=>`<td class="num" id="oi_${d}_${v.k}"></td>`).join('')}</tr>`}).join('')
+      <td>${g?`<input class="oi-in" type="number" min="0" max="200" step="5" data-oi="${d}" value="${esc(oiGen(c,OI_SEM,d)??'')}" placeholder="100" title="% para todas las métricas del día"> %`:'<span class="muted">—</span>'}</td>
+      ${VARS.map(v=>`<td class="num">${g&&g[v.k]?`<input class="oi-in oi-v" type="number" min="0" max="200" step="5" data-oiv="${d}|${v.k}" value="${esc(oiVar(c,OI_SEM,d,v.k)??'')}" placeholder="${esc(oiGen(c,OI_SEM,d)??100)}" title="% solo para ${v.t} (vacío = el % del día)"><span class="oi-pc">%</span>`:''}<div id="oi_${d}_${v.k}"></div></td>`).join('')}</tr>`}).join('')
     +`<tr class="tot"><td>Total semana</td><td id="oi_t_pct"></td>${VARS.map(v=>`<td class="num" id="oi_t_${v.k}"></td>`).join('')}</tr>`;
   renderOiVals(c);
 }
@@ -990,10 +1003,11 @@ function renderOiVals(c){
   const tg={},ti={};VARS.forEach(v=>{tg[v.k]=0;ti[v.k]=0});let alguno=false;
   for(const d of Object.keys(w.dias||{})){const g=objDia(OI_SEM,d,c.puesto),i=objIndDia(c,OI_SEM,d);
     if(tienePct(c,OI_SEM,d))alguno=true;
+    document.querySelectorAll(`[data-oiv^="${d}|"]`).forEach(x=>x.placeholder=oiGen(c,OI_SEM,d)??100);
     VARS.forEach(v=>{const e=document.getElementById(`oi_${d}_${v.k}`);if(!e)return;
       if(!g||!g[v.k]){e.innerHTML='<span class="muted">—</span>';return}
       tg[v.k]+=g[v.k];ti[v.k]+=i[v.k];
-      e.innerHTML=`<b>${fmt(i[v.k])}</b><span class="g">grupo ${fmt(g[v.k])}</span>`})}
+      e.innerHTML=`<b>${fmt(i[v.k])}</b><span class="g">grupo ${fmt(g[v.k])}${oiVar(c,OI_SEM,d,v.k)!==null?' · '+fmt(pctInd(c,OI_SEM,d,v.k))+'%':''}</span>`})}
   VARS.forEach(v=>{const e=document.getElementById(`oi_t_${v.k}`);if(e)e.innerHTML=tg[v.k]?`<b>${fmt(ti[v.k])}</b><span class="g">grupo ${fmt(tg[v.k])} · ${fmt(ti[v.k]/tg[v.k]*100)}%</span>`:'<span class="muted">—</span>'});
   const n=$('#oiNota');if(n)n.textContent=alguno?'':'Sin % cargado esta semana: va al 100% del grupo.';
 }
@@ -1045,9 +1059,8 @@ document.addEventListener('input',e=>{
   else if(el.dataset.chk){c.checks=c.checks||{};c.checks[el.dataset.chk]=el.checked}
   else if(el.dataset.pct){c.pct=c.pct||{};c.pct[el.dataset.pct]=el.value}
   else if(el.dataset.test){c.tests=c.tests||{};c.tests[el.dataset.test]=c.tests[el.dataset.test]||{};c.tests[el.dataset.test][el.dataset.k]=el.value}
-  else if(el.dataset.oi){const v=num(el.value);c.objind=c.objind||{};c.objind[OI_SEM]=c.objind[OI_SEM]||{};
-    if(v===null)delete c.objind[OI_SEM][el.dataset.oi];else c.objind[OI_SEM][el.dataset.oi]=v;
-    dirty();renderOiVals(c);refresh();return}
+  else if(el.dataset.oi){setOi(c,OI_SEM,el.dataset.oi,'_',num(el.value));dirty();renderOiVals(c);refresh();return}
+  else if(el.dataset.oiv){const [d,k]=el.dataset.oiv.split('|');setOi(c,OI_SEM,d,k,num(el.value));dirty();renderOiVals(c);refresh();return}
   else if(el.dataset.umb){c.umb=c.umb||{};c.umb[el.dataset.umb]=c.umb[el.dataset.umb]||{};c.umb[el.dataset.umb][el.dataset.k]=num(el.value)??UMB_DEF[el.dataset.k]}
   else return;
   dirty();refresh();

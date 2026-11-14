@@ -601,7 +601,13 @@ const SP_CLASS = { ok: 'sp-g', bajo: 'sp-a', alto: 'sp-r', nodata: 'sp-n' };
 function buildGrid() {
   const grid = document.getElementById('cardsGrid');
   grid.innerHTML = '';
-  const jugadores = Object.keys(ROSTER).sort();
+  // solo los que tuvieron al menos una sesión esa semana (los que viajaron / estuvieron)
+  const jugadores = Object.keys(ROSTER).sort()
+    .filter(n => { const f = ROSTER[n].find(s => s.semana === currentWeek); return f && f.jugo; });
+  if (!jugadores.length) {
+    grid.innerHTML = `<p style="grid-column:1/-1;color:var(--grey,#6b7785);padding:18px 4px">Todavía no hay sesiones en la semana ${currentWeek}. Aparecen los jugadores a medida que entrenan.</p>`;
+    return;
+  }
 
   jugadores.forEach(nombre => {
     const semanas = ROSTER[nombre];
