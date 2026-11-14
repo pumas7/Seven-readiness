@@ -90,6 +90,17 @@
           "resp": "",
           "plan": "",
           "creado": "2026-11-11T20:47:03.139Z"
+        },
+        {
+          "id": "e1794666071641",
+          "fecha": "2026-11-12",
+          "autor": "jokin",
+          "dolor": "0",
+          "hizo": "gym adaptado + campo",
+          "fisico": "fartleck 2 x 6 10\"acelero,30\" trote, 20\" amino",
+          "resp": "bien",
+          "plan": "adaptar gym y campo, seguir codigo del dia",
+          "creado": "2026-11-14T14:21:11.641Z"
         }
       ],
       "objind": {
@@ -98,6 +109,12 @@
           "2": 60,
           "3": 60,
           "4": 60
+        },
+        "18": {
+          "1": 70,
+          "2": 70,
+          "3": 70,
+          "4": 70
         }
       }
     }
