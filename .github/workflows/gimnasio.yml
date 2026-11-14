@@ -1,11 +1,16 @@
 name: Actualizar gimnasio (hoja del PF)
 
-# Baja solo la rutina y los correctivos de la hoja del PF y republica el sitio.
-# Los datos de VALD, Catapult y el objetivo GPS se toman tal cual están publicados,
-# así no hay que esperar a esas APIs.
+# Baja de la hoja del PF la rutina, los correctivos, el físico y el objetivo GPS (plan.json),
+# y republica el sitio. Los datos de VALD y Catapult se toman tal cual están publicados,
+# así no hay que esperar a esas APIs. Corre sola cada hora y también desde el botón.
 
 on:
   workflow_dispatch:
+  # Automático: cada hora de 8 a 23 (hora argentina = UTC-3), así una pestaña nueva de la hoja
+  # (Sem 18, Sem 19...) aparece sola en el tablero sin tocar ningún botón.
+  schedule:
+    - cron: '17 11-23 * * *'
+    - cron: '17 0-2 * * *'
 
 permissions:
   contents: read
@@ -39,14 +44,23 @@ jobs:
           pip install --quiet google-auth requests
           python bajar_gimnasio.py
 
-      - name: Traer lo que ya está publicado (VALD, Catapult, objetivo GPS)
+      - name: Bajar objetivo semanal GPS (hoja del PF)
+        id: plan
+        continue-on-error: true
+        env:
+          GOOGLE_SA_JSON: ${{ secrets.GOOGLE_SA_JSON }}
+        run: python bajar_sheets.py
+
+      - name: Traer lo que ya está publicado (VALD, Catapult; objetivo GPS si no se pudo leer)
         run: |
           set -e
           SITE="https://pumas7.github.io/Seven-readiness"
           V=$(date +%s)
           curl -fsSL --retry 3 "$SITE/data.json?v=$V" -o data.json
           curl -fsSL --retry 3 "$SITE/carga.json?v=$V" -o carga.json
-          curl -fsSL --retry 3 "$SITE/plan.json?v=$V" -o plan.json || rm -f plan.json
+          if [ "${{ steps.plan.outcome }}" != "success" ] || [ ! -f plan.json ]; then
+            curl -fsSL --retry 3 "$SITE/plan.json?v=$V" -o plan.json || rm -f plan.json
+          fi
           python -c "import json; [json.load(open(f)) for f in ('data.json', 'carga.json')]"
 
       - name: Preparar sitio
