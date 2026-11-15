@@ -4564,7 +4564,7 @@
       {
        "id": "F2",
        "ej": "PLANO C BARRA (ADAPTADO)",
-       "dosis": "SEGUN PLAN"
+       "dosis": "SEGUN PLAN (80kg)"
       }
      ]
     },
@@ -4847,7 +4847,7 @@
     }
    ],
    "autor": "jokin",
-   "fecha": "2026-11-15T11:56:47.388Z"
+   "fecha": "2026-11-15T13:46:27.968Z"
   }
  }
 }
