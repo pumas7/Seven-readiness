@@ -144,7 +144,22 @@
             "accel": 70,
             "distancia": 70,
             "hsr": 70,
-            "ds": 50
+            "ds": 50,
+            "deccel": 70
+          },
+          "3": {
+            "distancia": 80,
+            "hsr": 100,
+            "ds": 50,
+            "accel": 70,
+            "deccel": 70
+          },
+          "4": {
+            "distancia": 90,
+            "hsr": 100,
+            "ds": 50,
+            "accel": 70,
+            "deccel": 70
           }
         }
       }
