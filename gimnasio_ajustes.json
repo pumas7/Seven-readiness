@@ -4892,7 +4892,7 @@
       {
        "id": "A1",
        "ej": "APOYO FACIAL A 1 BR C/PESO",
-       "dosis": "3 X 3-10\" x lado"
+       "dosis": "3 X 3-10\" x lado (10KG)"
       },
       {
        "id": "F1",
@@ -5031,8 +5031,28 @@
      "items": [
       {
        "id": "A1",
-       "ej": "BICI",
+       "ej": "BICI + EEC GRUPO",
        "dosis": "10''"
+      },
+      {
+       "id": "F1",
+       "ej": "CARGADAS DE FUERZA",
+       "dosis": "GRUPO"
+      }
+     ]
+    },
+    {
+     "jugador": "BAUTI LESCANO",
+     "items": [
+      {
+       "id": "F1",
+       "ej": "ISOS EN BANCO 90 - 90",
+       "dosis": "4 X 20\""
+      },
+      {
+       "id": "F2",
+       "ej": "PUENTE CHINO 1P",
+       "dosis": "4 X 10\""
       }
      ]
     }
@@ -5215,7 +5235,7 @@
     }
    ],
    "autor": "jokin",
-   "fecha": "2026-11-16T12:37:18.386Z"
+   "fecha": "2026-11-16T13:20:38.789Z"
   }
  }
 }
