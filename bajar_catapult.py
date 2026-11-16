@@ -6,12 +6,13 @@ Genera carga.json que el tablero (carga/index.html) lee al abrirse.
 
 Lógica:
 - Trae todas las actividades del grupo SEVEN desde INICIO_TEMPORADA hasta hoy.
-- Agrupa por semana calendario (lunes a domingo).
+- Agrupa por semana: la que dice el nombre de la sesion ("Svn Sem 18 dia 1"); si el nombre
+  no la trae, la semana calendario (lunes a domingo).
 - Roster dinámico: detecta automáticamente qué jugadores tuvo cada semana.
 - Calcula el TOTAL semanal (suma para volumen, máximo para picos).
 - Calcula la banda de referencia (promedio de las 3 semanas previas entrenadas, minimo 2, x 0.8 y x 1.3).
 """
-import json, os, sys, urllib.request
+import json, os, re, sys, urllib.request
 from collections import defaultdict
 from datetime import datetime, timedelta
 from statistics import mean
@@ -130,6 +131,26 @@ def semana_de(fecha):
     return dias // 7 + 1
 
 
+RE_SEM = re.compile(r'\bsem(?:ana)?\s*(\d{1,2})\b', re.IGNORECASE)
+
+
+def semana_de_actividad(a):
+    """La semana la define el nombre que le pone el PF ("Svn Sem 18 dia 1"), no la fecha:
+    con viajes hay semanas que arrancan en domingo. Si el nombre no trae semana, o trae
+    una que queda a mas de 1 semana de la fecha (typo), se usa la semana calendario."""
+    por_fecha = semana_de(datetime.fromtimestamp(a['start_time']))
+    m = RE_SEM.search(a.get('name') or '')
+    if not m:
+        return por_fecha
+    n = int(m.group(1))
+    if abs(n - por_fecha) > 1:
+        print(f"  ATENCION: '{a.get('name')}' dice Sem {n} pero la fecha cae en Sem {por_fecha}; uso la fecha")
+        return por_fecha
+    if n != por_fecha:
+        print(f"  '{a.get('name')}' ({datetime.fromtimestamp(a['start_time']):%d/%m}) va a Sem {n} por el nombre")
+    return n
+
+
 def fila_metrica(row):
     """Convierte una fila de /stats en las 10 métricas del tablero.
     DS, DS entradas, HSR entradas, acel y decel salen de parametros propios
@@ -226,8 +247,7 @@ def main():
     # 2. Agrupar actividades por semana
     acts_por_semana = defaultdict(list)
     for a in sevens:
-        dt = datetime.fromtimestamp(a['start_time'])
-        acts_por_semana[semana_de(dt)].append(a)
+        acts_por_semana[semana_de_actividad(a)].append(a)
 
     # 2b. Sesiones manuales del PF, agrupadas por semana
     manual = leer_manual()
@@ -263,6 +283,7 @@ def main():
         sesiones = {a['id']: {
             'nombre': a['name'],
             'fecha': datetime.fromtimestamp(a['start_time']).strftime('%a %d/%m'),
+            'fecha_iso': datetime.fromtimestamp(a['start_time']).strftime('%Y-%m-%d'),
             'origen': 'catapult',
             'jugadores': {}
         } for a in acts}
