@@ -863,7 +863,7 @@ function refresh(){
 const fillCls=c=>c.replace('p-','f-');
 function semCelda(w,key,pp){
   const d=w.inc[key],tot=w.tot[key];
-  const inc=d===null||w.lesion?'':`<span class="g">${d>=0?'▲':'▼'}${fmt(Math.abs(d))}% vs S${w.pn}</span>`;
+  const inc=d===null||w.lesion||w.curso?'':`<span class="g">${d>=0?'▲':'▼'}${fmt(Math.abs(d))}% vs S${w.pn}</span>`;
   if(w.pre){const p=w.pct[key],pl=w.ob?.[key];
     return `<td class="num">${fmt(tot)} <span class="pill p-n">${pp(p)}</span><span class="g">${pl?'plan del grupo '+fmt(pl):'sin plan'}</span>${inc}</td>`}
   const full=w.curso?w.obiF?.[key]:w.obi?.[key],aHoy=w.obi?.[key],p=w.pcti[key];
