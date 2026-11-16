@@ -486,11 +486,11 @@ table.sesiones-tbl th.sep,table.sesiones-tbl td.sep{border-left:2px solid #E8EEF
 
     <div class="charts-stack">
       <div class="chart-card">
-        <h2>Carga semanal vs banda de referencia</h2>
-        <div class="evidence">Windt &amp; Gabbett 2016 — importan tanto el valor absoluto como el cambio</div>
+        <h2>ACWR semanal</h2>
+        <div class="evidence">Carga de la semana ÷ promedio de las 3 semanas previas entrenadas (mínimo 2) · Gabbett 2016</div>
         <button class="explain-toggle" onclick="toggleExplain(this)"><span class="chev">▾</span> ¿Cómo leer esto?</button>
         <div class="explain-body"><div class="inner">
-          La línea es la carga de cada semana (promedio del equipo o el jugador elegido). La <b>franja verde</b> es la banda 0.8x–1.3x del promedio de las 3 semanas previas entrenadas (mínimo 2). Si la línea se sale por abajo → poca carga; por arriba → mucha. <b>Ojo:</b> una semana incompleta (▲ ámbar) cae abajo por tener menos sesiones, no por subcarga real. Un gráfico por cada métrica elegida arriba.
+          Cada punto es el ACWR de esa semana (promedio del equipo o el jugador elegido), con el valor escrito arriba. <b>Franja verde</b> = 0,8–1,3. Punto <b>ámbar</b> = 1,3–1,5; <b>rojo</b> = más de 1,5 (salto brusco); <b>azul</b> = menos de 0,8 (descarga). Sin punto = no hay al menos 2 semanas previas para calcularlo. <b>Ojo:</b> una semana incompleta (▲, "⚠ X/4 ses") da un ACWR bajo por tener menos sesiones, no por subcarga real. Un gráfico por cada métrica elegida arriba.
         </div></div>
       </div>
       <div id="g1Charts" class="charts-stack"></div>
@@ -823,29 +823,24 @@ function render(){
 function renderMetrica(metrica){
   const jugador = selJ.value;
   const esEquipo = jugador === '__equipo__';
-  let labels, aguda, bandaLow, bandaHigh, sesionesInfo;
+  let labels, acwr, sesionesInfo;
 
   if(esEquipo){
     const eq = DATA.equipo[metrica];
     labels = eq.map(p=>`Sem ${p.semana}`);
-    aguda = eq.map(p=>p.promedio);
     sesionesInfo = eq.map(p=>({sesiones:p.sesiones, incompleta:p.incompleta}));
-    // Banda del equipo: promedio del equipo de las 3 semanas previas con datos (mínimo 2) x0.8 / x1.3 — mismo criterio que RTP
+    // ACWR del equipo: promedio del equipo de la semana ÷ promedio del equipo de las 3 semanas previas con datos (mínimo 2) — mismo criterio que RTP
     const serie = {}; eq.forEach(p=>serie[p.semana]=p.promedio);
     const sems = eq.map(p=>p.semana);
-    bandaLow=[]; bandaHigh=[];
-    sems.forEach(sem=>{
+    acwr = sems.map(sem=>{
       const prev = sems.filter(s=>s<sem && serie[s]!==null).slice(-3).map(s=>serie[s]);
       const cron = prev.length>=2? prev.reduce((a,b)=>a+b,0)/prev.length : null;
-      bandaLow.push(cron?Math.round(cron*0.8):null);
-      bandaHigh.push(cron?Math.round(cron*1.3):null);
+      return cron && serie[sem]!==null ? Math.round(serie[sem]/cron*100)/100 : null;
     });
   } else {
     const pts = DATA.jugadores[jugador][metrica];
     labels = pts.map(p=>`Sem ${p.semana}`);
-    aguda = pts.map(p=>p.aguda);
-    bandaLow = pts.map(p=>p.banda_low);
-    bandaHigh = pts.map(p=>p.banda_high);
+    acwr = pts.map(p=>p.acwr);
     sesionesInfo = pts.map(p=>({sesiones:p.sesiones, incompleta:p.incompleta}));
   }
 
@@ -855,15 +850,31 @@ function renderMetrica(metrica){
     return info.incompleta ? [`${l}`, `⚠ ${info.sesiones}/4 ses`] : [`${l}`, `${info.sesiones}/4 ses`];
   });
 
-  const ds = [
-    {label:'Banda 1.3x', data:bandaHigh, borderColor:'rgba(31,164,99,.35)', backgroundColor:'rgba(31,164,99,.10)', fill:'+1', pointRadius:0, borderDash:[4,4]},
-    {label:'Banda 0.8x', data:bandaLow, borderColor:'rgba(31,164,99,.35)', fill:false, pointRadius:0, borderDash:[4,4]},
-    {label: esEquipo?'Promedio equipo':'Carga real', data:aguda, borderColor:NAVY, backgroundColor:NAVY, borderWidth:3,
-      pointRadius:sesionesInfo.map(s=>s&&s.incompleta?7:5),
+  const colorDe = v => v===null ? GREY : v>1.5 ? RED : v>1.3 ? AMBER : v>=0.8 ? GREEN : SKY;
+  const fmtA = v => v.toLocaleString('es-AR',{minimumFractionDigits:2, maximumFractionDigits:2});
+  const ds = [{label: esEquipo?'ACWR promedio equipo':'ACWR', data:acwr, borderColor:NAVY, backgroundColor:NAVY, borderWidth:2.5,
+      pointRadius:sesionesInfo.map(s=>s&&s.incompleta?8:6),
       pointStyle:sesionesInfo.map(s=>s&&s.incompleta?'triangle':'circle'),
-      pointBackgroundColor:sesionesInfo.map(s=>s&&s.incompleta?AMBER:NAVY), tension:.2}
-  ];
-  charts[metrica] = new Chart(document.getElementById('g1_'+metrica), {type:'line', data:{labels:labelsRich, datasets:ds}, options:baseOpts(METRIC_LABELS[metrica])});
+      pointBackgroundColor:acwr.map(colorDe), pointBorderColor:'#fff', pointBorderWidth:1.5, tension:.2, spanGaps:false}];
+  // franjas de fondo: 0,8–1,3 verde, >1,5 roja
+  const zonas = {id:'zonas_'+metrica, beforeDatasetsDraw(ch){
+    const {ctx, chartArea:{left,right,top,bottom}, scales:{y}} = ch;
+    const zona=(a,b,col)=>{const p1=Math.min(bottom,y.getPixelForValue(a)), p2=Math.max(top,y.getPixelForValue(b)); if(p1>p2){ctx.fillStyle=col; ctx.fillRect(left,p2,right-left,p1-p2);}};
+    ctx.save(); zona(0.8,1.3,'rgba(31,164,99,.12)'); zona(1.5,y.max,'rgba(214,69,69,.07)'); ctx.restore();
+  }};
+  // valor de cada semana escrito sobre el punto
+  const etiquetas = {id:'etq_'+metrica, afterDatasetsDraw(ch){
+    const {ctx} = ch, meta = ch.getDatasetMeta(0);
+    ctx.save(); ctx.font = '600 11px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    meta.data.forEach((pt,i)=>{const v=acwr[i]; if(v===null||v===undefined) return; ctx.fillStyle = colorDe(v)===GREEN ? NAVY : colorDe(v); ctx.fillText(fmtA(v), pt.x, pt.y-9);});
+    ctx.restore();
+  }};
+  const op = baseOpts('ACWR');
+  op.plugins.legend = {display:false};
+  op.plugins.tooltip = {callbacks:{label: c => c.parsed.y===null ? 'sin dato' : 'ACWR ' + fmtA(c.parsed.y)}};
+  op.scales.y = {...op.scales.y, suggestedMin:0, suggestedMax:2, ticks:{...op.scales.y.ticks, callback:v=>v.toLocaleString('es-AR')}};
+  op.layout = {padding:{top:18}};
+  charts[metrica] = new Chart(document.getElementById('g1_'+metrica), {type:'line', data:{labels:labelsRich, datasets:ds}, options:op, plugins:[zonas, etiquetas]});
 }
 
 selJ.addEventListener('change', render);
