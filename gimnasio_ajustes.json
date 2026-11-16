@@ -4991,18 +4991,18 @@
       },
       {
        "id": "F1",
-       "ej": "PUENTE ISQUIO ELEVADO 2P + PUENTE GLUTEO 1P",
-       "dosis": "4 X 8(5¨) + 8+8"
+       "ej": "ISQUIO GHD  1P",
+       "dosis": "4 X15\"+15\""
       },
       {
        "id": "F2",
-       "ej": "ESTOCADAS FIJAS + NEURODINAMIA",
-       "dosis": "4 X 6+6 + 6+6"
+       "ej": "OBELISCOS",
+       "dosis": "X 6+6"
       },
       {
        "id": "F3",
-       "ej": "RDL C -MANCUENRA + SLR ",
-       "dosis": "4 X6 + 10"
+       "ej": "NEURODINAMIA",
+       "dosis": "X 5+5"
       }
      ]
     },
@@ -5205,7 +5205,7 @@
     }
    ],
    "autor": "jokin",
-   "fecha": "2026-11-16T12:17:27.395Z"
+   "fecha": "2026-11-16T12:19:49.198Z"
   }
  }
 }
