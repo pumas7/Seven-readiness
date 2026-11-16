@@ -423,17 +423,23 @@ function objSesion(s,puesto){
   const o=w.objetivo?.[dia]?.[puesto]; if(!o)return {dia,obj:null};
   const r={};VARS.forEach(v=>r[v.k]=valObj(o[v.k]));return {dia,obj:r};
 }
-function objSemana(n,puesto,hasta){
+// Días del plan de la semana n que ya tocaban "a hoy": los que ya tienen sesión del jugador
+// (según el nombre, "Sem 18 dia 2" = Día 2 aunque sea lunes) o cuya fecha del plan ya llegó.
+function diasHechos(c,n){const w=PLAN?.semanas?.[n],set=new Set();if(!w)return set;const h=hoy();
+  for(const d of Object.keys(w.dias||{}))if(addD(lunesDe(n),OFFSET_DIA[sinTilde(w.dias[d])]??0)<=h)set.add(d);
+  if(c)for(const s of sesionesJugador(c.jugador))if(s.sem===n){const o=objSesion(s,c.puesto);if(o?.dia)set.add(o.dia)}
+  return set}
+function objSemana(n,puesto,hechos){
   const w=PLAN?.semanas?.[n]; if(!w||!puesto)return null;
   const r={};VARS.forEach(v=>r[v.k]=0);let tot=0,inc=0;
   for(const dia of Object.keys(w.dias||{})){const o=w.objetivo?.[dia]?.[puesto];if(!o)continue;tot++;
-    const f=addD(lunesDe(n),OFFSET_DIA[sinTilde(w.dias[dia])]??0);if(hasta&&f>hasta)continue;inc++;
+    if(hechos&&!hechos.has(dia))continue;inc++;
     VARS.forEach(v=>r[v.k]+=valObj(o[v.k])||0)}
   r._dias=inc;r._total=tot;return r;
 }
 /* fracción de la semana del plan ya transcurrida (1 si la semana terminó) */
-function fracSemana(n){const w=PLAN?.semanas?.[n];if(!w)return 1;const ds=Object.values(w.dias||{});if(!ds.length)return 1;
-  const h=hoy();return ds.filter(d=>addD(lunesDe(n),OFFSET_DIA[sinTilde(d)]??0)<=h).length/ds.length}
+function fracSemana(n,c){const w=PLAN?.semanas?.[n];if(!w)return 1;const ds=Object.keys(w.dias||{});if(!ds.length)return 1;
+  const hh=diasHechos(c,n);return ds.filter(d=>hh.has(d)).length/ds.length}
 /* ===== Objetivo individual: % del objetivo del grupo, por semana y día (c.objind[sem][dia]) ===== */
 // c.objind[sem][dia] = número (mismo % para todo) o {_: % general, distancia: %, accel: %...} (% por métrica)
 const oiRaw=(c,n,d)=>c.objind?.[n]?.[d];
@@ -449,11 +455,11 @@ function setOi(c,n,d,k,v){c.objind=c.objind||{};const sem=c.objind[n]=c.objind[n
   if(!Object.keys(sem).length)delete c.objind[n]}
 function objDia(n,dia,puesto){const o=PLAN?.semanas?.[n]?.objetivo?.[dia]?.[puesto];if(!o)return null;const r={};VARS.forEach(v=>r[v.k]=valObj(o[v.k]));return r}
 function objIndDia(c,n,dia){const g=objDia(n,dia,c.puesto);if(!g)return null;const r={};VARS.forEach(v=>r[v.k]=g[v.k]==null?null:g[v.k]*pctInd(c,n,dia,v.k)/100);return r}
-function objSemanaInd(c,n,hasta){
+function objSemanaInd(c,n,hechos){
   const w=PLAN?.semanas?.[n]; if(!w||!c.puesto)return null;
   const r={};VARS.forEach(v=>r[v.k]=0);
   for(const dia of Object.keys(w.dias||{})){const o=objIndDia(c,n,dia);if(!o)continue;
-    const f=addD(lunesDe(n),OFFSET_DIA[sinTilde(w.dias[dia])]??0);if(hasta&&f>hasta)continue;
+    if(hechos&&!hechos.has(dia))continue;
     VARS.forEach(v=>r[v.k]+=o[v.k]||0)}
   return r;
 }
@@ -519,14 +525,16 @@ function calcular(c){
   const ses=sesionesJugador(c.jugador).filter(s=>s.fecha>=L&&s.fecha<=fin).map(s=>{
     const o=objSesion(s,c.puesto);const p={},pi={};const n=s.sem;
     const oi=o?.dia?objIndDia(c,n,o.dia):null;
-    VARS.forEach(v=>{const ob=o?.obj?.[v.k];p[v.k]=ob?s.m[v.k]/ob*100:null;const b=oi?.[v.k];pi[v.k]=b?s.m[v.k]/b*100:null});
-    return {...s,n,dia:o?.dia||null,obj:o?.obj||null,p,pi,ind:o?.dia?tienePct(c,n,o.dia):false,pctDia:o?.dia?pctInd(c,n,o.dia):null,pctVar:o?.dia?oiTieneVar(c,n,o.dia):false};
+    const z={};VARS.forEach(v=>{const ob=o?.obj?.[v.k];p[v.k]=ob?s.m[v.k]/ob*100:null;const b=oi?.[v.k];pi[v.k]=b?s.m[v.k]/b*100:null;
+      z[v.k]=b===0&&s.m[v.k]>0});
+    return {...s,n,dia:o?.dia||null,obj:o?.obj||null,p,pi,z,ind:o?.dia?tienePct(c,n,o.dia):false,pctDia:o?.dia?pctInd(c,n,o.dia):null,pctVar:o?.dia?oiTieneVar(c,n,o.dia):false};
   });
   const semanas=[];
   const entreno=n=>totalSemana(c.jugador,n).distancia>0;
   for(let n=Math.max(1,semL-2);n<=semHoy;n++){
     const curso=n===semanaDe(hoy())&&c.estado!=='alta';
-    const tot=totalSemana(c.jugador,n),ob=objSemana(n,c.puesto,curso?hoy():null),obi=objSemanaInd(c,n,curso?hoy():null);
+    const hh=curso?diasHechos(c,n):null;
+    const tot=totalSemana(c.jugador,n),ob=objSemana(n,c.puesto,hh),obi=objSemanaInd(c,n,hh);
     // Crónico "limpio": hasta 3 semanas previas en las que entrenó, sin contar la de la lesión
     const prev=[];for(let i=n-1;i>=1&&prev.length<3;i--){if(i===semL||!entreno(i))continue;prev.push(totalSemana(c.jugador,i))}
     // Semana anterior para comparar: la última en que entrenó (la de la lesión no sirve de base)
@@ -545,7 +553,7 @@ function calcular(c){
   // Base pre-lesión: promedio de las 3 últimas semanas que entrenó antes de la semana de la lesión (fija)
   const semsPre=[];for(let i=semL-1;i>=Math.max(1,semL-8)&&semsPre.length<3;i--)if(entreno(i))semsPre.push(i);
   const basePre={};VARS.forEach(v=>{basePre[v.k]=semsPre.length?semsPre.reduce((a,n)=>a+totalSemana(c.jugador,n)[v.k],0)/semsPre.length:null});
-  semanas.forEach(w=>{const fr=w.curso?fracSemana(w.n):1;w.frPre=fr;w.acwrPre={};
+  semanas.forEach(w=>{const fr=w.curso?fracSemana(w.n,c):1;w.frPre=fr;w.acwrPre={};
     VARS.forEach(v=>{const b=basePre[v.k];w.acwrPre[v.k]=w.n>=semL&&b&&fr?w.tot[v.k]/(b*fr):null})});
   const post=semanas.filter(w=>w.n>semL);
   const tests=evalTests(c,L);
@@ -637,7 +645,7 @@ function renderFollow(){
     const L=parseD(c.fecha),semL=semanaDe(L),A=parseD(c.fecha_alta),semA=semanaDe(A);
     const base={};VARS.forEach(v=>{const w=[1,2,3].map(i=>totalSemana(c.jugador,semL-i)[v.k]);base[v.k]=w.reduce((a,b)=>a+b,0)/3});
     const ws=[];for(let n=semA;n<=semanaDe(hoy());n++)ws.push(n);
-    const cells=ws.map(n=>{const t=totalSemana(c.jugador,n);const fr=fracSemana(n);
+    const cells=ws.map(n=>{const t=totalSemana(c.jugador,n);const fr=fracSemana(n,c);
       const r=['distancia','hsr','ds'].map(k=>base[k]&&fr?Math.round(t[k]/(base[k]*fr)*100):null);
       return `<td class="num">S${n}${fr<1?' <span class="muted">(en curso)</span>':''}: ${r.map((x,i)=>`<span class="pill ${segCls(x)}">${['Dist','HSR','DS'][i]} ${x??'—'}</span>`).join(' ')}</td>`}).join('');
     return `<tr><td><b>${esc(c.jugador)}</b><br><span class="muted">${esc(lesionTxt(c))}</span></td><td>Día ${diffD(A,hoy())} de ${DIAS_SEGUIMIENTO}</td>${cells}</tr>`}).join('');
@@ -819,9 +827,10 @@ function refresh(){
   let semAnt=null;
   $('#sesBody').innerHTML=k.ses.length?k.ses.map(s=>{
     let h='';if(s.n!==semAnt){semAnt=s.n;const cant=k.ses.filter(x=>x.n===s.n).length;
-      h=`<tr class="wk"><td colspan="9">Semana ${s.n} · ${fCorta(lunesDe(s.n))} al ${fCorta(addD(lunesDe(s.n),6))} · ${cant} sesi${cant===1?'ón':'ones'}${s.n===k.semL?' · semana de la lesión':''}</td></tr>`}
+      const ini=k.ses.filter(x=>x.n===s.n).reduce((a,x)=>x.fecha<a?x.fecha:a,lunesDe(s.n));
+      h=`<tr class="wk"><td colspan="9">Semana ${s.n} · ${fCorta(ini)} al ${fCorta(addD(lunesDe(s.n),6))} · ${cant} sesi${cant===1?'ón':'ones'}${s.n===k.semL?' · semana de la lesión':''}</td></tr>`}
     return h+`<tr><td>${fCorta(s.fecha)}</td><td>${esc(s.nombre)}</td><td>${s.dia?'Día '+s.dia+(s.ind?` · <b>${fmt(s.pctDia)}%</b>${s.pctVar?' <span class="muted" title="Tiene % distinto en alguna métrica">*</span>':''}`:''):'<span class="muted">fuera del plan</span>'}</td>
-    ${VARS.map(v=>`<td class="num">${fmt(s.m[v.k])} <span class="pill ${pctCls(s.pi[v.k])}">${pp(s.pi[v.k])}</span>${s.ind&&s.p[v.k]!==null?`<span class="g">grupo ${pp(s.p[v.k])}</span>`:''}</td>`).join('')}<td class="num">${fmt(s.m.pct,1)}%</td></tr>`}).join('')
+    ${VARS.map(v=>`<td class="num">${fmt(s.m[v.k])} ${s.z[v.k]?'<span class="pill p-r" title="El objetivo de ese día para él era 0">obj. 0</span>':`<span class="pill ${pctCls(s.pi[v.k])}">${pp(s.pi[v.k])}</span>`}${s.ind&&s.p[v.k]!==null?`<span class="g">grupo ${pp(s.p[v.k])}</span>`:''}</td>`).join('')}<td class="num">${fmt(s.m.pct,1)}%</td></tr>`}).join('')
     :'<tr><td colspan="9" class="muted">Todavía no hay sesiones del jugador en Catapult desde la lesión.</td></tr>';
   // semanas
   $('#semBody').innerHTML=k.semanas.map(w=>{
@@ -911,7 +920,7 @@ function renderIC(c,k){
   if(sub.length)C.push(`Subas semanales fuertes en ${sub.map(f=>`${f.v.t} (${f.suba})`).join(', ')}, desde una base todavía por debajo de su habitual pre-lesión (ACWR pre-lesión < 0,8): esperable en la reintroducción, no se considera pico, pero conviene sostener la progresión escalonada.`);
   if(w.curso&&conObj.length){
     const pw=PLAN?.semanas?.[w.n],h=hoy();
-    const resto=Object.keys(pw?.dias||{}).filter(d=>addD(lunesDe(w.n),OFFSET_DIA[sinTilde(pw.dias[d])]??0)>h);
+    const hh=diasHechos(c,w.n),resto=Object.keys(pw?.dias||{}).filter(d=>!hh.has(d));
     const deuda=fila.filter(f=>f.full&&f.full-f.t>0).filter(f=>{const r=resto.reduce((a,d)=>a+(objIndDia(c,w.n,d)?.[f.v.k]||0),0);return f.full-f.t>r});
     if(deuda.length)C.push(`Semana en curso: en ${nom(deuda)} lo que falta supera lo que el plan tiene para los días que quedan${resto.length?'':' (no quedan días)'}; no compensarlo de golpe.`);
   }
@@ -936,7 +945,7 @@ function renderCurso(c,k){
   const w=k.semanas.find(x=>x.curso&&!x.pre);
   if(!w||!w.obiF||!VARS.some(v=>w.obiF[v.k])){box.innerHTML='';return}
   const pw=PLAN?.semanas?.[w.n],h=hoy();
-  const resto=Object.keys(pw?.dias||{}).sort((a,b)=>a-b).filter(d=>addD(lunesDe(w.n),OFFSET_DIA[sinTilde(pw.dias[d])]??0)>h);
+  const hh=diasHechos(c,w.n),resto=Object.keys(pw?.dias||{}).sort((a,b)=>a-b).filter(d=>!hh.has(d));
   const restoTxt=resto.map(d=>{const o=objIndDia(c,w.n,d),f=addD(lunesDe(w.n),OFFSET_DIA[sinTilde(pw.dias[d])]??0);
     return `Día ${d} (${esc(pw.dias[d])} ${fCorta(f)}): ${o?VARS.filter(v=>o[v.k]).map(v=>`${v.t} ${fmt(o[v.k])}`).join(' · ')||'sin objetivo':'sin objetivo'}`}).join(' — ');
   box.innerHTML=`<div class="curso"><h4>Semana ${w.n} en curso <span class="pill p-b">${w.ob?w.ob._dias+' de '+w.ob._total+' días del plan':''}</span><span class="muted" style="font-weight:400;font-size:12px">objetivo individual que le pusiste arriba</span></h4>
