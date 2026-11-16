@@ -298,11 +298,14 @@ function predecesor(plan){
     .sort((a,b)=>(Math.abs(nd(a)-mio)-Math.abs(nd(b)-mio))||(nd(b)-nd(a))||(orden.indexOf(b)-orden.indexOf(a)))[0];
 }
 /* aplica sobre la hoja actual los cambios entre base→datos, solo donde la hoja sigue igual a la base */
-function aplicar(lista,vista,base,datos,origenDe,avisos){
+/* arrastre=true (viene de la semana anterior): si el jugador/bloque directamente no está en la hoja nueva
+   (el PF no lo pasó al duplicar), se arrastra igual tu ajuste en vez de hacerlo desaparecer.
+   pisables: claves que vienen arrastradas (no de la hoja): si un ajuste de esta semana agregó ese jugador/bloque, gana el ajuste */
+function aplicar(lista,vista,base,datos,origenDe,avisos,arrastre,pisables){
   const H=unidades(lista,vista),B=unidades(base,vista),D=unidades(datos,vista),out=new Map(H),marc={};
   for(const [k,u] of D){
     const b=B.get(k);if(b&&firma(b)===firma(u))continue;
-    if(firma(H.get(k))===firma(b)){out.set(k,u);marc[k]=origenDe(k)}
+    if(firma(H.get(k))===firma(b)||(arrastre&&!H.has(k))||(!b&&pisables?.has(k))){out.set(k,u);marc[k]=origenDe(k)}
     else avisos.push({k,nombre:nombreU(u,vista),...origenDe(k)});
   }
   for(const [k,b] of B){
@@ -319,12 +322,12 @@ function seccion(plan,dia,vista,sinPropio){
     const pr=predecesor(plan);
     if(pr&&DATA.planes[pr].dias?.[dia]){
       const e=seccion(pr,dia,vista);
-      const r=aplicar(lista,vista,hoja(pr,dia,vista),e.datos,k=>({...(e.marc[k]||{plan:pr}),arrastre:true}),avisos);
+      const r=aplicar(lista,vista,hoja(pr,dia,vista),e.datos,k=>({...(e.marc[k]||{plan:pr}),arrastre:true}),avisos,true);
       lista=r.lista;Object.assign(marc,r.marc);
     }
   }
   if(a&&!a.sinArrastre&&!sinPropio){
-    const r=aplicar(lista,vista,a.base||hoja(plan,dia,vista),a.datos,()=>({plan,autor:a.autor,fecha:a.fecha}),avisos);
+    const r=aplicar(lista,vista,a.base||hoja(plan,dia,vista),a.datos,()=>({plan,autor:a.autor,fecha:a.fecha}),avisos,false,new Set(Object.keys(marc).filter(k=>marc[k].arrastre)));
     lista=r.lista;Object.assign(marc,r.marc);
   }
   avisos=avisos.filter(x=>!(x.k in marc));
