@@ -27,6 +27,8 @@ BASE = "https://connect-us.catapultsports.com/api/v4"
 OWNER_SEVEN = "SEVEN"                      # owner.name del grupo Sevens
 INICIO_TEMPORADA = datetime(2026, 7, 20)   # lunes, semana 1 día 1
 SESIONES_NORMALES = 4                       # referencia semanal (pretemporada)
+# Actividades que no se cuentan (ni sesiones ni metros). Nombre tal cual Catapult, sin importar mayusculas.
+EXCLUIR_ACTIVIDADES = {'mmo vel'}
 
 # Mapeo de parámetros Catapult (validado)
 # Slugs tomados del tenant de la UAR (los mismos que usa el PF en su Excel).
@@ -237,6 +239,9 @@ def main():
     sevens = []
     for a in data:
         if a['owner']['name'] != OWNER_SEVEN:
+            continue
+        if ' '.join((a.get('name') or '').lower().split()) in EXCLUIR_ACTIVIDADES:
+            print(f"  Excluida: '{a.get('name')}'")
             continue
         dt = datetime.fromtimestamp(a['start_time'])
         if INICIO_TEMPORADA <= dt <= hoy.replace(hour=23, minute=59, second=59):
