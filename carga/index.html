@@ -368,7 +368,7 @@ table.sesiones-tbl th.sep,table.sesiones-tbl td.sep{border-left:2px solid #E8EEF
 <main>
   <div class="wrap">
     <div class="legend">
-      <span><b>Banda:</b> promedio de semanas reales previas × 0.8 – 1.3</span>
+      <span><b>Banda:</b> promedio de las 3 semanas previas entrenadas × 0.8 – 1.3</span>
       <span><span class="dot g"></span>Dentro de banda</span>
       <span><span class="dot a"></span>Por debajo (0.8x)</span>
       <span><span class="dot r"></span>Por encima (1.3x)</span>
@@ -478,66 +478,24 @@ table.sesiones-tbl th.sep,table.sesiones-tbl td.sep{border-left:2px solid #E8EEF
         <label>Ver</label>
         <select id="selJugador"></select>
       </div>
-      <div class="control-group">
-        <label>Métrica</label>
-        <select id="selMetrica"></select>
-      </div>
     </div>
-
-    <div class="demo-note">
-      <b>Semanas 1–3 = datos reales</b> <span class="tag-real">REAL</span> de Catapult (grupo SEVEN). Cada punto muestra las <b>sesiones de esa semana</b> (referencia: 4/sem). Las semanas con menos de 4 sesiones (ej. Sem 3, cortada por lluvia) se marcan con <b>▲ ámbar</b> y el aviso "⚠ X/4 ses" — el valor absoluto se mantiene y los gráficos se calculan igual, pero recordá que es una <b>semana incompleta</b> al interpretar. Fuente: Gabbett et al. (PubMed).
+    <div class="control-group" style="margin:-6px 0 16px">
+      <label>Métricas (una o varias)</label>
+      <div class="metric-chips" id="g1Chips"></div>
     </div>
 
     <div class="charts-stack">
       <div class="chart-card">
-        <h2>1 · Carga semanal vs Banda de referencia</h2>
+        <h2>Carga semanal vs banda de referencia</h2>
         <div class="evidence">Windt &amp; Gabbett 2016 — importan tanto el valor absoluto como el cambio</div>
         <button class="explain-toggle" onclick="toggleExplain(this)"><span class="chev">▾</span> ¿Cómo leer esto?</button>
         <div class="explain-body"><div class="inner">
-          La línea es la carga real de cada semana. La <b>franja verde</b> es la banda 0.8x–1.3x del promedio de las semanas previas. Si la línea se sale por abajo → poca carga; por arriba → mucha. Es lo que ya venías haciendo, pero como tendencia en vez de cajitas de números. <b>Ojo:</b> una semana incompleta (▲ ámbar) cae abajo por tener menos sesiones, no por subcarga real.
+          La línea es la carga de cada semana (promedio del equipo o el jugador elegido). La <b>franja verde</b> es la banda 0.8x–1.3x del promedio de las 3 semanas previas entrenadas (mínimo 2). Si la línea se sale por abajo → poca carga; por arriba → mucha. <b>Ojo:</b> una semana incompleta (▲ ámbar) cae abajo por tener menos sesiones, no por subcarga real. Un gráfico por cada métrica elegida arriba.
         </div></div>
-        <div class="chart-wrap"><canvas id="chart1"></canvas></div>
       </div>
-
-      <div class="chart-card">
-        <h2>2 · ACWR (agudo ÷ crónico 4 semanas)</h2>
-        <div class="evidence">Gabbett 2016 · Blanch &amp; Gabbett 2016 — el método publicado original</div>
-        <button class="explain-toggle" onclick="toggleExplain(this)"><span class="chev">▾</span> ¿Cómo leer esto?</button>
-        <div class="explain-body"><div class="inner">
-          Un número por semana: la carga de esta semana dividida por el promedio de las 4 anteriores. <b>1.0</b> = entrenaste igual que tu promedio. <b>1.5</b> = 50% más (peligro). <b>0.5</b> = la mitad (destraining). La zona verde de fondo (0.8–1.3) es donde querés estar; la roja (arriba de 1.5) es alarma. Este es el número que un médico deportivo reconoce como "ACWR".
-        </div></div>
-        <div class="chart-wrap"><canvas id="chart2"></canvas></div>
-      </div>
-
-      <div class="chart-card">
-        <h2>3 · Spike (cambio % semana a semana)</h2>
-        <div class="evidence">Gabbett 2016 — "aumentos excesivos y rápidos" son el driver de lesión</div>
-        <button class="explain-toggle" onclick="toggleExplain(this)"><span class="chev">▾</span> ¿Cómo leer esto?</button>
-        <div class="explain-body"><div class="inner">
-          Cada barra es cuánto cambió la carga respecto a la semana anterior, en %. <b>Verde</b> = cambio tolerable. <b>Roja</b> = spike (&gt;±50%). Lo que Gabbett realmente marca como peligroso es el <b>salto brusco</b> — tanto hacia arriba (recarga) como hacia abajo (destraining). Las barras con borde ámbar vienen de semanas incompletas.
-        </div></div>
-        <div class="chart-wrap"><canvas id="chart3"></canvas></div>
-      </div>
-
-      <div class="chart-card">
-        <h2>4 · Carga crónica (fitness protector)</h2>
-        <div class="evidence">Gabbett 2016 — las cargas crónicas altas PROTEGEN contra lesión</div>
-        <button class="explain-toggle" onclick="toggleExplain(this)"><span class="chev">▾</span> ¿Cómo leer esto?</button>
-        <div class="explain-body"><div class="inner">
-          La idea contraintuitiva de Gabbett: la carga crónica alta (bien construida) es <b>protectora</b>. Esta línea es la base crónica (promedio móvil de 4 semanas). Si sube gradual = el jugador está construyendo resiliencia. Si cae = pierde fitness y sube su vulnerabilidad. No mira la semana puntual, mira la tendencia de fondo.
-        </div></div>
-        <div class="chart-wrap"><canvas id="chart4"></canvas></div>
-      </div>
+      <div id="g1Charts" class="charts-stack"></div>
     </div>
-
-    <div class="cmp-card">
-      <h3>5 · Comparar varias métricas</h3>
-      <div class="sub">Cada métrica en su propia línea. Como las unidades no son comparables entre sí
-        (metros vs km/h vs conteos), se grafica en <b>índice base 100 = primera semana con datos</b>:
-        cada punto es el % respecto de esa semana. El valor real aparece al pasar el mouse.</div>
-      <div class="cmp-chips" id="cmpChips"></div>
-      <div class="chart-wrap"><canvas id="chartCmp"></canvas></div>
-    </div>
+  </div>
   </div>
 </main></div>
 
@@ -820,11 +778,24 @@ const METRIC_LABELS = {
 
 // Poblar selectores
 const selJ = document.getElementById('selJugador');
-const selM = document.getElementById('selMetrica');
+let SEL_METRICAS = ['distancia'];
+function pintarChipsG1(){
+  const c = document.getElementById('g1Chips'); if(!c) return;
+  c.innerHTML = DATA.metrics.map(m =>
+    `<button class="mchip${SEL_METRICAS.includes(m)?' on':''}" onclick="window.__graficos.toggleMetrica('${m}')">${METRIC_LABELS[m]}</button>`).join('');
+}
+function toggleMetrica(m){
+  const i = SEL_METRICAS.indexOf(m);
+  if(i >= 0){ if(SEL_METRICAS.length > 1) SEL_METRICAS.splice(i,1); }
+  else SEL_METRICAS.push(m);
+  SEL_METRICAS.sort((a,b) => DATA.metrics.indexOf(a) - DATA.metrics.indexOf(b));
+  pintarChipsG1();
+  if(window.__graficosRendered) render();
+}
 function populateSelects() {
   selJ.innerHTML = '<option value="__equipo__">🏉 Equipo completo</option>' +
     DATA.lista_jugadores.map(j => `<option value="${j}">${j}</option>`).join('');
-  selM.innerHTML = DATA.metrics.map(m => `<option value="${m}">${METRIC_LABELS[m]}</option>`).join('');
+  pintarChipsG1();
 }
 
 let charts = {};
@@ -843,30 +814,29 @@ function fmtDec(m){ return (m==='vmax')?1:(m==='accmax')?2:(m==='pct')?1:0; }
 
 function render(){
   destroyCharts();
-  const jugador = selJ.value;
-  const metrica = selM.value;
-  const esEquipo = jugador === '__equipo__';
+  const cont = document.getElementById('g1Charts');
+  cont.innerHTML = SEL_METRICAS.map(m =>
+    `<div class="chart-card"><h2>${METRIC_LABELS[m]}</h2><div class="chart-wrap"><canvas id="g1_${m}"></canvas></div></div>`).join('');
+  SEL_METRICAS.forEach(m => renderMetrica(m));
+}
 
-  let labels, aguda, cronica, acwr, delta, bandaLow, bandaHigh, bandMin, bandMax, sesionesInfo;
+function renderMetrica(metrica){
+  const jugador = selJ.value;
+  const esEquipo = jugador === '__equipo__';
+  let labels, aguda, bandaLow, bandaHigh, sesionesInfo;
 
   if(esEquipo){
     const eq = DATA.equipo[metrica];
     labels = eq.map(p=>`Sem ${p.semana}`);
     aguda = eq.map(p=>p.promedio);
-    bandMin = eq.map(p=>p.sd_low);
-    bandMax = eq.map(p=>p.sd_high);
     sesionesInfo = eq.map(p=>({sesiones:p.sesiones, incompleta:p.incompleta}));
-    // Para equipo, calculamos ACWR/spike/crónico sobre el PROMEDIO del equipo
+    // Banda del equipo: promedio del equipo de las 3 semanas previas con datos (mínimo 2) x0.8 / x1.3 — mismo criterio que RTP
     const serie = {}; eq.forEach(p=>serie[p.semana]=p.promedio);
     const sems = eq.map(p=>p.semana);
-    cronica=[]; acwr=[]; delta=[]; bandaLow=[]; bandaHigh=[];
-    sems.forEach((sem,i)=>{
-      const prev = sems.filter(s=>s<sem).slice(-4).map(s=>serie[s]);
-      const cron = prev.length? prev.reduce((a,b)=>a+b,0)/prev.length : null;
-      cronica.push(cron?Math.round(cron):null);
-      acwr.push(cron?Math.round(serie[sem]/cron*100)/100:null);
-      const ant = i>0? serie[sems[i-1]]:null;
-      delta.push(ant?Math.round((serie[sem]-ant)/ant*1000)/10:null);
+    bandaLow=[]; bandaHigh=[];
+    sems.forEach(sem=>{
+      const prev = sems.filter(s=>s<sem && serie[s]!==null).slice(-3).map(s=>serie[s]);
+      const cron = prev.length>=2? prev.reduce((a,b)=>a+b,0)/prev.length : null;
       bandaLow.push(cron?Math.round(cron*0.8):null);
       bandaHigh.push(cron?Math.round(cron*1.3):null);
     });
@@ -874,81 +844,30 @@ function render(){
     const pts = DATA.jugadores[jugador][metrica];
     labels = pts.map(p=>`Sem ${p.semana}`);
     aguda = pts.map(p=>p.aguda);
-    cronica = pts.map(p=>p.cronica);
-    acwr = pts.map(p=>p.acwr);
-    delta = pts.map(p=>p.delta);
     bandaLow = pts.map(p=>p.banda_low);
     bandaHigh = pts.map(p=>p.banda_high);
     sesionesInfo = pts.map(p=>({sesiones:p.sesiones, incompleta:p.incompleta}));
   }
 
-  const yl = METRIC_LABELS[metrica];
-
-  // Enriquecer labels con info de sesiones (marca semana incompleta)
   const labelsRich = labels.map((l,i) => {
     const info = sesionesInfo[i];
     if(!info) return l;
     return info.incompleta ? [`${l}`, `⚠ ${info.sesiones}/4 ses`] : [`${l}`, `${info.sesiones}/4 ses`];
   });
 
-  // ===== Chart 1: carga vs banda (+ dispersión ±1DE si equipo) =====
-  const ds1 = [
+  const ds = [
     {label:'Banda 1.3x', data:bandaHigh, borderColor:'rgba(31,164,99,.35)', backgroundColor:'rgba(31,164,99,.10)', fill:'+1', pointRadius:0, borderDash:[4,4]},
     {label:'Banda 0.8x', data:bandaLow, borderColor:'rgba(31,164,99,.35)', fill:false, pointRadius:0, borderDash:[4,4]},
-  ];
-  if(esEquipo){
-    ds1.push({label:'+1 DE', data:bandMax, borderColor:'rgba(44,116,179,.30)', backgroundColor:'rgba(44,116,179,.08)', fill:'+1', pointRadius:0, borderDash:[2,3]});
-    ds1.push({label:'−1 DE', data:bandMin, borderColor:'rgba(44,116,179,.30)', fill:false, pointRadius:0, borderDash:[2,3]});
-  }
-  ds1.push({label: esEquipo?'Promedio equipo':'Carga real', data:aguda, borderColor:NAVY, backgroundColor:NAVY, borderWidth:3,
-    pointRadius:sesionesInfo.map(s=>s&&s.incompleta?7:5),
-    pointStyle:sesionesInfo.map(s=>s&&s.incompleta?'triangle':'circle'),
-    pointBackgroundColor:sesionesInfo.map(s=>s&&s.incompleta?AMBER:NAVY), tension:.2});
-  charts.c1 = new Chart(document.getElementById('chart1'), {type:'line', data:{labels:labelsRich, datasets:ds1}, options:baseOpts(yl)});
-
-  // ===== Chart 2: ACWR =====
-  charts.c2 = new Chart(document.getElementById('chart2'), {
-    type:'line',
-    data:{labels:labelsRich, datasets:[{
-      label:'ACWR', data:acwr, borderColor:SKY, backgroundColor:SKY, borderWidth:3,
-      pointRadius:sesionesInfo.map(s=>s&&s.incompleta?8:6),
+    {label: esEquipo?'Promedio equipo':'Carga real', data:aguda, borderColor:NAVY, backgroundColor:NAVY, borderWidth:3,
+      pointRadius:sesionesInfo.map(s=>s&&s.incompleta?7:5),
       pointStyle:sesionesInfo.map(s=>s&&s.incompleta?'triangle':'circle'),
-      pointBackgroundColor:acwr.map((v,i)=> v===null?GREY : (v>1.5||v<0.8)?RED : v>1.3?AMBER : GREEN), tension:.2
-    }]},
-    options:{...baseOpts('ratio'), scales:{...baseOpts().scales, y:{...baseOpts().scales.y, min:0, suggestedMax:2}}}
-  });
-  const bandsPlugin = {
-    id:'bands'+Date.now(),
-    beforeDraw(chart){
-      const {ctx,chartArea:{left,right},scales:{y}}=chart;
-      const zone=(a,b,c)=>{const p1=y.getPixelForValue(a),p2=y.getPixelForValue(b);ctx.fillStyle=c;ctx.fillRect(left,p2,right-left,p1-p2);};
-      ctx.save(); zone(0.8,1.3,'rgba(31,164,99,.10)'); zone(1.5,2.0,'rgba(214,69,69,.08)'); ctx.restore();
-    }
-  };
-  charts.c2.config.plugins=[bandsPlugin]; charts.c2.update();
-
-  // ===== Chart 3: spike =====
-  charts.c3 = new Chart(document.getElementById('chart3'), {
-    type:'bar',
-    data:{labels:labelsRich, datasets:[{label:'Cambio %', data:delta,
-      backgroundColor:delta.map((v,i)=> v===null?GREY : sesionesInfo[i]&&sesionesInfo[i].incompleta?'rgba(232,163,23,.55)' : Math.abs(v)>50?RED:GREEN),
-      borderColor:delta.map((v,i)=> sesionesInfo[i]&&sesionesInfo[i].incompleta?AMBER:'transparent'),
-      borderWidth:delta.map((v,i)=> sesionesInfo[i]&&sesionesInfo[i].incompleta?2:0),
-      borderRadius:6}]},
-    options:{...baseOpts('%'), scales:{...baseOpts().scales, y:{...baseOpts().scales.y, ticks:{color:GREY,font:{size:10},callback:v=>v+'%'}}}}
-  });
-
-  // ===== Chart 4: crónico =====
-  charts.c4 = new Chart(document.getElementById('chart4'), {
-    type:'line',
-    data:{labels:labelsRich, datasets:[{label:'Carga crónica', data:cronica, borderColor:GREEN, backgroundColor:'rgba(31,164,99,.12)', borderWidth:3, pointRadius:5, fill:true, tension:.3}]},
-    options:baseOpts(yl)
-  });
+      pointBackgroundColor:sesionesInfo.map(s=>s&&s.incompleta?AMBER:NAVY), tension:.2}
+  ];
+  charts[metrica] = new Chart(document.getElementById('g1_'+metrica), {type:'line', data:{labels:labelsRich, datasets:ds}, options:baseOpts(METRIC_LABELS[metrica])});
 }
 
 selJ.addEventListener('change', render);
-selM.addEventListener('change', render);
-return { render, toggleExplain, populateSelects };
+return { render, toggleExplain, populateSelects, toggleMetrica };
 })();
 window.toggleExplain = window.__graficos.toggleExplain;
 window.render = window.__graficos.render;
@@ -1445,131 +1364,6 @@ function toggleExcluirManual(v){
   }
 }
 </script>
-<script>
-// ===== Comparador de varias metricas en un solo grafico =====
-// Las unidades no son comparables (metros vs km/h vs conteos), asi que se
-// normaliza a indice base 100 = primera semana con datos de esa metrica.
-// El tooltip muestra el valor real para que el numero no se pierda.
-window.__comparador = (function(){
-  const COLORES = ['#002e4b','#2C74B3','#1FA463','#E8A317','#D64545','#7B4BA8',
-                   '#0A9396','#B5651D','#8595A6','#C2185B'];
-  const LBL = {
-    distancia:'Distancia (m)', hsr:'HSR (m)', hsr_entr:'HSR Entr (#)', ds:'DS/Sprint (m)',
-    ds_entr:'DS Entr (#)', vmax:'Vmax (km/h)', pct:'% Vmax', accel:'Aceleraciones',
-    deccel:'Desaceleraciones', accmax:'Acc. Máx.'
-  };
-  const METS = ['distancia','hsr','hsr_entr','ds','ds_entr','vmax','pct','accel','deccel','accmax'];
-  let seleccion = ['distancia','hsr'];
-  let chart = null;
-
-  function dec(m){ return (m==='accmax') ? 2 : (m==='vmax'||m==='pct') ? 1 : 0; }
-  function fmt(v, m){
-    if(v === null || v === undefined) return '–';
-    return Number(v).toLocaleString('es-AR', {minimumFractionDigits:dec(m), maximumFractionDigits:dec(m)});
-  }
-
-  function serie(m){
-    const sel = document.getElementById('selJugador');
-    const quien = (sel && sel.value) ? sel.value : '__equipo__';
-    const D = window.DATA || {};
-    if(quien === '__equipo__') return (D.equipo && D.equipo[m]) || [];
-    return (D.jugadores && D.jugadores[quien] && D.jugadores[quien][m]) || [];
-  }
-
-  function toggle(m){
-    const i = seleccion.indexOf(m);
-    if(i >= 0){ if(seleccion.length > 1) seleccion.splice(i,1); }
-    else { if(seleccion.length >= 6){ return; } seleccion.push(m); }
-    seleccion.sort((a,b) => METS.indexOf(a) - METS.indexOf(b));
-    pintarChips();
-    render();
-  }
-
-  function pintarChips(){
-    const cont = document.getElementById('cmpChips');
-    if(!cont) return;
-    cont.innerHTML = METS.map(m =>
-      `<button class="mchip${seleccion.includes(m)?' on':''}" onclick="window.__comparador.toggle('${m}')">`
-      + `${LBL[m]}</button>`).join('')
-      + `<span style="font-size:11px;color:var(--grey);align-self:center;margin-left:6px">máx. 6</span>`;
-  }
-
-  function render(){
-    const cv = document.getElementById('chartCmp');
-    if(!cv || !window.Chart) return;
-    if(chart){ chart.destroy(); chart = null; }
-
-    const semanas = [...new Set(seleccion.flatMap(m => serie(m).map(p => p.semana)))].sort((a,b)=>a-b);
-    if(!semanas.length) return;
-
-    const reales = {};
-    const datasets = seleccion.map((m, i) => {
-      const s = serie(m);
-      const porSemana = {};
-      s.forEach(p => { porSemana[p.semana] = p.aguda; });
-      const primeros = semanas.map(w => porSemana[w]).filter(v => v !== undefined && v !== null && v !== 0);
-      const base = primeros.length ? primeros[0] : null;
-      reales[m] = porSemana;
-      return {
-        label: LBL[m],
-        data: semanas.map(w => {
-          const v = porSemana[w];
-          if(v === undefined || v === null || base === null) return null;
-          return Math.round((v / base) * 1000) / 10;
-        }),
-        borderColor: COLORES[i % COLORES.length],
-        backgroundColor: COLORES[i % COLORES.length],
-        borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
-        tension: 0.25, spanGaps: true, fill: false
-      };
-    });
-
-    chart = new Chart(cv.getContext('2d'), {
-      type: 'line',
-      data: {labels: semanas.map(w => 'Sem ' + w), datasets: datasets},
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        interaction: {mode: 'index', intersect: false},
-        plugins: {
-          legend: {display: true, labels: {font: {size: 11}, color: '#3a4a5c', boxWidth: 14, usePointStyle: true}},
-          tooltip: {
-            callbacks: {
-              label: function(ctx){
-                const m = seleccion[ctx.datasetIndex];
-                const w = semanas[ctx.dataIndex];
-                const real = reales[m] ? reales[m][w] : null;
-                const idx = ctx.parsed.y;
-                return LBL[m] + ': ' + fmt(real, m) + '  (índice ' + (idx === null ? '–' : idx) + ')';
-              }
-            }
-          }
-        },
-        scales: {
-          x: {grid: {display: false}, ticks: {color: '#8595A6', font: {size: 10}}},
-          y: {
-            grid: {color: '#EDF2F7'},
-            ticks: {color: '#8595A6', font: {size: 10}, callback: v => v + '%'},
-            title: {display: true, text: 'Índice (100 = primera semana con dato)',
-                    color: '#8595A6', font: {size: 10}}
-          }
-        }
-      }
-    });
-  }
-
-  function init(){
-    pintarChips();
-    const sj = document.getElementById('selJugador');
-    if(sj && !sj.dataset.cmpHooked){
-      sj.dataset.cmpHooked = '1';
-      sj.addEventListener('change', render);
-    }
-    render();
-  }
-
-  return {toggle, render, init, pintarChips};
-})();
-</script>
 <div id="printArea"></div>
 <style id="pageStyle"></style>
 <script>
@@ -1656,7 +1450,7 @@ window.__informes = (function(){
 
   function pie(extra){
     return `<div class="inf-foot">
-      Banda de referencia = promedio de las semanas previas con datos, x0.8 (piso) y x1.3 (techo).
+      Banda de referencia = promedio de las 3 semanas previas entrenadas (mínimo 2), x0.8 (piso) y x1.3 (techo).
       Volumen (distancia, HSR, DS, aceleraciones, desaceleraciones) se suma; picos (Vmax, %Vmax, Acc. máx.) se toman al máximo.
       <span class="inf-leyenda">Rojo = por debajo del piso · Ámbar = por encima del techo · Verde = dentro de banda.</span>
       ${extra ? '<div class="inf-leyenda">' + esc(extra) + '</div>' : ''}
@@ -1910,7 +1704,7 @@ function buildAggregates(roster, semanas, sesionesNormales){
         const aguda = entry.datos[m];
         const hist = historial[m];
         let cronica=null, delta=null, acwr=null;
-        if(hist.length){
+        if(hist.length >= 2){
           const prev = hist.slice(-3);
           cronica = prev.reduce((a,b)=>a+b,0) / prev.length;
           delta = ((aguda - cronica) / cronica) * 100;
@@ -1995,14 +1789,13 @@ fetch('../carga.json?v=' + Date.now())
     const bannerEl = document.getElementById('bannerNote');
     if(bannerEl){
       bannerEl.innerHTML = nSes < json.sesiones_normales
-        ? `⚠️ Semana ${maxSem} en curso — lleva ${nSes} de las ~${json.sesiones_normales} sesiones habituales. Las bandas usan las semanas reales previas disponibles. Roster auto-detectado desde Catapult, sin tipeo manual.`
+        ? `⚠️ Semana ${maxSem} en curso — lleva ${nSes} de las ~${json.sesiones_normales} sesiones habituales. Las bandas usan las 3 semanas previas entrenadas (mínimo 2). Roster auto-detectado desde Catapult, sin tipeo manual.`
         : `Semana ${maxSem} completa (${nSes}/${json.sesiones_normales} sesiones). Roster auto-detectado desde Catapult, sin tipeo manual.`;
     }
 
     window.__semanal.renderTabs(json.semanas);
     window.__semanal.buildGrid();
     window.__graficos.populateSelects();
-    window.__comparador.init();
 
     if(document.getElementById('section-sesiones').style.display !== 'none'){
       // no-op, sesiones se arma on-demand
