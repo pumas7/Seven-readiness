@@ -5046,8 +5046,8 @@
       },
       {
        "id": "F3",
-       "ej": "CAMBIA SALTOS POR CAIDAS A 2 P",
-       "dosis": "X 5"
+       "ej": "GRUPO SIN SALTOS",
+       "dosis": ""
       }
      ]
     },
@@ -5245,7 +5245,7 @@
     }
    ],
    "autor": "jokin",
-   "fecha": "2026-11-16T13:45:55.972Z"
+   "fecha": "2026-11-16T13:47:43.704Z"
   }
  }
 }
