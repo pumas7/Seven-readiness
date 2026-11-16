@@ -5038,6 +5038,11 @@
        "id": "F1",
        "ej": "CARGADAS DE FUERZA",
        "dosis": "GRUPO"
+      },
+      {
+       "id": "F2",
+       "ej": "SENT ISO PARED + ISOS EN CCA",
+       "dosis": "4 X 20\" (30KG)"
       }
      ]
     },
@@ -5235,7 +5240,7 @@
     }
    ],
    "autor": "jokin",
-   "fecha": "2026-11-16T13:20:43.274Z"
+   "fecha": "2026-11-16T13:25:02.023Z"
   }
  }
 }
