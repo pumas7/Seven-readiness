@@ -403,20 +403,23 @@ const DEMO_KEY='rtp-demo-v3';
 function fechaSesion(sem,f){
   if(/^\d{4}-\d{2}-\d{2}/.test(f||''))return parseD(f);
   const m=String(f||'').match(/(\d{1,2})\/(\d{1,2})/); if(!m)return null;
-  for(let i=0;i<7;i++){const d=addD(lunesDe(+sem),i);if(d.getDate()===+m[1]&&d.getMonth()+1===+m[2])return d}
+  for(let i=-7;i<14;i++){const d=addD(lunesDe(+sem),i);if(d.getDate()===+m[1]&&d.getMonth()+1===+m[2])return d}
   return null;
 }
 function sesionesJugador(name){
   const out=[];
   for(const [sem,lista] of Object.entries(CARGA?.sesiones||{}))
     for(const s of lista){const m=s.jugadores?.[name];if(!m)continue;
-      out.push({sem:+sem,fecha:fechaSesion(sem,s.fecha),nombre:s.nombre,origen:s.origen,m})}
+      out.push({sem:+sem,fecha:s.fecha_iso?parseD(s.fecha_iso):fechaSesion(sem,s.fecha),diaN:diaDelNombre(s.nombre),nombre:s.nombre,origen:s.origen,m})}
   return out.filter(s=>s.fecha).sort((a,b)=>a.fecha-b.fecha);
 }
-function objSesion(fecha,puesto){
-  const w=PLAN?.semanas?.[semanaDe(fecha)]; if(!w||!puesto)return null;
-  const dn=DIAS_ES[fecha.getDay()];
-  const dia=Object.keys(w.dias||{}).find(k=>sinTilde(w.dias[k])===dn); if(!dia)return {dia:null,obj:null};
+// "Svn Sem 18 dia 1" -> 1. Solo cuando "dia N" va pegado a la semana: en torneos ("Sem 9 Sur Dia 1 vs Par") el día es del torneo, no del plan.
+function diaDelNombre(nombre){const m=String(nombre||'').match(/\bsem(?:ana)?\s*\d{1,2}\s+d[ií]a\s*(\d)\b/i);return m?m[1]:null}
+// Semana y día de plan de una sesión: los define el nombre que le pone el PF; si no, la fecha.
+function objSesion(s,puesto){
+  const w=PLAN?.semanas?.[s.sem]; if(!w||!puesto)return null;
+  const dn=DIAS_ES[s.fecha.getDay()];
+  const dia=(s.diaN&&w.dias?.[s.diaN])?s.diaN:Object.keys(w.dias||{}).find(k=>sinTilde(w.dias[k])===dn); if(!dia)return {dia:null,obj:null};
   const o=w.objetivo?.[dia]?.[puesto]; if(!o)return {dia,obj:null};
   const r={};VARS.forEach(v=>r[v.k]=valObj(o[v.k]));return {dia,obj:r};
 }
@@ -514,7 +517,7 @@ function calcular(c){
   const L=parseD(c.fecha)||hoy();const fin=c.estado==='alta'?parseD(c.fecha_alta):hoy();
   const semL=semanaDe(L),semHoy=semanaDe(fin);
   const ses=sesionesJugador(c.jugador).filter(s=>s.fecha>=L&&s.fecha<=fin).map(s=>{
-    const o=objSesion(s.fecha,c.puesto);const p={},pi={};const n=semanaDe(s.fecha);
+    const o=objSesion(s,c.puesto);const p={},pi={};const n=s.sem;
     const oi=o?.dia?objIndDia(c,n,o.dia):null;
     VARS.forEach(v=>{const ob=o?.obj?.[v.k];p[v.k]=ob?s.m[v.k]/ob*100:null;const b=oi?.[v.k];pi[v.k]=b?s.m[v.k]/b*100:null});
     return {...s,n,dia:o?.dia||null,obj:o?.obj||null,p,pi,ind:o?.dia?tienePct(c,n,o.dia):false,pctDia:o?.dia?pctInd(c,n,o.dia):null,pctVar:o?.dia?oiTieneVar(c,n,o.dia):false};
