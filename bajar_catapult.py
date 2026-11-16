@@ -9,7 +9,7 @@ Lógica:
 - Agrupa por semana calendario (lunes a domingo).
 - Roster dinámico: detecta automáticamente qué jugadores tuvo cada semana.
 - Calcula el TOTAL semanal (suma para volumen, máximo para picos).
-- Calcula la banda de referencia (promedio de semanas reales previas x 0.8 y x 1.3).
+- Calcula la banda de referencia (promedio de las 3 semanas previas entrenadas, minimo 2, x 0.8 y x 1.3).
 """
 import json, os, sys, urllib.request
 from collections import defaultdict
@@ -195,8 +195,10 @@ def totalizar(by_ath):
 
 
 def bandas_de(historial):
-    """Banda de referencia = promedio de semanas reales previas x0.8 / x1.3."""
-    if len(historial) < 1:
+    """Banda de referencia = promedio de las 3 semanas previas entrenadas x0.8 / x1.3.
+    Mismo criterio que RTP: hacen falta al menos 2 semanas previas; si no, no hay banda."""
+    historial = historial[-3:]
+    if len(historial) < 2:
         return None
     metrics_banda = {}
     for k in METRICS:
