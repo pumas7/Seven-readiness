@@ -30,7 +30,7 @@ main{padding:22px 0 60px}
 .legend{display:flex;gap:18px;align-items:center;margin-bottom:16px;font-size:12px;color:var(--grey);flex-wrap:wrap}
 .legend b{color:var(--ink)}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
-.dot.g{background:var(--green)}.dot.a{background:var(--amber)}.dot.r{background:var(--red)}.dot.n{background:var(--grey)}
+.dot.g{background:var(--green)}.dot.a{background:var(--amber)}.dot.r{background:var(--red)}.dot.n{background:var(--grey)}.dot.v{background:#B8C2CC}
 .bandtoggle{display:flex;gap:8px;align-items:center;margin-bottom:18px;font-size:12px;flex-wrap:wrap}
 .bandtoggle .lbl{color:var(--grey);font-weight:600}
 .btn-band{border:1px solid var(--line);background:#fff;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;font-family:inherit;transition:.15s;color:var(--ink);font-weight:600}
@@ -42,11 +42,13 @@ main{padding:22px 0 60px}
 .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;transition:.15s;position:relative;overflow:hidden}
 .card:hover{border-color:var(--sky);box-shadow:0 6px 20px rgba(20,66,114,.10);transform:translateY(-2px)}
 .card .status-bar{position:absolute;top:0;left:0;width:4px;height:100%}
-.sb-g{background:var(--green)}.sb-a{background:var(--amber)}.sb-r{background:var(--red)}.sb-n{background:var(--grey)}
+.sb-g{background:var(--green)}.sb-a{background:var(--amber)}.sb-r{background:var(--red)}.sb-n{background:var(--grey)}.sb-v{background:repeating-linear-gradient(90deg,#B8C2CC 0 6px,#E2E7EC 6px 12px)}
 .card h3{font-size:15px;font-weight:700;margin-bottom:3px;padding-left:6px}
 .card .date{font-size:11px;color:var(--grey);margin-bottom:12px;padding-left:6px}
 .status-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;margin-left:6px}
-.sp-g{background:#E4F5EC;color:var(--green)}.sp-a{background:#FCF2DD;color:#A9750A}.sp-r{background:#FBE4E4;color:var(--red)}.sp-n{background:#EEF1F4;color:var(--grey)}
+.sp-g{background:#E4F5EC;color:var(--green)}.sp-a{background:#FCF2DD;color:#A9750A}.sp-r{background:#FBE4E4;color:var(--red)}.sp-n{background:#EEF1F4;color:var(--grey)}.sp-v{background:#EEF1F4;color:#5B6B7B;border:1px dashed #B8C2CC}
+.card.vencido .metrics{opacity:.55}
+.descartes{margin-top:8px;font-size:11px;color:#8a6d1a;background:#FFF8E6;border-radius:6px;padding:5px 8px;line-height:1.35}
 .metrics{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
 .mrow{display:flex;align-items:center;justify-content:space-between;font-size:12px}
 .mrow .ml{color:var(--grey)}
@@ -310,13 +312,38 @@ const NOTES={
   nordic:'N&oacute;rdicos (viernes). La asimetr&iacute;a izquierda/derecha se semaforiza por el valor del d&iacute;a (0-10% verde, 11-20% amarillo, 21%+ rojo). El torque de cada pierna, por % de ca&iacute;da vs. sus &uacute;ltimas 3. Se ajusta al peso corporal.'
 };
 
+// ===== Validación de datos =====
+// Valores fuera de rango fisiológico no se usan (ni en el semáforo ni en promedios): el test queda, la métrica no.
+const RANGOS={
+  cmj:{JUMP_HEIGHT:[10,80],RSI_MODIFIED:[0.1,1.5],CONTRACTION_TIME:[0.3,1.5],ECCENTRIC_PEAK_VELOCITY:[0.3,3.5]},
+  cmrj:{CMRJ_REBOUND_JUMP_HEIGHT:[5,70],CMRJ_REBOUND_RSI:[0.3,5]}
+};
+const CONTACTO_MAX=0.25;   // CMRJ: contacto >= 250 ms no es un rebote reactivo válido (SSC rápido) -> se descarta el test
+const DIAS_VENCIDO=10;     // si el último test tiene más de 10 días, el semáforo pasa a "dato vencido"
+const DESCARTES={};
+const labelDe=(tab,k)=>(METRICS[tab]||[]).find(m=>m.k===k)?.label||k;
 function getSeries(player,tab){
   const raw=DATA.players[player][tab]||[];
   const bw=getBodyWeight(player);
-  return raw.map(t=>{const o={date:t.date};for(const k in t)o[k]=t[k];
-    if(tab==='nordic'){o.torqueNormL=bw>0?t.leftTorque/bw:null;o.torqueNormR=bw>0?t.rightTorque/bw:null;}
-    return o;});
+  const desc=[],out=[];
+  for(const t of raw){
+    const o={date:t.date};for(const k in t)o[k]=t[k];
+    if(tab==='cmrj'&&o.CMRJ_REBOUND_CONTACT_TIME>=CONTACTO_MAX){
+      desc.push(`${fmtDate(o.date)}: contacto ${Math.round(o.CMRJ_REBOUND_CONTACT_TIME*1000)} ms (≥250, no es rebote reactivo válido)`);continue;}
+    for(const [k,[a,b]] of Object.entries(RANGOS[tab]||{})){
+      const v=o[k];if(v===null||v===undefined)continue;const x=Math.abs(v);
+      if(x<a||x>b){desc.push(`${fmtDate(o.date)}: ${labelDe(tab,k)} ${+v.toFixed(2)} fuera de rango`);o[k]=null;}
+    }
+    if(tab==='nordic'){
+      if(!t.leftTorque||!t.rightTorque){o.torqueNormL=o.torqueNormR=null;desc.push(`${fmtDate(o.date)}: torque en 0 (test incompleto)`);}
+      else{o.torqueNormL=bw>0?t.leftTorque/bw:null;o.torqueNormR=bw>0?t.rightTorque/bw:null;}
+    }
+    out.push(o);
+  }
+  (DESCARTES[player]=DESCARTES[player]||{})[tab]=desc;
+  return out;
 }
+function diasDesde(iso){if(!iso)return null;const [y,m,d]=iso.slice(0,10).split('-').map(Number);const h=new Date();h.setHours(0,0,0,0);return Math.round((h-new Date(y,m-1,d))/864e5);}
 function getBodyWeight(player){const c=DATA.players[player].cmj||[];for(let i=c.length-1;i>=0;i--)if(c[i].BODY_WEIGHT)return c[i].BODY_WEIGHT;return 0;}
 
 function stats(series,metric){
@@ -373,9 +400,10 @@ function playerStatus(player,tab){
   const last=series[series.length-1];
   const rank={g:0,a:1,r:2,n:-1,i:-1};let worst='n',res=[];
   for(const m of METRICS[tab]){const s=statusOf(series,m);res.push({m,st:s,val:last[m.k]});if((rank[s.status]??-1)>rank[worst])worst=s.status;}
-  return {status:worst,last,metrics:res,series};
+  const dias=diasDesde(last.date),vencido=dias!==null&&dias>DIAS_VENCIDO;
+  return {status:vencido?'v':worst,semaforo:worst,dias,vencido,last,metrics:res,series};
 }
-function statusLabel(s){return {g:'OK',a:'Vigilar',r:'Alerta',n:'Sin dato',i:'Info'}[s];}
+function statusLabel(s){return {g:'OK',a:'Vigilar',r:'Alerta',n:'Sin dato',i:'Info',v:'Dato vencido'}[s];}
 // formatea un valor aplicando escala opcional (ej. s->ms x1000), decimales y unidad
 function fmtV(v,m){ if(v===null||v===undefined||typeof v!=='number')return v; const sc=m.scale||1; return (v*sc).toFixed(m.dec); }
 function fmtU(v,m){ return fmtV(v,m)+(m.unit||''); }
@@ -391,7 +419,7 @@ function mejorRegistro(vals,dir){
   if(dir==='absdown')return vals.reduce((a,b)=>Math.abs(b)>Math.abs(a)?b:a);
   return Math.max(...vals);
 }
-function cvar(v){return {g:'green',a:'amber',r:'red',n:'grey',i:'grey'}[v];}
+function cvar(v){return {g:'green',a:'amber',r:'red',n:'grey',i:'grey',v:'grey'}[v];}
 // Formatea fecha ISO (AAAA-MM-DD) a DD-MM-AAAA para mostrar en todo el tablero
 function fmtDate(iso){
   if(!iso||typeof iso!=='string')return iso;
@@ -455,7 +483,7 @@ function renderPromedios(){
   host.style.display='block';
   charts.forEach(c=>c.destroy()); charts=[];
 
-  let html = `<div class="avg-intro"><b>Vista general del equipo.</b> Cada tarjeta muestra el <b>promedio de todo el grupo</b> en su ultima evaluacion (el numero grande), y como viene variando en el tiempo (la mini-linea). Debajo, las dos bandas de referencia del promedio: <span style="color:#7c4dc4;font-weight:700">&plusmn;1 desvio</span> (variacion normal del grupo) y <span style="color:var(--green);font-weight:700">SWC</span> (cambio minimo que importa). Sirve para ver de un vistazo si el equipo entero viene estable, subiendo o cayendo.</div>`;
+  let html = `<div class="avg-intro"><b>Vista general del equipo.</b> Cada tarjeta muestra el <b>promedio de todo el grupo</b> en su &uacute;ltima evaluaci&oacute;n (el n&uacute;mero grande) y c&oacute;mo viene variando (la mini-l&iacute;nea). El % compara contra el <b>promedio de las &uacute;ltimas 3 evaluaciones del grupo</b>, con el mismo sem&aacute;foro que las tarjetas: 0-10% verde, 11-20% amarillo, 21%+ rojo (solo cuenta el cambio hacia el lado malo).</div>`;
 
   for(const tab of ['cmj','cmrj','nordic']){
     const cfg = AVG_METRICS[tab];
@@ -477,30 +505,27 @@ function renderPromedios(){
       }
       const vals = serie.map(s=>s.avg);
       const current = vals[vals.length-1];
-      // delta vs promedio previo
-      const prevVals = vals.slice(0,-1);
+      // mismo criterio que el semáforo: promedio de las 3 evaluaciones previas del grupo
+      const prevVals = vals.slice(Math.max(0,vals.length-4),-1);
       const prevMean = prevVals.length? prevVals.reduce((a,b)=>a+b,0)/prevVals.length : current;
-      const sd = prevVals.length>1 ? Math.sqrt(prevVals.reduce((a,b)=>a+(b-prevMean)**2,0)/(prevVals.length-1)) : 0;
-      const swc = 0.2*sd;
       const delta = current - prevMean;
-      // direccion de tendencia visual
-      let trendCls='flat', arrow='&rarr;';
-      const absd = Math.abs(delta);
-      if(absd < swc || sd===0){ trendCls='flat'; arrow='&rarr;'; }
-      else if(delta>0){ trendCls = m.dir==='down'?'down':'up'; arrow='&uarr;'; }
-      else { trendCls = m.dir==='down'?'up':'down'; arrow='&darr;'; }
-      const deltaTxt = sd===0 ? 'primer dato' : `${delta>=0?'+':''}${(delta*(m.scale||1)).toFixed(m.dec)} vs promedio`;
+      const pctCambio = prevVals.length&&prevMean ? delta/Math.abs(prevMean)*100 : null;
+      // % hacia el lado malo: 0-10 verde, 11-20 amarillo, 21+ rojo (asimetría: sin semáforo de tendencia)
+      const malo = pctCambio===null||m.dir==='flat' ? null : (m.dir==='down' ? pctCambio : -pctCambio);
+      const est = malo===null ? 'n' : malo<=0 ? 'g' : bandaPorPct(malo);
+      const trendCls = {g:'up',a:'flat',r:'down',n:'flat'}[est];
+      const arrow = delta>0?'&uarr;':delta<0?'&darr;':'&rarr;';
+      const deltaTxt = pctCambio===null ? 'primer dato' : `${pctCambio>=0?'+':''}${pctCambio.toFixed(1)}% vs prom. &uacute;ltimas ${prevVals.length}`;
+      const sd = 0, swc = 0;
 
       const cid = 'spark_'+tab+'_'+m.k;
       card.innerHTML = `
         <div class="trend-bar tb-${trendCls}"></div>
         <div class="ac-label">${m.label}</div>
         <div><span class="ac-number">${fmtV(current,m)}</span><span class="ac-unit">${m.unit}</span></div>
-        <div class="ac-delta ${trendCls}">${arrow} ${deltaTxt}</div>
+        <div class="ac-delta ${trendCls}" style="color:var(--${cvar(est)})">${arrow} ${deltaTxt}</div>
         <div class="ac-spark"><canvas id="${cid}"></canvas></div>
-        <div class="ac-bands">Promedio grupo: <span class="bnum">${fmtU(prevMean,m)}</span><br>
-          <span class="sw-te-txt">&plusmn;1 desvio:</span> <span class="bnum">${((prevMean-sd)*(m.scale||1)).toFixed(m.dec)} a ${((prevMean+sd)*(m.scale||1)).toFixed(m.dec)}</span><br>
-          <span class="sw-swc-txt">SWC:</span> <span class="bnum">&plusmn;${(swc*(m.scale||1)).toFixed(m.dec)}</span></div>`;
+        <div class="ac-bands">Promedio &uacute;ltimas ${prevVals.length||'-'}: <span class="bnum">${fmtU(prevMean,m)}</span></div>`;
       grid.appendChild(card);
       // sparkline (protegido: si falla no corta el resto)
       try{ drawSpark(cid, serie, m, prevMean, sd, swc); }catch(e){ console.warn('spark fail', m.k, e); }
@@ -541,13 +566,16 @@ function renderTeam(){
         const disp=(typeof v==='number')?fmtV(v,r.m):v;
         mh+=`<div class="mrow"><span class="ml">${r.m.label}</span><span class="mv">${disp}${r.m.unit}<span class="flag" style="background:var(--${cvar(r.st.status)})"></span></span></div>`;}
     }
-    const ds=ps.last?fmtDate(ps.last.date):'sin registros';
-    card.innerHTML=`<div class="status-bar sb-${ps.status}"></div><h3>${player}</h3><div class="date">Ultimo: ${ds}</div>
-      <span class="status-pill sp-${ps.status}"><span class="dot ${ps.status}"></span>${statusLabel(ps.status)}</span>
-      <div class="metrics">${mh||'<div class="mrow"><span class="ml">Sin datos en esta evaluacion</span></div>'}</div>`;
+    const ds=ps.last?`${fmtDate(ps.last.date)}${ps.dias!==null?` &middot; hace ${ps.dias} d&iacute;a${ps.dias===1?'':'s'}`:''}`:'sin registros';
+    const desc=(DESCARTES[player]||{})[tab]||[];
+    if(ps.vencido)card.classList.add('vencido');
+    card.innerHTML=`<div class="status-bar sb-${ps.status}"></div><h3>${player}</h3><div class="date">&Uacute;ltimo: ${ds}</div>
+      <span class="status-pill sp-${ps.status}"><span class="dot ${ps.status}"></span>${statusLabel(ps.status)}${ps.vencido&&ps.semaforo!=='n'?` <span style="font-weight:500;opacity:.8">(era ${statusLabel(ps.semaforo)})</span>`:''}</span>
+      <div class="metrics">${mh||'<div class="mrow"><span class="ml">Sin datos en esta evaluacion</span></div>'}</div>
+      ${desc.length?`<div class="descartes" title="${desc.join('\n')}">&#9888; ${desc.length} dato${desc.length===1?'':'s'} descartado${desc.length===1?'':'s'} (detalle en la ficha)</div>`:''}`;
     card.onclick=()=>renderDetail(player);grid.appendChild(card);
   }
-  document.getElementById('tabNote').textContent=NOTES[tab];
+  document.getElementById('tabNote').innerHTML=NOTES[tab]+` Si el &uacute;ltimo test tiene m&aacute;s de ${DIAS_VENCIDO} d&iacute;as, la tarjeta pasa a <b>dato vencido</b>. Los valores fuera de rango fisiol&oacute;gico y los CMRJ con contacto &ge;250 ms no se usan.`;
 }
 
 
@@ -641,8 +669,9 @@ function renderDetail(player){
   }
   dv.innerHTML=`<div class="detail-head"><button class="back" onclick="renderTeam()">&larr;</button>
     <div><h2>${player}</h2><div class="sub">${{cmj:'CMJ comun',cmrj:'CMRJ rebote',nordic:'Nordicos'}[tab]} &middot; ${series.length} registros</div></div>
-    <span class="status-pill sp-${ps.status}" style="margin-left:auto"><span class="dot ${ps.status}"></span>${statusLabel(ps.status)}</span></div>
+    <span class="status-pill sp-${ps.status}" style="margin-left:auto"><span class="dot ${ps.status}"></span>${statusLabel(ps.status)}${ps.vencido?` &middot; hace ${ps.dias} d&iacute;as`:''}</span></div>
     <div class="detail-body">
+      ${((DESCARTES[player]||{})[tab]||[]).length?`<div class="descartes" style="margin-bottom:12px"><b>Datos descartados:</b><br>${DESCARTES[player][tab].join('<br>')}</div>`:''}
       <details class="bands-help" open>
         <summary>C&oacute;mo leer este tablero (tocar para ocultar)</summary>
         <div class="bands-help-body">
@@ -900,6 +929,8 @@ fetch('../data.json?v=' + Date.now())
   .then(d => {
     DATA = d;
     document.getElementById('genDate').textContent = 'Actualizado ' + fmtDate(DATA.generated.slice(0,10));
+    { let ult=''; for(const p in DATA.players)for(const t of ['cmj','cmrj','nordic']){const a=DATA.players[p][t]||[];if(a.length&&a[a.length-1].date>ult)ult=a[a.length-1].date}
+      if(ult) document.getElementById('genDate').textContent += ' · último test ' + fmtDate(ult); }
     renderTeam();
   })
   .catch(err => {
