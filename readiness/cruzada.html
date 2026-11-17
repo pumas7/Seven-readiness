@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pumas 7s — Vista cruzada</title>
+<style>
+:root{--navy:#002e4b;--steel:#0a4368;--sky:#2C74B3;--paper:#F4F6F9;--ink:#0F2233;--line:#E3E8EE;--muted:#5B6B7B;
+  --green:#1FA463;--amber:#E8A317;--red:#D64545;--grey:#8595A6;--gold:#F2C94C}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--paper);color:var(--ink)}
+header{background:var(--navy);color:#fff;padding:20px 24px}
+.hwrap{max-width:1320px;margin:0 auto;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.hwrap h1{font-size:25px;font-weight:800;letter-spacing:-.01em}
+.hwrap p{font-size:13.5px;color:#C9D6E2;margin-top:3px}
+.hwrap .fill{flex:1 1 300px;min-width:0}
+.back{background:var(--gold);color:var(--navy);text-decoration:none;font-weight:700;font-size:14px;padding:9px 14px;border-radius:10px}
+.fechas{font-size:12px;color:#C9D6E2;text-align:right}
+main{max-width:1320px;margin:0 auto;padding:22px 20px 50px;display:flex;flex-direction:column;gap:18px}
+.resumen{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px}
+.rb{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;text-align:left;font:inherit;cursor:pointer;color:inherit}
+.rb:hover{border-color:var(--sky)}
+.rb .n{font-size:28px;font-weight:800}.rb .t{font-size:13px;font-weight:700}.rb .s{font-size:11.5px;color:var(--muted);margin-top:2px}
+.rb.cruce{border-color:#E9A3A3}.rb.cruce .n,.rb.alerta .n{color:#B83232}.rb.vigilar .n{color:#8A5F06}.rb.venc .n{color:#4B5B6B}.rb.rtp .n{color:#1F5C93}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{font:inherit;font-size:13px;font-weight:600;padding:8px 14px;border-radius:999px;border:1px solid #C9D3DD;background:#fff;color:var(--ink);cursor:pointer;min-height:38px}
+.chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.ctl .sp{flex:1 1 auto}
+.ctl label{font-size:13px;color:var(--muted)}
+.ctl select{font:inherit;font-size:13px;padding:8px 10px;border-radius:10px;border:1px solid #C9D3DD;background:#fff;min-height:38px}
+.tbox{background:#fff;border:1px solid var(--line);border-radius:16px;overflow-x:auto}
+table{width:100%;min-width:1380px;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;padding:12px 10px;border-bottom:1px solid var(--line);white-space:nowrap;background:#fff;position:sticky;top:0}
+th small{text-transform:none;font-weight:500;letter-spacing:0}
+td{padding:10px;border-bottom:1px solid #EEF1F4;vertical-align:top}
+tr.x td{background:#FFF7F7}
+.nom{font-weight:700;font-size:13.5px;white-space:nowrap}
+.sub{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.p-x{background:#FBE4E4;color:#A12C2C;border:1px solid #E9A3A3}.p-x i,.p-r i{background:var(--red)}
+.p-r{background:#FBE4E4;color:#A12C2C}
+.p-a{background:#FCF2DD;color:#8A5F06}.p-a i{background:var(--amber)}
+.p-g{background:#E4F5EC;color:#14724A}.p-g i{background:var(--green)}
+.p-v{background:#EEF1F4;color:#4B5B6B;border:1px dashed #A9B5C1}.p-v i{background:#A9B5C1}
+.p-b{background:#E3EEF8;color:#1F5C93}.p-b i{background:var(--sky)}
+.ac{font-weight:700;font-size:14.5px;white-space:nowrap}
+.t-g{color:#14724A}.t-a{color:#8A5F06}.t-r{color:#B83232}.t-b{color:#1F5C93}.t-n{color:var(--muted);font-weight:500;font-size:12px}
+.rev{font-size:12px;max-width:280px;line-height:1.4}
+.rev div+div{margin-top:3px}
+select.pu{font:inherit;font-size:11px;padding:1px 4px;border-radius:6px;border:1px solid #C9D3DD;background:#fff;color:var(--muted);margin-top:4px}
+.ley{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;font-size:12.5px;line-height:1.5;color:#33475B}
+.ley div{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.ley b{color:var(--ink)}
+.msg{font-size:13px;padding:10px 14px;border-radius:10px;background:#E3EEF8;color:#1F5C93}
+.msg.err{background:#FBE4E4;color:#A12C2C}
+.vacio{padding:30px;text-align:center;color:var(--muted)}
+footer{text-align:center;color:var(--grey);font-size:12px;padding:10px 0 30px}
+</style>
+</head>
+<body>
+<header><div class="hwrap">
+  <a class="back" href="../">← Inicio</a>
+  <div class="fill"><h1>Vista cruzada</h1><p>Readiness × carga externa × bienestar × RTP · un jugador por fila</p></div>
+  <div class="fechas" id="fechas">Cargando…</div>
+</div></header>
+<main>
+  <div id="msg" class="msg" hidden></div>
+  <section class="resumen" id="resumen" aria-label="Resumen"></section>
+  <div class="ctl">
+    <button class="chip on" data-f="todos" type="button">Todos</button>
+    <button class="chip" data-f="revisar" type="button">Solo para revisar</button>
+    <button class="chip" data-f="FWDS" type="button">Forwards</button>
+    <button class="chip" data-f="BACKS" type="button">Backs</button>
+    <span class="sp"></span>
+    <label for="sem">Semana</label><select id="sem"></select>
+  </div>
+  <div class="tbox"><table>
+    <thead><tr>
+      <th>Jugador</th><th>Estado</th>
+      <th>CMJ <small>(jue)</small></th><th>CMRJ <small>(mar)</small></th><th>Nórdico <small>(vie)</small></th>
+      <th>ACWR Dist</th><th>HSR</th><th>DS</th><th>Acel</th><th>Decel</th>
+      <th>Bienestar</th><th>RTP</th><th>Para revisar</th>
+    </tr></thead>
+    <tbody id="tb"><tr><td colspan="13" class="vacio">Cargando datos…</td></tr></tbody>
+  </table></div>
+  <section class="ley" aria-label="Cómo se lee">
+    <div><b>Readiness</b><br>% vs promedio de sus últimas 3 evaluaciones, hacia el lado malo: 0–10 verde, 11–20 amarillo, 21+ rojo (se muestra la peor métrica). Nórdico: asimetría del día con las mismas bandas. Gris punteado = último test de más de 10 días. No se usan valores fuera de rango ni CMRJ con contacto ≥250 ms.</div>
+    <div><b>ACWR</b><br>Semana ÷ promedio de las 3 previas entrenadas (mín. 2). Verde 0,8–1,3 · ámbar 1,3–1,5 · rojo &gt;1,5 · azul &lt;0,8. <b>Semana en curso:</b> el número grande es el <b>proyectado</b> = lo hecho + lo que falta del plan del PF para su puesto; abajo, el ACWR de lo hecho hasta hoy. Jugadores en RTP: sin proyección (ver módulo RTP).</div>
+    <div><b>Bienestar y cruce</b><br>Último cuestionario de AMS de la semana (colores = z-score de AMS) y el chequeo del día: bienestar en rojo + carga de las 48 h previas &gt;15 % sobre lo habitual, zona dolorida + carga de esa zona, o bienestar en rojo + caída de salto. <b>Cruce</b> = readiness amarillo/rojo + algún ACWR &gt;1,3, o un chequeo del día marcado. Marca, no decide.</div>
+  </section>
+</main>
+<footer>Pumas 7s — Seven-readiness · Vista cruzada · Uso interno del cuerpo técnico</footer>
+<script>
+(function(){
+const INICIO=new Date(2026,6,20), DIAS_VENCIDO=10, CONTACTO_MAX=0.25;
+const RAW='https://raw.githubusercontent.com/pumas7/Seven-readiness/main/';
+const API='https://api.github.com/repos/pumas7/Seven-readiness/contents/';
+const M=['distancia','hsr','ds','accel','deccel'];
+const DIAS_ES=['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sinTilde=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+const clave=s=>sinTilde(s).split(/\s+/).filter(Boolean).sort().join(' ');
+const hoy=(()=>{const d=new Date();d.setHours(0,0,0,0);return d})();
+const addD=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const parseD=s=>{if(!s)return null;const [y,m,d]=String(s).slice(0,10).split('-').map(Number);return new Date(y,m-1,d)};
+const lunesDe=n=>addD(INICIO,(n-1)*7);
+const semanaDe=d=>Math.floor((d-INICIO)/864e5/7)+1;
+const diffD=(a,b)=>Math.round((b-a)/864e5);
+const fC=d=>d?`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`:'—';
+const f2=x=>x.toFixed(2).replace('.',',');
+const iniciales=n=>n.split(/\s+/).filter(Boolean).map(w=>w[0].toUpperCase()).join('');
+const js=u=>fetch(u+(u.includes('?')?'&':'?')+'v='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
+function msg(t,err){const m=$('#msg');m.textContent=t;m.className='msg'+(err?' err':'');m.hidden=!t}
+
+let DATA,CARGA,PLAN,RTP,BIEN,PUESTOS={puestos:{}},PSHA=null,FILTRO='todos',SEM=null,SEM_HOY=null;
+
+/* ===== Readiness (mismos criterios que /readiness/) ===== */
+const RANGOS={cmj:{JUMP_HEIGHT:[10,80],RSI_MODIFIED:[0.1,1.5],CONTRACTION_TIME:[0.3,1.5],ECCENTRIC_PEAK_VELOCITY:[0.3,3.5]},
+  cmrj:{CMRJ_REBOUND_JUMP_HEIGHT:[5,70],CMRJ_REBOUND_RSI:[0.3,5]}};
+const MET={cmj:[['RSI_MODIFIED','RSI mod','down'],['JUMP_HEIGHT','altura','down'],['CONTRACTION_TIME','t. contracción','up'],['ECCENTRIC_PEAK_VELOCITY','vel. excéntrica','absdown']],
+  cmrj:[['CMRJ_REBOUND_RSI','RSI','down'],['CMRJ_REBOUND_JUMP_HEIGHT','altura reb.','down'],['CMRJ_REBOUND_CONTACT_TIME','contacto','up']]};
+const banda=p=>p<=10?'g':p<=20?'a':'r';
+function serie(p,tab,hasta){
+  const bw=(()=>{const c=p.cmj||[];for(let i=c.length-1;i>=0;i--)if(c[i].BODY_WEIGHT)return c[i].BODY_WEIGHT;return 0})();
+  const out=[];
+  for(const t of (p[tab]||[])){if(parseD(t.date)>hasta)continue;const o={...t};
+    if(tab==='cmrj'&&o.CMRJ_REBOUND_CONTACT_TIME>=CONTACTO_MAX)continue;
+    for(const [k,[a,b]] of Object.entries(RANGOS[tab]||{})){const v=o[k];if(v==null)continue;const x=Math.abs(v);if(x<a||x>b)o[k]=null}
+    if(tab==='nordic'){if(!t.leftTorque||!t.rightTorque){o.tL=o.tR=null}else{o.tL=bw?t.leftTorque/bw:null;o.tR=bw?t.rightTorque/bw:null}}
+    out.push(o)}
+  return out}
+function caida(vals,dir){if(vals.length<2)return null;const cur=vals[vals.length-1],base=vals.slice(Math.max(0,vals.length-4),-1);
+  const mean=base.reduce((a,b)=>a+b,0)/base.length;if(!mean)return null;
+  const d=dir==='down'?mean-cur:dir==='up'?cur-mean:Math.abs(mean)-Math.abs(cur);return d/Math.abs(mean)*100}
+function readiness(p,tab,ref){
+  if(!p)return {e:'n',txt:'Sin dato',sub:'—'};
+  const s=serie(p,tab,ref);if(!s.length)return {e:'n',txt:'Sin dato',sub:'—'};
+  const last=s[s.length-1],fd=parseD(last.date),dias=diffD(fd,ref);
+  let peor=null;
+  if(tab==='nordic'){
+    const a=last.asym;if(a!=null){const ab=Math.abs(a);peor={e:banda(ab),txt:`Asim ${ab.toFixed(0)}%`,met:'asimetría',p:ab}}
+    for(const [k,lab] of [['tL','torque izq'],['tR','torque der']]){const v=s.map(x=>x[k]).filter(x=>x!=null);const c=caida(v,'down');
+      if(c!=null&&c>0){const e=banda(c);if(e!=='g'&&(!peor||'gar'.indexOf(e)>'gar'.indexOf(peor.e)))peor={e,txt:`−${c.toFixed(0)}%`,met:lab,p:c}}}
+  }else{
+    for(const [k,lab,dir] of MET[tab]){const v=s.map(x=>x[k]).filter(x=>x!=null);const c=caida(v,dir);if(c==null)continue;
+      const e=c<=0?'g':banda(c);if(!peor||'gar'.indexOf(e)>'gar'.indexOf(peor.e)||(e===peor.e&&c>peor.p))peor={e,txt:(c<=0?'+':'−')+Math.abs(c).toFixed(0)+'%',met:lab,p:c}}
+  }
+  if(!peor)return {e:'n',txt:'Sin dato',sub:fC(fd)};
+  const venc=dias>DIAS_VENCIDO;
+  return {e:venc?'v':peor.e,orig:peor.e,txt:venc?'Vencido':peor.txt,sub:venc?`${fC(fd)} · hace ${dias} d`:`${fC(fd)} · ${peor.met}`,met:peor.met,p:peor.p,venc}}
+
+/* ===== Carga: ACWR real y proyectado ===== */
+const diaDelNombre=n=>{const m=String(n||'').match(/\bsem(?:ana)?\s*\d{1,2}\s+d[ií]a\s*(\d)\b/i);return m?m[1]:null};
+function diasPlanHechos(n){
+  const w=PLAN?.semanas?.[n],set=new Set();if(!w)return set;
+  for(const d of Object.keys(w.dias||{})){const off=DIAS_ES.indexOf(sinTilde(w.dias[d]));const f=addD(lunesDe(n),off<1?6:off-1);if(f<hoy)set.add(d)}
+  for(const s of (CARGA.sesiones[n]||[])){const dn=diaDelNombre(s.nombre);if(dn&&w.dias?.[dn])set.add(dn);
+    else if(s.fecha_iso){const wd=DIAS_ES[parseD(s.fecha_iso).getDay()];const k=Object.keys(w.dias||{}).find(x=>sinTilde(w.dias[x])===wd);if(k)set.add(k)}}
+  return set}
+function restoPlan(n,puesto){
+  const w=PLAN?.semanas?.[n];if(!w)return null;const hechos=diasPlanHechos(n),r={};M.forEach(k=>r[k]=0);let dias=0;
+  for(const d of Object.keys(w.dias||{})){if(hechos.has(d))continue;const o=w.objetivo?.[d];if(!o)continue;dias++;
+    M.forEach(k=>{const f=o.FWDS?.[k],b=o.BACKS?.[k];const v=puesto==='FWDS'?f:puesto==='BACKS'?b:(f!=null&&b!=null?(f+b)/2:(f??b));r[k]+=+v||0})}
+  r._dias=dias;return r}
+function acwr(nomC,n,curso,puesto,enRTP){
+  const rows=CARGA.roster[nomC]||[];const by={};rows.forEach(r=>by[r.semana]=r);
+  const prev=[];for(let i=n-1;i>=1&&prev.length<3;i--){const r=by[i];if(r&&r.jugo&&r.datos)prev.push(r.datos)}
+  const act=by[n]&&by[n].datos?by[n].datos:null;
+  const out={};
+  for(const k of M){
+    if(prev.length<2){out[k]={v:null,s:'sin crónico'};continue}
+    const cr=prev.reduce((a,p)=>a+(+p[k]||0),0)/prev.length;if(!cr){out[k]={v:null,s:'sin crónico'};continue}
+    const hecho=act?(+act[k]||0):0;
+    if(curso&&!enRTP){const rp=restoPlan(n,puesto);
+      if(rp){out[k]={v:(hecho+rp[k])/cr,hoy:hecho/cr,proy:true};continue}}
+    out[k]={v:act?hecho/cr:null,hoy:null,proy:false,s:act?'':'no entrenó'}}
+  return out}
+const clsA=v=>v==null?'t-n':v>1.5?'t-r':v>1.3?'t-a':v>=0.8?'t-g':'t-b';
+
+/* ===== Bienestar ===== */
+function bienestar(nomAMSkey,n){
+  if(!BIEN?.dias)return null;
+  const ini=lunesDe(n),fin=addD(ini,6);
+  const fechas=Object.keys(BIEN.dias).filter(f=>{const d=parseD(f);return d>=addD(ini,-1)&&d<=fin&&d<=hoy}).sort();
+  if(!fechas.length)return null;
+  let resp=0,ult=null;
+  for(const f of fechas){const j=BIEN.dias[f].jugadores||{};const k=Object.keys(j).find(x=>clave(x)===nomAMSkey);const o=k?j[k]:null;
+    if(o&&o.respondio)resp++;ult={f,o,ch:BIEN.dias[f].chequeo||{},nombre:k}}
+  return {resp,total:fechas.length,ult}}
+
+/* ===== Armado ===== */
+function construir(){
+  const n=SEM,curso=n===SEM_HOY,ref=curso?hoy:addD(lunesDe(n),6);
+  const jug=new Map();
+  const add=(nombre,src)=>{if(/^Jugador /.test(nombre))return;const k=clave(nombre);const o=jug.get(k)||{k,nombre};o[src]=nombre;if(src==='c'||!o.nombre)o.nombre=nombre;jug.set(k,o)};
+  for(const [nm,rows] of Object.entries(CARGA.roster||{})){if(rows.some(r=>r.jugo&&r.semana<=n&&r.semana>=n-4))add(nm,'c')}
+  for(const nm of Object.keys(DATA?.players||{}))add(nm,'v');
+  const casos=(RTP?.casos||[]).filter(c=>c.estado==='activo');
+  const filas=[];
+  for(const o of jug.values()){
+    const p=o.v?DATA.players[o.v]:null;
+    const rd={cmj:readiness(p,'cmj',ref),cmrj:readiness(p,'cmrj',ref),nordic:readiness(p,'nordic',ref)};
+    const caso=casos.find(c=>clave(c.jugador)===o.k);
+    const puesto=PUESTOS.puestos[o.nombre]||caso?.puesto||null;
+    const ac=o.c?acwr(o.c,n,curso,puesto,!!caso):null;
+    const bi=bienestar(o.k,n);
+    // flags
+    const rv=[];let est='OK';
+    const rdVals=Object.values(rd),rdMal=rdVals.filter(x=>!x.venc&&(x.e==='a'||x.e==='r'));
+    const acV=ac&&!caso?M.map(k=>ac[k].v).filter(v=>v!=null):[]; // en RTP el ACWR no cuenta (crónico de rehab, ver módulo RTP)
+    const acMax=acV.length?Math.max(...acV):null;
+    const ch=bi?.ult?.ch||{},nomA=bi?.ult?.nombre;
+    const chHits=nomA?['revisarDosis','revisarZona','dobleSenal'].flatMap(t=>(ch[t]||[]).filter(s=>s.startsWith(nomA+':')).map(s=>({t,s:s.slice(nomA.length+1).trim()}))):[];
+    const bo=bi?.ult?.o;
+    const bRojo=bo&&['sueno','recuperacion','dolor','total'].some(k=>bo[k+'_color']==='rojo');
+    const bAmar=bo&&['sueno','recuperacion','dolor','total'].some(k=>bo[k+'_color']==='amarillo');
+    if(rdMal.length&&acMax!=null&&acMax>1.3){rv.push(`${rdMal.map(x=>x.met+' '+x.txt).join(', ')} con ACWR ${f2(acMax)}${curso&&!caso?' (proy.)':''}.`)}
+    chHits.forEach(h=>rv.push(({revisarDosis:'Dosis de hoy: ',revisarZona:'Zona dolorida: ',dobleSenal:'Doble señal: '})[h.t]+h.s));
+    const cruce=(rdMal.length&&acMax!=null&&acMax>1.3)||chHits.length>0;
+    const alerta=rdVals.some(x=>!x.venc&&x.e==='r')||bRojo||(acMax!=null&&acMax>1.5);
+    const vigilar=rdMal.length>0||bAmar||(acMax!=null&&acMax>1.3)||(acMax!=null&&acMax<0.8&&!curso);
+    const venc=rdVals.every(x=>x.e==='v'||x.e==='n');
+    if(!cruce){
+      rdVals.filter(x=>!x.venc&&x.e==='r').forEach(x=>rv.push(`Caída ${x.met} ${x.txt}.`));
+      if(acMax!=null&&acMax>1.3)rv.push(`ACWR ${f2(acMax)} en ${M.filter(k=>ac[k].v===acMax).map(k=>({distancia:'Dist',hsr:'HSR',ds:'DS',accel:'Acel',deccel:'Decel'})[k]).join('/')}${curso&&!caso?' (proyectado si cumple el plan)':''}.`);
+      if(bRojo)rv.push(`Bienestar en rojo (${fC(parseD(bi.ult.f))}).`);
+    }
+    if(bo&&bo.areas)rv.push(`Áreas doloridas: ${bo.areas}.`);
+    if(bi&&bi.ult&&bo&&!bo.respondio&&curso)rv.push(`No respondió el cuestionario del ${fC(parseD(bi.ult.f))}.`);
+    if(caso&&caso.region==='post'&&!(DATA?.players?.[o.v]?.nordic||[]).some(t=>parseD(t.date)>=parseD(caso.fecha)))rv.push('Isquios: sin NordBord desde la lesión.');
+    if(venc&&o.v)rv.push('Sin tests recientes de VALD.');
+    est=cruce?'Cruce':alerta?'Alerta':caso?'RTP':vigilar?'Vigilar':venc?'Vencido':'OK';
+    filas.push({o,rd,ac,bi,caso,puesto,est,rv,curso});
+  }
+  const ORD={Cruce:0,Alerta:1,RTP:2,Vigilar:3,Vencido:4,OK:5};
+  filas.sort((a,b)=>ORD[a.est]-ORD[b.est]||a.o.nombre.localeCompare(b.o.nombre));
+  return filas}
+
+function pintar(){
+  const filas=construir();
+  const cuenta=e=>filas.filter(f=>f.est===e).length;
+  $('#resumen').innerHTML=[
+    ['cruce','Cruce','Cruce','readiness/bienestar + carga'],['alerta','Alerta','Alerta','rojo en algún indicador'],
+    ['vigilar','Vigilar','Vigilar','amarillo o ACWR 1,3–1,5'],['venc','Vencido','Datos vencidos','último test > 10 días'],['rtp','RTP','En RTP','casos activos']]
+    .map(([c,e,t,s])=>`<button type="button" class="rb ${c}" data-est="${e}"><div class="n">${cuenta(e)}</div><div class="t">${t}</div><div class="s">${s}</div></button>`).join('');
+  document.querySelectorAll('.rb').forEach(b=>b.onclick=()=>{FILTRO='est:'+b.dataset.est;marcarChips();pintar()});
+  let vis=filas;
+  if(FILTRO==='revisar')vis=filas.filter(f=>f.est!=='OK');
+  else if(FILTRO==='FWDS'||FILTRO==='BACKS')vis=filas.filter(f=>f.puesto===FILTRO);
+  else if(FILTRO.startsWith('est:'))vis=filas.filter(f=>f.est===FILTRO.slice(4));
+  const pcls={Cruce:'p-x',Alerta:'p-r',RTP:'p-b',Vigilar:'p-a',Vencido:'p-v',OK:'p-g'};
+  const tcls={g:'p-g',a:'p-a',r:'p-r',v:'p-v',n:'p-v'};
+  $('#tb').innerHTML=vis.length?vis.map(f=>{
+    const t=x=>`<td><span class="pill ${tcls[x.e]}"><i></i>${esc(x.txt)}</span><div class="sub">${esc(x.sub)}</div></td>`;
+    const a=k=>{if(!f.ac)return '<td><span class="ac t-n">—</span><div class="sub">sin GPS</div></td>';const x=f.ac[k];
+      if(x.v==null)return `<td><span class="ac t-n">—</span><div class="sub">${esc(x.s||'')}</div></td>`;
+      return `<td><span class="ac ${f.caso?'t-n':clsA(x.v)}">${f2(x.v)}</span><div class="sub">${x.proy?'proy. · hoy '+f2(x.hoy):f.caso?'en RTP · ver módulo':''}</div></td>`};
+    const b=f.bi?.ult;let bc='<td><span class="pill p-v"><i></i>Sin dato</span><div class="sub">—</div></td>';
+    if(b){const o=b.o;if(!o||!o.respondio)bc=`<td><span class="pill p-v"><i></i>No respondió</span><div class="sub">${fC(parseD(b.f))} · ${f.bi.resp}/${f.bi.total} resp.</div></td>`;
+      else{const col=o.total_color==='rojo'?'p-r':o.total_color==='amarillo'?'p-a':o.total_color==='verde'?'p-g':'p-v';
+        const det=['sueno','recuperacion','dolor'].filter(k=>o[k+'_color']==='rojo'||o[k+'_color']==='amarillo').map(k=>({sueno:'sueño',recuperacion:'recup.',dolor:'dolor'})[k]+' '+o[k]).join(' · ');
+        bc=`<td><span class="pill ${col}"><i></i>Total ${o.total??'—'}</span><div class="sub">${fC(parseD(b.f))}${det?' · '+esc(det):''} · ${f.bi.resp}/${f.bi.total} resp.</div></td>`}}
+    const r=f.caso?`<td><span class="pill p-b"><i></i>${f.caso.disp?'Disponible':'No disponible'}</span><div class="sub">${esc(f.caso.tipo||'')} · día ${diffD(parseD(f.caso.fecha),hoy)}</div></td>`:'<td><span class="sub">—</span></td>';
+    const pu=`<select class="pu" data-j="${esc(f.o.nombre)}" aria-label="Puesto de ${esc(f.o.nombre)}"><option value="">puesto…</option><option${f.puesto==='FWDS'?' selected':''}>FWDS</option><option${f.puesto==='BACKS'?' selected':''}>BACKS</option></select>`;
+    return `<tr class="${f.est==='Cruce'?'x':''}"><td><div class="nom">${esc(f.o.nombre)}</div><div class="sub">${esc(iniciales(f.o.nombre))}</div>${pu}</td>
+      <td><span class="pill ${pcls[f.est]}"><i></i>${f.est}</span></td>
+      ${t(f.rd.cmj)}${t(f.rd.cmrj)}${t(f.rd.nordic)}${M.map(a).join('')}${bc}${r}
+      <td class="rev">${f.rv.map(x=>`<div>${esc(x)}</div>`).join('')}</td></tr>`}).join('')
+    :'<tr><td colspan="13" class="vacio">No hay jugadores con este filtro.</td></tr>';
+  document.querySelectorAll('select.pu').forEach(s=>s.onchange=()=>guardarPuesto(s.dataset.j,s.value));
+  const sinPuesto=filas.filter(f=>!f.puesto&&f.o.c).length;
+  if(SEM===SEM_HOY&&sinPuesto)msg(`${sinPuesto} jugadores sin puesto: la proyección usa el promedio de los objetivos de FWDS y BACKS. Elegí el puesto debajo del nombre (se guarda para todos).`);
+}
+function marcarChips(){document.querySelectorAll('.chip').forEach(b=>b.classList.toggle('on',b.dataset.f===FILTRO))}
+
+/* ===== Puestos (puestos.json en el repo) ===== */
+function getToken(){let t=null;try{t=localStorage.getItem('gh_token')}catch(e){}
+  if(!t){t=prompt('Pegá el token de GitHub para guardar (queda solo en este navegador):');if(t){t=t.trim();try{localStorage.setItem('gh_token',t)}catch(e){}}}return t}
+const b64e=s=>{const u=new TextEncoder().encode(s);let b='';for(let i=0;i<u.length;i+=0x8000)b+=String.fromCharCode(...u.subarray(i,i+0x8000));return btoa(b)};
+async function guardarPuesto(j,v){
+  const tok=getToken();if(!tok){msg('Falta el token de GitHub para guardar el puesto.',true);return}
+  const H={Authorization:'token '+tok,Accept:'application/vnd.github+json'};
+  try{
+    const g=await fetch(API+'puestos.json?ref=main',{headers:H,cache:'no-store'});
+    let base={puestos:{}},sha;
+    if(g.status===401){try{localStorage.removeItem('gh_token')}catch(e){}msg('Token inválido: se borró, volvé a intentar.',true);return}
+    if(g.ok){const x=await g.json();sha=x.sha;base=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(x.content.replace(/\n/g,'')),c=>c.charCodeAt(0))))}
+    base.puestos=base.puestos||{};if(v)base.puestos[j]=v;else delete base.puestos[j];
+    const r=await fetch(API+'puestos.json',{method:'PUT',headers:{...H,'Content-Type':'application/json'},
+      body:JSON.stringify({message:`Puesto: ${j} → ${v||'sin puesto'}`,content:b64e(JSON.stringify(base,null,1)+'\n'),branch:'main',...(sha?{sha}:{})})});
+    if(!r.ok){msg('No se pudo guardar el puesto ('+r.status+').',true);return}
+    PUESTOS=base;msg(`Puesto de ${j}: ${v||'sin puesto'} (guardado).`);pintar();
+  }catch(e){msg('Error al guardar: '+e.message,true)}
+}
+
+/* ===== Inicio ===== */
+(async()=>{
+  [DATA,CARGA,PLAN,RTP,BIEN]=await Promise.all([js('../data.json'),js('../carga.json'),js('../plan.json'),js(RAW+'rtp.json'),js(RAW+'bienestar.json')]);
+  const pz=await js(RAW+'puestos.json');if(pz)PUESTOS=pz;PUESTOS.puestos=PUESTOS.puestos||{};
+  if(!DATA||!CARGA){$('#tb').innerHTML='<tr><td colspan="13" class="vacio">No se pudieron cargar los datos de VALD o Catapult.</td></tr>';return}
+  const sems=(CARGA.semanas||[]).map(Number).sort((a,b)=>b-a);
+  SEM_HOY=Math.max(semanaDe(hoy),sems[0]||1);SEM=SEM_HOY;
+  const opts=[...new Set([SEM_HOY,...sems])].sort((a,b)=>b-a);
+  $('#sem').innerHTML=opts.map(n=>`<option value="${n}">S${n} · ${fC(lunesDe(n))} al ${fC(addD(lunesDe(n),6))}${n===SEM_HOY?' (en curso)':''}</option>`).join('');
+  $('#sem').onchange=e=>{SEM=+e.target.value;pintar()};
+  document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{FILTRO=b.dataset.f;marcarChips();pintar()});
+  let ultV='';for(const p of Object.values(DATA.players||{}))for(const t of ['cmj','cmrj','nordic']){const a=p[t]||[];if(a.length&&a[a.length-1].date>ultV)ultV=a[a.length-1].date}
+  const bf=BIEN?.dias?Object.keys(BIEN.dias).sort().pop():null;
+  $('#fechas').innerHTML=`Último test VALD ${fC(parseD(ultV))} · Catapult ${fC(parseD((CARGA.generated||'').slice(0,10)))} · Bienestar ${bf?fC(parseD(bf)):'—'}`;
+  pintar();
+})();
+})();
+</script>
+</body>
+</html>
