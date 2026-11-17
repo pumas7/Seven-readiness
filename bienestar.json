@@ -1,0 +1,98 @@
+{
+ "fuente": "Teamworks AMS · informe Bienestar",
+ "escala": "Sueño, Recuperación, Dolor: 1-5 (total 3-15); colores = z-score de AMS (verde z>-0,5, amarillo z>-1,5, rojo z<-1,5)",
+ "dias": {
+  "2026-11-12": {
+   "leido": "2026-11-17T01:11:11.691Z",
+   "jugadores": {
+    "Calello Francisco": {
+     "respondio": false
+    },
+    "Perez Pardo Gregorio": {
+     "respondio": false
+    },
+    "Batac Juan": {
+     "respondio": false
+    },
+    "Massun Juan Cruz": {
+     "respondio": false
+    },
+    "Bazan Velez Lautaro": {
+     "respondio": false
+    },
+    "Gonzalez Rizzoni Luciano": {
+     "respondio": false
+    },
+    "Arrieta Martiniano": {
+     "respondio": false
+    },
+    "Fossati Mateo": {
+     "respondio": false
+    },
+    "Graziano Matteo": {
+     "respondio": false
+    },
+    "Moneta Marcos": {
+     "respondio": false
+    },
+    "De Haro Pedro": {
+     "respondio": false
+    },
+    "Castro Santiago": {
+     "respondio": false
+    },
+    "Dubuc Sebastian": {
+     "respondio": false
+    },
+    "Mare Santiago": {
+     "respondio": false
+    },
+    "Vera Feld Santiago": {
+     "respondio": true,
+     "sueno_hrs": 8,
+     "sueno_hrs_color": "verde",
+     "sueno": 3,
+     "sueno_color": "amarillo",
+     "recuperacion": 3,
+     "recuperacion_color": "amarillo",
+     "dolor": 4,
+     "dolor_color": "verde",
+     "total": 10,
+     "total_color": "amarillo"
+    },
+    "Zangara Santino": {
+     "respondio": false
+    },
+    "Pellandini Joaquin": {
+     "respondio": true,
+     "sueno_hrs": 8,
+     "sueno_hrs_color": "verde",
+     "sueno": 4,
+     "sueno_color": "verde",
+     "recuperacion": 4,
+     "recuperacion_color": "verde",
+     "dolor": 4,
+     "dolor_color": "verde",
+     "total": 12,
+     "total_color": "verde"
+    },
+    "Diaz Ignacio": {
+     "respondio": false
+    },
+    "Alvarez Santiago": {
+     "respondio": false
+    },
+    "Estofan Bautista": {
+     "respondio": false
+    },
+    "Maldonado Castro Valentin": {
+     "respondio": false
+    },
+    "Ghisolfi Danilo": {
+     "respondio": false
+    }
+   }
+  }
+ },
+ "actualizado": "2026-11-17T01:11:11.711Z"
+}
