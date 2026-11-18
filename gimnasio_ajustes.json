@@ -5334,18 +5334,8 @@
      "items": [
       {
        "id": "A1",
-       "ej": "PUENTE CHINO 2P + PUENTE GLUTEO 1P",
-       "dosis": "3X20\" / 8+8"
-      },
-      {
-       "id": "F2",
-       "ej": "RDL BARRA + SLR ASIST",
-       "dosis": "3X8 / 10+10"
-      },
-      {
-       "id": "F3",
-       "ej": "CAMINATAS EXCENTRICAS + NEURODINAMIA",
-       "dosis": "3X8 /10+10"
+       "ej": "PUENTE CHINO 1P + PUENTE GLUTEO 1P",
+       "dosis": "4 x 6+6 - 6 (10kg)"
       }
      ]
     },
@@ -5568,7 +5558,7 @@
     }
    ],
    "autor": "jokin",
-   "fecha": "2026-11-18T12:00:41.876Z"
+   "fecha": "2026-11-18T12:01:48.633Z"
   }
  }
 }
