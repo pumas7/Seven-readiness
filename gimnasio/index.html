@@ -622,7 +622,7 @@ function semanaJugador(jug){
   const itemsDe=(plan,d)=>DATA.planes[plan]?.dias?.[d]?(unidades(seccion(plan,d,'cor').datos,'cor').get(k)?.items||[]):null;
   const clave=i=>nk(i.id)+'|'+nk(i.ej);
   const cap1=s=>s?s.charAt(0).toUpperCase()+s.slice(1).replace('miercoles','miércoles').replace('sabado','sábado'):'';
-  let h=`<div class="sedbar"><button class="btn gold" data-sedit>✎ Editar la semana de ${esc(jug)} (${esc(PLAN)})</button><span class="note">Cambiás todos los días juntos; se guarda como ajuste del tablero, igual que Editar.</span></div>`;
+  let h=`<div class="sedbar"><button class="btn gold" data-sedit>✎ Editar la semana de ${esc(jug)} (${esc(PLAN)})</button><span class="note">Cambiás todos los días juntos; se guarda como ajuste del tablero, igual que Editar.</span><span id="delBox" style="margin-left:auto;display:flex;gap:8px;align-items:center"><button class="btn danger" data-sdelj>🗑 Eliminar jugador</button></span></div>`;
   h+=`<div class="semtab"><table><thead><tr><th>Semana</th>${dias.map(d=>`<th>Día ${esc(d)}${p0.dias_semana?.[d]?' · '+esc(cap1(p0.dias_semana[d])):''}</th>`).join('')}</tr></thead><tbody>`;
   filas.forEach((plan,ri)=>{
     const p=DATA.planes[plan],prev=filas[ri+1];
@@ -702,8 +702,8 @@ function editarSemana(jug){
   $('#semSub').textContent='Editá los correctivos de toda la semana. Lo que dejes vacío se borra de ese día.';
   $('#semBody').innerHTML=semanaEditor();
 }
-async function guardarSemana(){
-  const autor=($('#sedAut')?.value||'').trim();ls.set('gym_autor',autor);
+async function guardarSemana(eliminar){
+  const autor=($('#sedAut')?.value??ls.get('gym_autor')??'').trim();ls.set('gym_autor',autor);
   const k=nk(SED.jug),fecha=new Date().toISOString();PEND.set={};PEND.del=[];
   for(const d of Object.keys(SED.dias)){
     const items=SED.dias[d].map(i=>({id:(i.id||'').trim().toUpperCase(),ej:(i.ej||'').trim(),dosis:(i.dosis||'').trim()})).filter(i=>i.ej||i.dosis);
@@ -718,10 +718,28 @@ async function guardarSemana(){
   if(!Object.keys(PEND.set).length){toast('No cambiaste nada.');SED=null;abrirSemana(SEM_JUG);return}
   if(!DEMO&&!ls.get('gh_token')&&!$('#tok')?.value?.trim()){toast('Pegá el token de GitHub para guardar.',true);return}
   const n=Object.keys(PEND.set).length;
-  if(await persistir()){toast(`Guardado: ${n} día${n>1?'s':''} de ${SED.jug}.`);SED=null;bc?.postMessage({t:'aj',aj:AJ});if(!EDIT)render();abrirSemana(SEM_JUG)}
+  if(await persistir()){
+    if(eliminar){toast(`${SED.jug} eliminado de los ${n} día${n>1?'s':''} de ${PLAN}.`);SED=null;bc?.postMessage({t:'aj',aj:AJ});if(!EDIT)render();$('#semModal').hidden=true;return}
+    toast(`Guardado: ${n} día${n>1?'s':''} de ${SED.jug}.`);SED=null;bc?.postMessage({t:'aj',aj:AJ});if(!EDIT)render();abrirSemana(SEM_JUG)}
+}
+/* eliminar un jugador de todos los días del plan (pide confirmar en dos toques, sin cuadros del navegador) */
+function pedirEliminar(){
+  const n=Object.keys(DATA.planes[PLAN].dias).filter(d=>unidades(seccion(PLAN,d,'cor').datos,'cor').has(nk(SEM_JUG))).length;
+  $('#delBox').innerHTML=`<span class="note" style="color:var(--bad)">Se saca a ${esc(SEM_JUG)} de ${n} día${n>1?'s':''} de ${esc(PLAN)} (se arrastra a las semanas siguientes, salvo que el PF le cambie los correctivos en la hoja).</span>
+    ${!DEMO&&!ls.get('gh_token')?'<input id="tok" type="password" placeholder="Token de GitHub (el de Carga)" aria-label="Token de GitHub" style="width:200px">':''}
+    <button class="btn ghost" data-sdelno>Cancelar</button><button class="btn danger" data-sdelsi style="background:var(--bad);color:#fff">Sí, eliminar</button>`;
+}
+async function eliminarJugador(){
+  if(EDIT){toast('Terminá primero la edición de la pantalla.',true);return}
+  if(!DEMO&&!ls.get('gh_token')&&!$('#tok')?.value?.trim()){toast('Pegá el token de GitHub para guardar.',true);return}
+  SED={jug:SEM_JUG,dias:{}};Object.keys(DATA.planes[PLAN].dias).forEach(d=>SED.dias[d]=[]);
+  await guardarSemana(true);
 }
 $('#semBody').addEventListener('click',e=>{
   if(e.target.closest('[data-sedit]')){if(EDIT){toast('Terminá primero la edición de la pantalla.',true);return}editarSemana(SEM_JUG);return}
+  if(e.target.closest('[data-sdelj]')){pedirEliminar();return}
+  if(e.target.closest('[data-sdelno]')){$('#delBox').innerHTML='<button class="btn danger" data-sdelj>🗑 Eliminar jugador</button>';return}
+  if(e.target.closest('[data-sdelsi]')){const b=e.target.closest('button');b.disabled=true;eliminarJugador().finally(()=>{b.disabled=false});return}
   if(!SED)return;const b=e.target.closest('button');if(!b)return;
   if(b.dataset.sdel){const [d,j]=b.dataset.sdel.split('.');SED.dias[d].splice(+j,1);$('#semBody').innerHTML=semanaEditor()}
   else if(b.dataset.sadd){const d=b.dataset.sadd;(SED.dias[d]=SED.dias[d]||[]).push({id:'',ej:'',dosis:''});$('#semBody').innerHTML=semanaEditor()}
