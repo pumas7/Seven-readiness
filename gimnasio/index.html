@@ -334,6 +334,16 @@ function seccion(plan,dia,vista,sinPropio){
   return {datos:lista,marc,avisos,aj:Object.keys(marc).length?a||{}:null};
 }
 
+/* correctivos: cada día muestra a todos los jugadores que tienen correctivos en algún día del plan
+   (si en ese día no tiene nada, aparece la tarjeta vacía). Los agregados van al final, en orden de aparición. */
+function conTodos(plan,dia,lista){
+  const ks=new Set(lista.map(u=>nk(u.jugador))),extra=[];
+  Object.keys(DATA.planes[plan]?.dias||{}).sort((a,b)=>a-b).forEach(d=>{
+    if(String(d)===String(dia))return;
+    (seccion(plan,d,'cor').datos||[]).forEach(u=>{const k=nk(u.jugador);if(k&&!ks.has(k)){ks.add(k);extra.push({jugador:u.jugador,items:[]})}});
+  });
+  return [...lista,...extra];
+}
 /* ---------- render ---------- */
 function render(){
   const p=DATA.planes[PLAN];const day=p?.dias?.[DIA];
@@ -354,7 +364,7 @@ function render(){
     h+=EDIT?rutEdit(datos):rutView(datos);
   }else{
     h+=gymDelDia();
-    h+=EDIT?corEdit(datos):corView(datos);
+    h+=EDIT?corEdit(datos):corView(conTodos(PLAN,DIA,datos));
   }
   $('#screen').innerHTML=h;tick();ajustar();
   $('#otra').href=VISTA==='rut'?'#correctivos':'#rutina';
@@ -469,15 +479,18 @@ $('#selDia').onchange=e=>setSel(PLAN,e.target.value);
 $('#vRut').onclick=()=>{if(EDIT)return;VISTA='rut';history.replaceState(null,'','#rutina');render()};
 $('#vCor').onclick=()=>{if(EDIT)return;VISTA='cor';history.replaceState(null,'','#correctivos');render()};
 $('#btnFull').onclick=async()=>{try{document.fullscreenElement?await document.exitFullscreen():await document.documentElement.requestFullscreen()}catch(e){toast('Este navegador no deja poner pantalla completa. Probá con F11.',true)}};
-$('#btnEdit').onclick=()=>{EDIT=clone(seccion(PLAN,DIA,VISTA).datos);$('#savebar').hidden=false;$('#btnEdit').disabled=true;
+$('#btnEdit').onclick=()=>{const d0=seccion(PLAN,DIA,VISTA).datos;EDIT=clone(VISTA==='cor'?conTodos(PLAN,DIA,d0):d0);$('#savebar').hidden=false;$('#btnEdit').disabled=true;
   $('#autor').value=ls.get('gym_autor')||'';$('#saveTxt').textContent='Editando '+(VISTA==='rut'?'la rutina':'los correctivos')+' del día '+DIA+'. Al guardar se actualiza en las dos pantallas.';render()};
 function salirEdicion(){EDIT=null;$('#savebar').hidden=true;$('#btnEdit').disabled=false;render()}
 $('#btnCancel').onclick=salirEdicion;
 $('#btnSave').onclick=async()=>{
   const autor=$('#autor').value.trim();ls.set('gym_autor',autor);
   // limpia filas vacías
+  const yaEstaban=new Set((seccion(PLAN,DIA,VISTA).datos||[]).map(u=>nk(u.jugador)));
   const datos=VISTA==='rut'?EDIT.map(b=>({...b,items:b.items.filter(i=>i.ej.trim()||i.dosis.trim())})).filter(b=>b.items.length)
-                           :EDIT.map(p=>({...p,items:p.items.filter(i=>i.ej.trim()||i.dosis.trim())})).filter(p=>p.jugador.trim());
+                           :EDIT.map(p=>({...p,items:p.items.filter(i=>i.ej.trim()||i.dosis.trim())}))
+                             // las tarjetas vacías que aparecen por estar en otros días no se graban, salvo que les cargues algo
+                             .filter(p=>p.jugador.trim()&&(p.items.length||yaEstaban.has(nk(p.jugador))));
   const k=ajKey(PLAN,DIA,VISTA);const v={datos,base:seccion(PLAN,DIA,VISTA,true).datos,autor,fecha:new Date().toISOString()};
   PEND.set={[k]:v};PEND.del=[];AJ.ajustes[k]=v;
   if(await persistir()){salirEdicion();toast('Guardado. Las dos pantallas ya lo muestran.');bc?.postMessage({t:'aj',aj:AJ})}
