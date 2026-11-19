@@ -192,6 +192,7 @@ tr.sub td{background:#FAFCFE;color:var(--grey);font-size:11.5px}
   <div class="bar-top">
     <h2>Tratamientos activos</h2>
     <button class="btn" id="btnNew">Nuevo tratamiento</button>
+    <button class="btn" id="btnAddJug" style="background:var(--sky);border-color:var(--sky)">+ Agregar jugador</button>
     <button class="btn ghost" id="btnHist">Historial</button>
   </div>
   <div id="newBox"></div>
@@ -1222,7 +1223,7 @@ function renderHist(){
 }
 function showView(v){VIEW=v;$('#viewCase').hidden=v!=='case';$('#viewHist').hidden=v!=='hist';if(v==='hist')renderHist();renderCases();actLabel()}
 
-function renderNew(){
+function renderNew(remoto){
   const act=new Set(activos().map(c=>c.jugador));
   const jug=Object.keys(CARGA?.roster||{}).sort().filter(n=>!act.has(n));
   $('#newBox').innerHTML=`<div class="sec newcase"><h3>Nuevo tratamiento</h3><p class="hint">La lista de jugadores sale del plantel del tablero (Catapult). Al elegir la lesión se cargan solos los criterios y la batería de evaluación.</p>
@@ -1252,6 +1253,10 @@ function renderNew(){
   $('#nTipo').onchange=setBat;setBat();
   $('#nJug').onchange=e=>{$('#nOtroBox').hidden=e.target.value!=='__otro';const p=PLAN?.plantel?.[e.target.value];if(p)$('#nPue').value=p};
   $('#nMod').onchange=e=>{$('#nRem').hidden=e.target.value!=='remoto'};
+  if(remoto){$('#newBox h3').textContent='Agregar jugador (se rehabilita en su provincia)';
+    $('#newBox .hint').textContent='Para jugadores que hacen la rehabilitación con su kine en la provincia. Si no está en la lista, elegí "Otro" y escribí el nombre. Se crean solos los recordatorios para escribirle al kine y al jugador.';
+    $('#nMod').value='remoto';$('#nRem').hidden=false;$('#nJug').value='__otro';$('#nOtroBox').hidden=false;$('#nOtro').focus?.()}
+  $('#newBox').scrollIntoView?.({behavior:'smooth',block:'start'});
   $('#nCancel').onclick=()=>$('#newBox').innerHTML='';
   $('#nOk').onclick=()=>{
     let j=$('#nJug').value;if(j==='__otro')j=norm($('#nOtro').value);
@@ -1318,6 +1323,7 @@ document.addEventListener('click',e=>{
     case 'btnPrintIC':imprimir('print-ic');break;
     case 'btnAcwr':ACWR_OPEN=!ACWR_OPEN;$('#acwrBox').hidden=!ACWR_OPEN;b.textContent=(ACWR_OPEN?'Ocultar':'Ver')+' ACWR vs. pre-lesión';break;
     case 'btnNew':renderNew();break;
+    case 'btnAddJug':renderNew(true);break;
     case 'btnAddTar':{const c=caso(SEL);const t=$('#ntT').value.trim();if(!t){msg('Escribí el recordatorio.','error');return}
       c.tareas=c.tareas||[];c.tareas.push({id:'t'+Date.now(),t,con:$('#ntCon').value,cada:Math.max(0,+$('#ntCada').value||0),prox:$('#ntProx').value||isoD(hoy()),log:[]});
       dirty();refresh();msg('Recordatorio agregado.');break}
