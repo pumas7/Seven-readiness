@@ -631,6 +631,7 @@ const caso=id=>RTP.casos.find(c=>c.id===id);
 /* ===== Rehabilitación a distancia (en su provincia) + recordatorios de seguimiento ===== */
 const esRemoto=c=>c?.modalidad==='remoto';
 const CON_TXT={kine:'Kine que lo trata',jugador:'Jugador',medico:'Médico',otro:'Otro'};
+const esStaff=t=>t.con==='staff';
 const FUENTES=['Staff Pumas 7s','Kine provincial','Jugador','Médico'];
 const EST_REM={no:'No disponible',dr:'Disponible con riesgo',rec:'Recuperado'};
 let HECHO=null; // recordatorio con el formulario de "hecho" abierto ("idCaso|idTarea")
@@ -639,26 +640,27 @@ function tareasDef(cadaK=7,cadaJ=14){const h=isoD(hoy()),n=Date.now();
 const tareasAct=c=>(c.tareas||[]).filter(t=>t.activa!==false);
 const venceEn=t=>t.prox?diffD(hoy(),parseD(t.prox)):null; // < 0 vencida · 0 hoy
 const tareaOn=t=>t.on!==false;
-const pendCaso=c=>tareasAct(c).filter(t=>tareaOn(t)&&t.prox&&venceEn(t)<=0);
+const pendCaso=c=>tareasAct(c).filter(t=>tareaOn(t)&&t.prox&&venceEn(t)<=(esStaff(t)?(+t.antes||0):0));
 const pendientes=()=>activos().flatMap(c=>pendCaso(c).map(t=>({c,t}))).sort((a,b)=>venceEn(a.t)-venceEn(b.t));
 function tareaPill(t){if(!tareaOn(t))return '<span class="pill p-n">pausado</span>';const d=venceEn(t);if(d===null)return '<span class="pill p-n">sin fecha</span>';
   if(d<0)return `<span class="pill p-r">vencido hace ${-d} día${d<-1?'s':''}</span>`;if(d===0)return '<span class="pill p-a">hoy</span>';
+  if(esStaff(t)&&d<=(+t.antes||0))return `<span class="pill p-a">en ${d} día${d>1?'s':''}</span>`;
   return `<span class="pill p-n">en ${d} día${d>1?'s':''}</span>`}
 const ultLog=t=>(t.log||[]).slice(-1)[0];
 function hechoForm(c,t){const key=c.id+'|'+t.id;if(HECHO!==key)return '';
-  return `<div class="hecho-form"><input data-hn="${key}" placeholder="Qué hablaron / qué te contó (queda en la evolución)" aria-label="Nota del contacto">
+  return `<div class="hecho-form"><input data-hn="${key}" placeholder="${esStaff(t)?'Qué se hizo / resultado (queda en la evolución)':'Qué hablaron / qué te contó (queda en la evolución)'}" aria-label="Nota del contacto">
     <button class="btn" data-tok="${key}">Guardar como hecho</button><button class="btn ghost" data-thecho="">Cancelar</button></div>`}
 function marcarHecha(c,t,nota){
   const autor=autorGuardado(),f=isoD(hoy());
   t.log=t.log||[];t.log.push({fecha:f,autor,nota});
   if(+t.cada>0)t.prox=isoD(addD(hoy(),+t.cada));else t.activa=false;
   c.evolucion=c.evolucion||[];
-  c.evolucion.push({id:'e'+Date.now(),fecha:f,autor,fuente:'Staff Pumas 7s',contacto:t.con,dolor:'',hizo:`📞 ${t.t}${nota?': '+nota:''}`,fisico:'',resp:'',plan:'',creado:new Date().toISOString()});
+  c.evolucion.push({id:'e'+Date.now(),fecha:f,autor,fuente:'Staff Pumas 7s',contacto:t.con,dolor:'',hizo:`${esStaff(t)?'✔':'📞'} ${t.t}${nota?': '+nota:''}`,fisico:'',resp:'',plan:'',creado:new Date().toISOString()});
 }
 function renderAvisos(){
   const l=pendientes();
-  $('#avisos').innerHTML=l.length?`<div class="avisos"><h3>⚠ Recordatorios para hoy (${l.length})</h3>${l.map(({c,t})=>`<div class="aviso">
-    <b>${esc(t.t)}</b><span>· ${esc(c.jugador)}${esRemoto(c)&&c.provincia?' ('+esc(c.provincia)+')':''}${t.con==='kine'&&c.kine_nombre?' · '+esc(c.kine_nombre):''}${t.con==='kine'&&c.kine_contacto?' · '+esc(c.kine_contacto):''}${t.con==='jugador'&&c.jug_contacto?' · '+esc(c.jug_contacto):''}</span>
+  $('#avisos').innerHTML=l.length?`<div class="avisos"><h3>⚠ Recordatorios y tareas próximas (${l.length})</h3>${l.map(({c,t})=>`<div class="aviso">
+    ${esStaff(t)?'<span class="pill p-b">Nuestra</span>':''}<b>${esc(t.t)}</b><span>· ${esc(c.jugador)}${esRemoto(c)&&c.provincia?' ('+esc(c.provincia)+')':''}${t.con==='kine'&&c.kine_nombre?' · '+esc(c.kine_nombre):''}${t.con==='kine'&&c.kine_contacto?' · '+esc(c.kine_contacto):''}${t.con==='jugador'&&c.jug_contacto?' · '+esc(c.jug_contacto):''}</span>
     ${tareaPill(t)}<span style="margin-left:auto;display:flex;gap:6px"><button class="btn" style="padding:4px 10px" data-thecho="${c.id}|${t.id}">Hecho</button><button class="btn ghost" style="padding:4px 10px" data-open="${c.id}">Abrir</button></span>
     ${hechoForm(c,t)}</div>`).join('')}</div>`:'';
 }
@@ -670,10 +672,28 @@ function tareasSec(){
       <label class="f">Con<select id="ntCon">${Object.entries(CON_TXT).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label>
       <label class="f">Cada (días)<input type="number" id="ntCada" min="0" value="0" style="width:80px"></label>
       <label class="f">Primera vez<input type="date" id="ntProx" value="${isoD(hoy())}"></label>
-      <button class="btn ghost" id="btnAddTar">Agregar recordatorio</button></div></div>`;
+      <button class="btn ghost" id="btnAddTar">Agregar recordatorio</button></div></div>
+  <div class="sec"><h3>Tareas nuestras (staff)</h3><p class="hint">Lo que tenemos que hacer nosotros con este jugador: traerlo a evaluar, pedir estudios, coordinar con el médico. Te avisa arriba, en Recordatorios, los días antes que elijas. Al marcarla hecha queda en la evolución.</p>
+    <div class="scroll"><table><thead><tr><th>Tarea</th><th>Fecha</th><th>Avisar antes (días)</th><th>Estado</th><th></th></tr></thead><tbody id="stfBody"></tbody></table></div>
+    <div class="actions" style="align-items:flex-end">
+      <label class="f">Nueva tarea<input id="nsT" placeholder="Ej. Traerlo a Buenos Aires para evaluar"></label>
+      <label class="f">Fecha<input type="date" id="nsF"></label>
+      <label class="f">Avisar antes (días)<input type="number" id="nsA" min="0" value="7" style="width:80px"></label>
+      <button class="btn ghost" id="btnAddStf">Agregar tarea</button></div></div>`;
 }
 function renderTareas(c){
-  const b=$('#tarBody');if(!b)return;const l=tareasAct(c);
+  const sb=$('#stfBody');
+  if(sb){const ls=tareasAct(c).filter(esStaff).sort((a,b)=>(a.prox||'9').localeCompare(b.prox||'9'));
+    sb.innerHTML=ls.length?ls.map(t=>`<tr><td><input data-tar="${t.id}" data-k="t" value="${esc(t.t)}" aria-label="Tarea"></td>
+      <td><input type="date" data-tar="${t.id}" data-k="prox" value="${esc(t.prox)}" aria-label="Fecha"></td>
+      <td><input type="number" min="0" data-tar="${t.id}" data-k="antes" value="${esc(t.antes??0)}" style="width:64px" aria-label="Avisar antes"></td>
+      <td>${tareaPill(t)}</td>
+      <td style="white-space:nowrap"><button class="btn" style="padding:4px 10px" data-thecho="${c.id}|${t.id}">Hecha</button> <button class="btn ghost" style="padding:4px 8px" data-tdel="${t.id}" aria-label="Quitar tarea">✕</button></td></tr>
+      ${HECHO===c.id+'|'+t.id?`<tr><td colspan="5">${hechoForm(c,t)}</td></tr>`:''}`).join('')
+      :'<tr><td colspan="5" class="muted">Sin tareas pendientes. Agregá una abajo.</td></tr>';
+    const hechas=(c.tareas||[]).filter(t=>esStaff(t)&&t.activa===false&&(t.log||[]).length);
+    if(hechas.length)sb.innerHTML+=`<tr><td colspan="5" class="muted" style="font-size:12px">Hechas: ${hechas.map(t=>`${esc(t.t)} (${fCorta(parseD(ultLog(t).fecha))})`).join(' · ')}</td></tr>`}
+  const b=$('#tarBody');if(!b)return;const l=tareasAct(c).filter(t=>!esStaff(t));
   b.innerHTML=l.length?l.map(t=>{const u=ultLog(t);return `<tr style="${tareaOn(t)?'':'opacity:.55'}"><td><input type="checkbox" data-tar="${t.id}" data-k="on" ${tareaOn(t)?'checked':''} aria-label="Recordatorio activo"></td><td><input data-tar="${t.id}" data-k="t" value="${esc(t.t)}" aria-label="Recordatorio"></td>
     <td><select data-tar="${t.id}" data-k="con" aria-label="Con quién">${Object.entries(CON_TXT).map(([k,v])=>`<option value="${k}" ${t.con===k?'selected':''}>${v}</option>`).join('')}</select></td>
     <td><input type="number" min="0" data-tar="${t.id}" data-k="cada" value="${esc(t.cada)}" style="width:64px" aria-label="Cada cuántos días"></td>
@@ -768,6 +788,7 @@ function informeRemoto(c,final){
     ${(c.evolucion||[]).length?`<h4>Evolución reciente</h4><ul>${evOrden(c).slice(0,4).map(e=>`<li><b>${fLarga(parseD(e.fecha))}${e.fuente?' · '+esc(e.fuente):''}${e.dolor!==''&&e.dolor!=null?' · dolor '+esc(e.dolor)+'/10':''}:</b> ${esc([e.hizo,e.fisico&&'Físico: '+e.fisico,e.resp&&'Respuesta: '+e.resp,e.plan&&'Plan: '+e.plan].filter(Boolean).join(' · '))}</li>`).join('')}</ul>`:''}
     <h4>Pronóstico</h4><p>${esc(c.pron)||'<span class="muted">Sin cargar.</span>'}</p>
     <h4>Recomendación</h4><p>${esc(c.recom)||'<span class="muted">Sin cargar.</span>'}</p>
+    ${!final&&tareasAct(c).filter(esStaff).length?`<h4>Pendientes del staff</h4><ul>${tareasAct(c).filter(esStaff).map(t=>`<li>${esc(t.t)}${t.prox?' · '+fLarga(parseD(t.prox)):''}</li>`).join('')}</ul>`:''}
     <h4>Qué falta para el alta</h4><p>${esc(c.restr)||'<span class="muted">Sin cargar.</span>'}</p>
     <p class="muted" style="font-size:11.5px">Seguimiento a distancia: sin carga de campo ni evaluaciones medidas por el staff. Lo informado surge del kine tratante y del jugador.</p>`;
 }
@@ -1285,7 +1306,7 @@ document.addEventListener('input',e=>{
   else if(el.dataset.oiv){const [d,k]=el.dataset.oiv.split('|');setOi(c,OI_SEM,d,k,num(el.value));dirty();renderOiVals(c);refresh();return}
   else if(el.dataset.tar){const t=(c.tareas||[]).find(x=>x.id===el.dataset.tar);if(!t)return;
     if(el.dataset.k==='on'){t.on=el.checked;dirty();refresh();return}
-    t[el.dataset.k]=el.dataset.k==='cada'?Math.max(0,+el.value||0):el.value;dirty();renderCases();return}
+    t[el.dataset.k]=(el.dataset.k==='cada'||el.dataset.k==='antes')?Math.max(0,+el.value||0):el.value;dirty();renderCases();renderAvisos();return}
   else if(el.dataset.hn!==undefined)return;
   else if(el.dataset.umb){c.umb=c.umb||{};c.umb[el.dataset.umb]=c.umb[el.dataset.umb]||{};c.umb[el.dataset.umb][el.dataset.k]=num(el.value)??UMB_DEF[el.dataset.k]}
   else return;
@@ -1324,6 +1345,10 @@ document.addEventListener('click',e=>{
     case 'btnAcwr':ACWR_OPEN=!ACWR_OPEN;$('#acwrBox').hidden=!ACWR_OPEN;b.textContent=(ACWR_OPEN?'Ocultar':'Ver')+' ACWR vs. pre-lesión';break;
     case 'btnNew':renderNew();break;
     case 'btnAddJug':renderNew(true);break;
+    case 'btnAddStf':{const c=caso(SEL);const t=$('#nsT').value.trim();if(!t){msg('Escribí la tarea.','error');return}
+      if(!$('#nsF').value){msg('Poné la fecha de la tarea.','error');return}
+      c.tareas=c.tareas||[];c.tareas.push({id:'t'+Date.now(),t,con:'staff',cada:0,prox:$('#nsF').value,antes:Math.max(0,+$('#nsA').value||0),log:[]});
+      dirty();refresh();renderAvisos();msg('Tarea agregada. Acordate de Guardar cambios.');break}
     case 'btnAddTar':{const c=caso(SEL);const t=$('#ntT').value.trim();if(!t){msg('Escribí el recordatorio.','error');return}
       c.tareas=c.tareas||[];c.tareas.push({id:'t'+Date.now(),t,con:$('#ntCon').value,cada:Math.max(0,+$('#ntCada').value||0),prox:$('#ntProx').value||isoD(hoy()),log:[]});
       dirty();refresh();msg('Recordatorio agregado.');break}
