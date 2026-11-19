@@ -234,6 +234,15 @@
               "nota": ""
             }
           ]
+        },
+        {
+          "id": "t1795119042142",
+          "t": "check out en diciembre",
+          "con": "staff",
+          "cada": 0,
+          "prox": "2026-12-01",
+          "antes": 7,
+          "log": []
         }
       ],
       "evolucion": [
@@ -262,6 +271,20 @@
           "resp": "",
           "plan": "",
           "creado": "2026-11-19T19:46:33.938Z"
+        }
+      ],
+      "adjuntos": [
+        {
+          "id": "a1795119102966_0",
+          "nombre": "Plan Valen maldonado - Etapa 3_4 - Hoja 1.pdf",
+          "path": "rtp_adjuntos/c1795117520849/1795119100763_Plan_Valen_maldonado_-_Etapa_3_4_-_Hoja_1.pdf",
+          "size": 231309,
+          "tipo": "Rutina",
+          "fecha": "2026-11-19",
+          "fuente": "Kine provincial",
+          "nota": "",
+          "autor": "jokin",
+          "subido": "2026-11-19T20:11:42.967Z"
         }
       ]
     }
