@@ -391,6 +391,77 @@
           "subido": "2026-11-19T20:17:04.613Z"
         }
       ]
+    },
+    {
+      "id": "c1795119555397",
+      "jugador": "Bautista Lescano",
+      "puesto": "BACKS",
+      "tipo": "cuadriceps",
+      "lesion": "",
+      "region": "ant",
+      "lado": "Izquierdo",
+      "fecha": "2026-11-19",
+      "bateria": "cuadriceps",
+      "checks": {},
+      "pct": {},
+      "contacto": 0,
+      "previas": "",
+      "pron": "",
+      "recom": "",
+      "disp": false,
+      "restr": "",
+      "tests": {},
+      "umb": {},
+      "extra": [],
+      "estado": "activo",
+      "creado": "2026-11-19",
+      "modalidad": "remoto",
+      "est_rem": "no",
+      "provincia": "parana",
+      "club": "cae",
+      "kine_nombre": "tulio",
+      "kine_contacto": "+54 9 3434 54-7600",
+      "jug_contacto": "",
+      "ret_est": "",
+      "tareas": [
+        {
+          "id": "t1795119555397",
+          "t": "Escribirle al kine",
+          "con": "kine",
+          "cada": 7,
+          "prox": "2026-11-26",
+          "log": [
+            {
+              "fecha": "2026-11-19",
+              "autor": "jokin",
+              "nota": "ya le avise que ibas a escribirle tucha"
+            }
+          ]
+        },
+        {
+          "id": "t1795119555398",
+          "t": "Escribirle al jugador",
+          "con": "jugador",
+          "cada": 14,
+          "prox": "2026-11-19",
+          "log": []
+        }
+      ],
+      "evolucion": [
+        {
+          "id": "e1795119611565",
+          "fecha": "2026-11-19",
+          "autor": "jokin",
+          "fuente": "Staff Pumas 7s",
+          "contacto": "kine",
+          "dolor": "",
+          "hizo": "📞 Escribirle al kine: ya le avise que ibas a escribirle tucha",
+          "fisico": "",
+          "resp": "",
+          "plan": "",
+          "creado": "2026-11-19T20:20:11.565Z"
+        }
+      ]
     }
   ]
 }
