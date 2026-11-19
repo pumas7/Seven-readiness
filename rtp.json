@@ -376,6 +376,20 @@
           "plan": "",
           "creado": "2026-11-19T20:16:37.642Z"
         }
+      ],
+      "adjuntos": [
+        {
+          "id": "a1795119424613_0",
+          "nombre": "Informe pedro de haro rodilla.pdf",
+          "path": "rtp_adjuntos/c1795119387965/1795119420593_Informe_pedro_de_haro_rodilla.pdf",
+          "size": 414203,
+          "tipo": "Rutina",
+          "fecha": "2026-11-19",
+          "fuente": "Kine provincial",
+          "nota": "",
+          "autor": "jokin",
+          "subido": "2026-11-19T20:17:04.613Z"
+        }
       ]
     }
   ]
