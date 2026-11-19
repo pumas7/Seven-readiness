@@ -287,6 +287,77 @@
           "subido": "2026-11-19T20:11:42.967Z"
         }
       ]
+    },
+    {
+      "id": "c1795119387965",
+      "jugador": "Pedro De Haro",
+      "puesto": "BACKS",
+      "tipo": "rodilla",
+      "lesion": "lca + menisco externo ",
+      "region": "art",
+      "lado": "Izquierdo",
+      "fecha": "2026-11-16",
+      "bateria": "rodilla",
+      "checks": {},
+      "pct": {},
+      "contacto": 0,
+      "previas": "",
+      "pron": "",
+      "recom": "",
+      "disp": false,
+      "restr": "",
+      "tests": {},
+      "umb": {},
+      "extra": [],
+      "estado": "activo",
+      "creado": "2026-11-19",
+      "modalidad": "remoto",
+      "est_rem": "no",
+      "provincia": "rosario",
+      "club": "contratado",
+      "kine_nombre": "pablo milikonsky",
+      "kine_contacto": "+54 9 3415 93-5507",
+      "jug_contacto": "",
+      "ret_est": "",
+      "tareas": [
+        {
+          "id": "t1795119387966",
+          "t": "Escribirle al kine",
+          "con": "kine",
+          "cada": 7,
+          "prox": "2026-11-26",
+          "log": [
+            {
+              "fecha": "2026-11-19",
+              "autor": "jokin",
+              "nota": ""
+            }
+          ]
+        },
+        {
+          "id": "t1795119387967",
+          "t": "Escribirle al jugador",
+          "con": "jugador",
+          "cada": 14,
+          "prox": "2026-11-19",
+          "log": []
+        }
+      ],
+      "evolucion": [
+        {
+          "id": "e1795119396245",
+          "fecha": "2026-11-19",
+          "autor": "jokin",
+          "fuente": "Staff Pumas 7s",
+          "contacto": "kine",
+          "dolor": "",
+          "hizo": "📞 Escribirle al kine",
+          "fisico": "",
+          "resp": "",
+          "plan": "",
+          "creado": "2026-11-19T20:16:36.245Z"
+        }
+      ]
     }
   ]
 }
