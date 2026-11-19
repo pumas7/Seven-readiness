@@ -476,6 +476,25 @@ function objSemanaInd(c,n,hechos){
     VARS.forEach(v=>r[v.k]+=o[v.k]||0)}
   return r;
 }
+// Semana completa (base pre-lesión): entrenó al menos el 75% de los días de SU grupo esa semana.
+// En semana de torneo hay dos grupos: los que jugaron (entrenamiento + días de partido) y los que se quedaron (solo entrenamiento).
+// Días del grupo = días en que entrenó o jugó al menos la mitad del grupo.
+const SEM_COMPLETA=0.75;
+const keyD=d=>d?d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate():null;
+const esPartido=nm=>/\bvs\.?\s/i.test(nm||'');
+function completaSemana(n,name){
+  const L=CARGA?.sesiones?.[String(n)]||[];
+  const fk=s=>keyD(s.fecha_iso?parseD(s.fecha_iso):fechaSesion(n,s.fecha));
+  const jugaron=new Set();L.forEach(s=>{if(esPartido(s.nombre))Object.keys(s.jugadores||{}).forEach(j=>jugaron.add(j))});
+  const torneo=jugaron.size>0,yoJugue=jugaron.has(name);
+  const porJ={};L.forEach(s=>{const k=fk(s);if(!k)return;Object.keys(s.jugadores||{}).forEach(j=>{(porJ[j]=porJ[j]||new Set()).add(k)})});
+  const grupo=Object.keys(porJ).filter(j=>!torneo||jugaron.has(j)===yoJugue);
+  if(!grupo.length)return {ok:true,dj:0,dg:0,torneo,yoJugue};
+  const cnt={};grupo.forEach(j=>porJ[j].forEach(k=>cnt[k]=(cnt[k]||0)+1));
+  const diasG=Object.keys(cnt).filter(k=>cnt[k]>=grupo.length/2);
+  const mios=porJ[name]||new Set();const dj=diasG.filter(k=>mios.has(k)).length,dg=diasG.length;
+  return {ok:!dg||dj/dg>=SEM_COMPLETA,dj,dg,torneo,yoJugue};
+}
 function totalSemana(name,n){
   const row=(CARGA?.roster?.[name]||[]).find(r=>r.semana===n);
   const r={};VARS.forEach(v=>r[v.k]=row?.datos?.[v.k]||0);return r;
@@ -563,8 +582,17 @@ function calcular(c){
     });
     semanas.push({n,tot,cron,ob,obi,obiF:curso?objSemanaInd(c,n,null):null,acwr,pct,pcti,inc,pn,pre:n<semL,lesion:n===semL,curso,sin:!entreno(n)});
   }
-  // Base pre-lesión: promedio de las 3 últimas semanas que entrenó antes de la semana de la lesión (fija)
-  const semsPre=[];for(let i=semL-1;i>=Math.max(1,semL-8)&&semsPre.length<3;i--)if(entreno(i))semsPre.push(i);
+  // Base pre-lesión (fija): últimas 3 semanas COMPLETAS (≥75% de los días de su grupo, ver completaSemana) antes de la semana de la lesión, mirando hasta 8 atrás.
+  // Si no hay ninguna completa, cae a las últimas semanas en que entrenó (avisado en la vista).
+  const semsSalt=[];let semsPre=[];
+  for(let i=semL-1;i>=Math.max(1,semL-8)&&semsPre.length<3;i--){
+    if(!entreno(i)){semsSalt.push({n:i,m:'no entrenó'});continue}
+    const cs=completaSemana(i,c.jugador);
+    if(!cs.ok){semsSalt.push({n:i,m:`${cs.dj}/${cs.dg} días${cs.torneo?(cs.yoJugue?' del grupo que jugó':' del grupo que se quedó'):''}`});continue}
+    semsPre.push(i);
+  }
+  let preFallback=false;
+  if(!semsPre.length){preFallback=true;for(let i=semL-1;i>=Math.max(1,semL-8)&&semsPre.length<3;i--)if(entreno(i))semsPre.push(i)}
   const basePre={};VARS.forEach(v=>{basePre[v.k]=semsPre.length?semsPre.reduce((a,n)=>a+totalSemana(c.jugador,n)[v.k],0)/semsPre.length:null});
   // Crónico muy bajo (menos de la mitad de su habitual pre-lesión): el ACWR no es interpretable (divide por casi cero),
   // no se muestra ni marca picos; para esas semanas valen el ACWR vs pre-lesión y el % contra objetivo.
@@ -619,7 +647,7 @@ function calcular(c){
     if(fase[4]<1)flags.push(['Semana completa sin cumplir','no toleró todavía una semana al 100% del objetivo.']);
     if((c.contacto||0)<2)flags.push(['Contacto insuficiente',`habilitado en "${CONTACTO[c.contacto||0]}".`]);
   }
-  return {L,fin,semL,ses,semanas,post,semsPre:semsPre.sort((a,b)=>a-b),basePre,tests,mca,preBest,ev,fase,cur,estado,pend,flags,total:tot?ok/tot:0};
+  return {L,fin,semL,ses,semanas,post,semsPre:semsPre.sort((a,b)=>a-b),semsSalt:semsSalt.filter(x=>x.n>Math.min(...semsPre)),preFallback,basePre,tests,mca,preBest,ev,fase,cur,estado,pend,flags,total:tot?ok/tot:0};
 }
 const ESTADO_TXT={no:'No disponible',dr:'Disponible con riesgo',rec:'Recuperado',alta:'Alta'};
 const ESTADO_PILL={no:'p-r',dr:'p-a',rec:'p-g',alta:'p-b'};
@@ -1236,7 +1264,7 @@ function renderAcwr(k){
   if(!k.semsPre.length){box.innerHTML='<p class="muted" style="font-size:12.5px">No hay semanas con sesiones en Catapult antes de la lesión: no se puede armar la base.</p>';return}
   const ws=k.semanas.filter(w=>w.n>=k.semL);
   const rango=k.semsPre.length>1?`S${k.semsPre[0]}–S${k.semsPre[k.semsPre.length-1]}`:`S${k.semsPre[0]}`;
-  box.innerHTML=`<p class="hint" style="margin-top:10px">Crónico fijo = promedio de las ${k.semsPre.length} semanas que entrenó antes de la lesión (${k.semsPre.map(n=>'S'+n).join(', ')}). Agudo = lo que hizo cada semana desde la lesión. La semana en curso se compara contra la parte de la base que corresponde a los días ya pasados.
+  box.innerHTML=`<p class="hint" style="margin-top:10px">Crónico fijo = promedio de las ${k.semsPre.length} ${k.preFallback?'semanas que entrenó':'semanas completas (≥75% de los días de su grupo; en torneo, el que jugó se compara con los que jugaron)'} antes de la semana de la lesión (${k.semsPre.map(n=>'S'+n).join(', ')}).${k.semsSalt.length?` Salteadas: ${k.semsSalt.map(x=>`S${x.n} (${x.m})`).join(', ')}.`:''}${k.preFallback?' <b>Ojo:</b> no hay semanas completas en las 8 previas, la base usa semanas incompletas.':''} Agudo = lo que hizo cada semana desde la lesión. La semana en curso se compara contra la parte de la base que corresponde a los días ya pasados.
     <span class="pill p-b">&lt; 0,8</span> por debajo de su habitual · <span class="pill p-g">0,8–1,3</span> · <span class="pill p-a">1,3–1,5</span> · <span class="pill p-r">&gt; 1,5</span> pico</p>
     <div class="scroll"><table><thead><tr><th>Semana</th>${VARS.map(v=>`<th>${v.t}</th>`).join('')}<th></th></tr></thead><tbody>
     <tr class="wk"><td>Base ${rango}</td>${VARS.map(v=>`<td class="num">${fmt(k.basePre[v.k])}</td>`).join('')}<td><span class="pill p-n">promedio pre-lesión</span></td></tr>
