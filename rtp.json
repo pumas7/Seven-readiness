@@ -174,6 +174,77 @@
           }
         }
       }
+    },
+    {
+      "id": "c1795117520849",
+      "jugador": "Valentin Maldonado",
+      "puesto": "FWDS",
+      "tipo": "rodilla",
+      "lesion": "lca + sutura raiz meniscal ",
+      "region": "art",
+      "lado": "Izquierdo",
+      "fecha": "2026-03-11",
+      "bateria": "rodilla",
+      "checks": {},
+      "pct": {},
+      "contacto": 0,
+      "previas": "",
+      "pron": "",
+      "recom": "",
+      "disp": false,
+      "restr": "",
+      "tests": {},
+      "umb": {},
+      "extra": [],
+      "estado": "activo",
+      "creado": "2026-11-19",
+      "modalidad": "remoto",
+      "est_rem": "no",
+      "provincia": "cordoba",
+      "club": "universitario de cordoba",
+      "kine_nombre": "pedro caminos",
+      "kine_contacto": "+54 9 3512 29-8447",
+      "jug_contacto": "-",
+      "ret_est": "2026-03-11",
+      "tareas": [
+        {
+          "id": "t1795117520873",
+          "t": "Escribirle al kine",
+          "con": "kine",
+          "cada": 7,
+          "prox": "2026-11-26",
+          "log": [
+            {
+              "fecha": "2026-11-19",
+              "autor": "jokin",
+              "nota": "buena evolucion de campo, se le inflama si esta mucho tiempo en el club oparado"
+            }
+          ]
+        },
+        {
+          "id": "t1795117520874",
+          "t": "Escribirle al jugador",
+          "con": "jugador",
+          "cada": 14,
+          "prox": "2026-11-19",
+          "log": []
+        }
+      ],
+      "evolucion": [
+        {
+          "id": "e1795117590022",
+          "fecha": "2026-11-19",
+          "autor": "jokin",
+          "fuente": "Staff Pumas 7s",
+          "contacto": "kine",
+          "dolor": "",
+          "hizo": "📞 Escribirle al kine: buena evolucion de campo, se le inflama si esta mucho tiempo en el club oparado",
+          "fisico": "",
+          "resp": "",
+          "plan": "",
+          "creado": "2026-11-19T19:46:30.022Z"
+        }
+      ]
     }
   ]
 }
