@@ -632,6 +632,64 @@ const caso=id=>RTP.casos.find(c=>c.id===id);
 const esRemoto=c=>c?.modalidad==='remoto';
 const CON_TXT={kine:'Kine que lo trata',jugador:'Jugador',medico:'Médico',otro:'Otro'};
 const esStaff=t=>t.con==='staff';
+/* ===== Rutinas y evaluaciones (archivos subidos al repo) ===== */
+const ADJ_TIPOS=['Rutina','Evaluación','Estudio / imagen','Informe médico','Otro'];
+const ADJ_RAW=()=>`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/`,ADJ_BLOB=()=>`https://github.com/${GH_USER}/${GH_REPO}/blob/main/`;
+const esImgAdj=a=>/\.(png|jpe?g|gif|webp)$/i.test(a.path||'');
+function adjSec(){return `<div class="sec"><h3>Rutinas y evaluaciones</h3><p class="hint">Archivos que te pasan: PDF, fotos, Word, Excel. Quedan guardados con el tablero y se ven acá ordenados por fecha. El repo es público: cualquiera con el link del archivo lo puede abrir.</p>
+  <div id="adjList"></div>
+  <div class="grid" style="margin-top:12px">
+    <label class="f">Archivo(s)<input type="file" id="adjFile" multiple></label>
+    <label class="f">Tipo<select id="adjTipo">${ADJ_TIPOS.map(x=>`<option>${x}</option>`).join('')}</select></label>
+    <label class="f">Fecha<input type="date" id="adjFecha" value="${isoD(hoy())}"></label>
+    <label class="f">De quién viene<select id="adjFuente">${FUENTES.map(x=>`<option ${x==='Kine provincial'?'selected':''}>${x}</option>`).join('')}</select></label>
+  </div>
+  <label class="f" style="margin-top:10px">Nota<input id="adjNota" placeholder="Ej. Rutina semana 3 · Isocinético 60°/s · RM de sentadilla"></label>
+  <div class="actions"><button class="btn" id="btnAdj">Subir archivo</button><span id="adjEstado" class="muted" style="align-self:center"></span></div></div>`}
+function renderAdj(c){const el=$('#adjList');if(!el)return;
+  const l=[...(c.adjuntos||[])].sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')||(b.subido||'').localeCompare(a.subido||''));
+  el.innerHTML=l.length?`<div class="scroll"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Archivo</th><th>De quién</th><th>Nota</th><th></th></tr></thead><tbody>${l.map(a=>`<tr>
+    <td>${fLarga(parseD(a.fecha))}</td><td><span class="pill p-b">${esc(a.tipo)}</span></td>
+    <td>${esImgAdj(a)?`<a href="${ADJ_RAW()}${encodeURI(a.path)}" target="_blank" rel="noopener"><img src="${ADJ_RAW()}${encodeURI(a.path)}" alt="" style="height:40px;border-radius:4px;vertical-align:middle;margin-right:6px"></a>`:''}<a href="${ADJ_BLOB()}${encodeURI(a.path)}" target="_blank" rel="noopener">${esc(a.nombre)}</a><span class="muted"> · ${Math.max(1,Math.round((a.size||0)/1024))} KB</span></td>
+    <td>${esc(a.fuente||'')}${a.autor?`<br><span class="muted">subió ${esc(a.autor)}</span>`:''}</td><td>${esc(a.nota||'')}</td>
+    <td style="white-space:nowrap"><a class="btn ghost" style="padding:4px 10px;text-decoration:none" href="${ADJ_RAW()}${encodeURI(a.path)}" download="${esc(a.nombre)}" target="_blank" rel="noopener">Descargar</a> <button class="btn ghost" style="padding:4px 8px" data-adjdel="${a.id}" aria-label="Borrar archivo">✕</button></td></tr>`).join('')}</tbody></table></div>`
+    :'<p class="muted">Todavía no hay archivos cargados.</p>';
+}
+const fileB64=f=>new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]||'');r.onerror=()=>ko(r.error);r.readAsDataURL(f)});
+async function subirAdj(){
+  const c=caso(SEL);if(!c)return;const fs=[...($('#adjFile').files||[])];
+  if(!fs.length){msg('Elegí uno o más archivos.','error');return}
+  const big=fs.find(f=>f.size>25e6);if(big){msg(`${big.name} pesa más de 25 MB. Comprimilo o subí un PDF más liviano.`,'error');return}
+  if(DEMO){msg('En modo demo no se suben archivos.','error');return}
+  const token=getToken();if(!token){msg('Falta el token de GitHub.','error');return}
+  const btn=$('#btnAdj'),meta={tipo:$('#adjTipo').value,fecha:$('#adjFecha').value||isoD(hoy()),fuente:$('#adjFuente').value,nota:$('#adjNota').value.trim()};
+  btn.disabled=true;let n=0;
+  try{
+    for(const [i,f] of fs.entries()){
+      $('#adjEstado').textContent=`Subiendo ${i+1} de ${fs.length}: ${f.name}…`;
+      const safe=f.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w.\-]+/g,'_').slice(-80);
+      const path=`rtp_adjuntos/${c.id}/${Date.now()}_${safe}`;
+      const r=await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${path}`,{method:'PUT',
+        headers:{Authorization:'token '+token,Accept:'application/vnd.github+json','Content-Type':'application/json'},
+        body:JSON.stringify({message:`RTP: archivo de ${c.jugador} (${meta.tipo})`,content:await fileB64(f),branch:'main'})});
+      if(r.status===401){try{localStorage.removeItem('gh_token')}catch(e){}throw new Error('token inválido, se borró: volvé a intentar y pegá uno válido')}
+      if(!r.ok)throw new Error('GitHub respondió '+r.status);
+      c.adjuntos=c.adjuntos||[];c.adjuntos.push({id:'a'+Date.now()+'_'+i,nombre:f.name,path,size:f.size,...meta,autor:autorGuardado(),subido:new Date().toISOString()});n++;
+    }
+  }catch(e){msg(`Error al subir${n?` (se subieron ${n})`:''}: ${e.message}`,'error')}
+  finally{btn.disabled=false;$('#adjEstado').textContent=''}
+  if(n){$('#adjFile').value='';$('#adjNota').value='';dirty();renderAdj(c);await guardar(false);msg(`${n} archivo${n>1?'s':''} subido${n>1?'s':''} y guardado${n>1?'s':''} en el caso.`)}
+}
+async function borrarAdj(id){
+  const c=caso(SEL),a=(c?.adjuntos||[]).find(x=>x.id===id);if(!a)return;
+  if(!confirm(`¿Borrar "${a.nombre}"? Se borra del tablero y del repo.`))return;
+  const token=DEMO?null:getToken();
+  if(token){try{const API=`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${a.path}`,H={Authorization:'token '+token,Accept:'application/vnd.github+json'};
+    const g=await fetch(API+'?ref=main',{headers:H});
+    if(g.ok){const sha=(await g.json()).sha;await fetch(API,{method:'DELETE',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify({message:`RTP: borro archivo de ${c.jugador}`,sha,branch:'main'})})}
+  }catch(e){}}
+  c.adjuntos=c.adjuntos.filter(x=>x.id!==id);dirty();renderAdj(c);if(!DEMO)await guardar(false);
+}
 const FUENTES=['Staff Pumas 7s','Kine provincial','Jugador','Médico'];
 const EST_REM={no:'No disponible',dr:'Disponible con riesgo',rec:'Recuperado'};
 let HECHO=null; // recordatorio con el formulario de "hecho" abierto ("idCaso|idTarea")
@@ -682,6 +740,7 @@ function tareasSec(){
       <button class="btn ghost" id="btnAddStf">Agregar tarea</button></div></div>`;
 }
 function renderTareas(c){
+  renderAdj(c);
   const sb=$('#stfBody');
   if(sb){const ls=tareasAct(c).filter(esStaff).sort((a,b)=>(a.prox||'9').localeCompare(b.prox||'9'));
     sb.innerHTML=ls.length?ls.map(t=>`<tr><td><input data-tar="${t.id}" data-k="t" value="${esc(t.t)}" aria-label="Tarea"></td>
@@ -735,6 +794,7 @@ function renderCaseRemoto(c){
       <input data-f="previas" value="${esc(c.previas)}" placeholder="${esc(previasAuto(c).join(' · ')||'Sin registros previos en el historial')}"></label>
   </div>
   ${tareasSec()}
+  ${adjSec()}
   <div class="sec">
     <h3>Evolución</h3><p class="hint">Lo que te cuentan el kine o el jugador, con fecha y fuente. Los contactos marcados como hechos en Recordatorios se suman solos.</p>
     <div class="grid">
@@ -786,6 +846,7 @@ function informeRemoto(c,final){
     <p><b>${est}</b>. Se rehabilita a distancia${c.provincia?' en '+esc(c.provincia):''}${c.club?' ('+esc(c.club)+')':''}${c.kine_nombre?', con '+esc(c.kine_nombre):''}. Día ${diaEv(c)} (semana ${Math.floor(diaEv(c)/7)+1}).${ret}
     Último contacto con el kine: ${ck?fLarga(parseD(ck.fecha)):'sin registrar'} · con el jugador: ${cj?fLarga(parseD(cj.fecha)):'sin registrar'}.</p>
     ${(c.evolucion||[]).length?`<h4>Evolución reciente</h4><ul>${evOrden(c).slice(0,4).map(e=>`<li><b>${fLarga(parseD(e.fecha))}${e.fuente?' · '+esc(e.fuente):''}${e.dolor!==''&&e.dolor!=null?' · dolor '+esc(e.dolor)+'/10':''}:</b> ${esc([e.hizo,e.fisico&&'Físico: '+e.fisico,e.resp&&'Respuesta: '+e.resp,e.plan&&'Plan: '+e.plan].filter(Boolean).join(' · '))}</li>`).join('')}</ul>`:''}
+    ${(c.adjuntos||[]).length?`<h4>Rutinas y evaluaciones recibidas</h4><ul>${[...c.adjuntos].sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')).slice(0,6).map(a=>`<li>${fLarga(parseD(a.fecha))} · ${esc(a.tipo)}: ${esc(a.nombre)}${a.nota?' — '+esc(a.nota):''}</li>`).join('')}</ul>`:''}
     <h4>Pronóstico</h4><p>${esc(c.pron)||'<span class="muted">Sin cargar.</span>'}</p>
     <h4>Recomendación</h4><p>${esc(c.recom)||'<span class="muted">Sin cargar.</span>'}</p>
     ${!final&&tareasAct(c).filter(esStaff).length?`<h4>Pendientes del staff</h4><ul>${tareasAct(c).filter(esStaff).map(t=>`<li>${esc(t.t)}${t.prox?' · '+fLarga(parseD(t.prox)):''}</li>`).join('')}</ul>`:''}
@@ -911,6 +972,7 @@ function renderCase(){
       <input data-f="previas" value="${esc(c.previas)}" placeholder="${esc(previasAuto(c).join(' · ')||'Sin registros previos en el historial')}"></label>
   </div>
   ${tareasSec()}
+  ${adjSec()}
 
   <div class="sec">
     <h3>Evolución</h3><p class="hint">Registro fechado de cada día: qué hizo, cómo respondió y qué sigue. Queda firmado con el nombre de quien lo carga y lo ve todo el equipo.</p>
@@ -1330,6 +1392,7 @@ document.addEventListener('click',e=>{
     const nota=(b.closest('.hecho-form').querySelector('input').value||'').trim();
     marcarHecha(c,t,nota);HECHO=null;dirty();refresh();renderAvisos();
     msg(`Hecho: ${t.t} (${c.jugador}).${+t.cada>0?' Próximo: '+fLarga(parseD(t.prox))+'.':''}`);if(!DEMO)guardar(false);return}
+  if(b.dataset.adjdel){borrarAdj(b.dataset.adjdel);return}
   if(b.dataset.tdel){const c=caso(SEL),t=(c?.tareas||[]).find(x=>x.id===b.dataset.tdel);if(!t||!confirm(`¿Quitar el recordatorio "${t.t}"?`))return;
     t.activa=false;dirty();refresh();return}
   if(b.dataset.delev){const c=caso(SEL);if(!confirm('¿Borrar este registro de la evolución?'))return;c.evolucion=(c.evolucion||[]).filter(e=>e.id!==b.dataset.delev);dirty();refresh();return}
@@ -1345,6 +1408,7 @@ document.addEventListener('click',e=>{
     case 'btnAcwr':ACWR_OPEN=!ACWR_OPEN;$('#acwrBox').hidden=!ACWR_OPEN;b.textContent=(ACWR_OPEN?'Ocultar':'Ver')+' ACWR vs. pre-lesión';break;
     case 'btnNew':renderNew();break;
     case 'btnAddJug':renderNew(true);break;
+    case 'btnAdj':subirAdj();break;
     case 'btnAddStf':{const c=caso(SEL);const t=$('#nsT').value.trim();if(!t){msg('Escribí la tarea.','error');return}
       if(!$('#nsF').value){msg('Poné la fecha de la tarea.','error');return}
       c.tareas=c.tareas||[];c.tareas.push({id:'t'+Date.now(),t,con:'staff',cada:0,prox:$('#nsF').value,antes:Math.max(0,+$('#nsA').value||0),log:[]});
