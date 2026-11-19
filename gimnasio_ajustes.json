@@ -5027,31 +5027,6 @@
      ]
     },
     {
-     "jugador": "JOYA",
-     "items": [
-      {
-       "id": "A1",
-       "ej": "BICI + EEC GRUPO",
-       "dosis": "10''"
-      },
-      {
-       "id": "F1",
-       "ej": "CARGADAS DE FUERZA",
-       "dosis": "GRUPO"
-      },
-      {
-       "id": "F2",
-       "ej": "SENT ISO PARED + ISOS EN CCA",
-       "dosis": "4 X 20\" (30KG)"
-      },
-      {
-       "id": "F3",
-       "ej": "GRUPO SIN SALTOS",
-       "dosis": ""
-      }
-     ]
-    },
-    {
      "jugador": "BAUTI LESCANO",
      "items": [
       {
@@ -5245,7 +5220,7 @@
     }
    ],
    "autor": "jokin",
-   "fecha": "2026-11-16T13:47:43.704Z"
+   "fecha": "2026-11-19T16:08:49.091Z"
   },
   "Sem 18|3|cor": {
    "datos": [
