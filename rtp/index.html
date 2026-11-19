@@ -76,6 +76,16 @@ main{padding:22px 0 60px}
 .ph .p{font-size:11.5px;color:var(--grey);margin-top:3px}
 .flags{padding:10px 22px 4px;display:flex;flex-direction:column;gap:6px}
 .flag{background:#FBE4E4;color:#9E2B2B;border-left:4px solid var(--red);padding:7px 12px;border-radius:0 8px 8px 0;font-size:12.5px}
+.avisos{background:#FFF8EC;border:1px solid #F1D9A6;border-radius:14px;padding:12px 16px;margin-bottom:14px}
+.avisos h3{font-size:14px;color:#7A5F14;margin-bottom:6px}
+.aviso{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:6px 0;border-top:1px solid #F3E3BF;font-size:13px}
+.aviso:first-of-type{border-top:0}
+.hecho-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%;margin-top:6px}
+.hecho-form input{flex:1;min-width:220px}
+.chip-al{display:inline-block;margin-top:6px;font-size:11.5px;font-weight:700;color:#9E2B2B;background:#FBE4E4;border-radius:20px;padding:2px 8px}
+.chip-rem{display:inline-block;margin-top:6px;margin-right:4px;font-size:11.5px;font-weight:700;color:#1F5C93;background:#E3EEF9;border-radius:20px;padding:2px 8px}
+.tiempo{display:flex;flex-wrap:wrap;gap:22px;padding:12px 22px 14px}
+.tiempo div{font-size:12px;color:var(--grey)}.tiempo b{display:block;font-size:20px;color:var(--navy)}
 .flag.info{background:#FCF2DD;color:#7A5F14;border-left-color:var(--amber)}
 
 .sec{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px}
@@ -185,6 +195,7 @@ tr.sub td{background:#FAFCFE;color:var(--grey);font-size:11.5px}
     <button class="btn ghost" id="btnHist">Historial</button>
   </div>
   <div id="newBox"></div>
+  <div id="avisos"></div>
   <div class="cases" id="cases"></div>
   <div id="follow"></div>
 
@@ -616,12 +627,171 @@ const ESTADO_PILL={no:'p-r',dr:'p-a',rec:'p-g',alta:'p-b'};
 const activos=()=>RTP.casos.filter(c=>c.estado!=='alta');
 const cerrados=()=>RTP.casos.filter(c=>c.estado==='alta').sort((a,b)=>(b.fecha_alta||'').localeCompare(a.fecha_alta||''));
 const caso=id=>RTP.casos.find(c=>c.id===id);
+/* ===== Rehabilitación a distancia (en su provincia) + recordatorios de seguimiento ===== */
+const esRemoto=c=>c?.modalidad==='remoto';
+const CON_TXT={kine:'Kine que lo trata',jugador:'Jugador',medico:'Médico',otro:'Otro'};
+const FUENTES=['Staff Pumas 7s','Kine provincial','Jugador','Médico'];
+const EST_REM={no:'No disponible',dr:'Disponible con riesgo',rec:'Recuperado'};
+let HECHO=null; // recordatorio con el formulario de "hecho" abierto ("idCaso|idTarea")
+function tareasDef(cadaK=7,cadaJ=14){const h=isoD(hoy()),n=Date.now();
+  return [{id:'t'+n,t:'Escribirle al kine',con:'kine',cada:+cadaK||7,prox:h,log:[]},{id:'t'+(n+1),t:'Escribirle al jugador',con:'jugador',cada:+cadaJ||14,prox:h,log:[]}]}
+const tareasAct=c=>(c.tareas||[]).filter(t=>t.activa!==false);
+const venceEn=t=>t.prox?diffD(hoy(),parseD(t.prox)):null; // < 0 vencida · 0 hoy
+const pendCaso=c=>tareasAct(c).filter(t=>t.prox&&venceEn(t)<=0);
+const pendientes=()=>activos().flatMap(c=>pendCaso(c).map(t=>({c,t}))).sort((a,b)=>venceEn(a.t)-venceEn(b.t));
+function tareaPill(t){const d=venceEn(t);if(d===null)return '<span class="pill p-n">sin fecha</span>';
+  if(d<0)return `<span class="pill p-r">vencido hace ${-d} día${d<-1?'s':''}</span>`;if(d===0)return '<span class="pill p-a">hoy</span>';
+  return `<span class="pill p-n">en ${d} día${d>1?'s':''}</span>`}
+const ultLog=t=>(t.log||[]).slice(-1)[0];
+function hechoForm(c,t){const key=c.id+'|'+t.id;if(HECHO!==key)return '';
+  return `<div class="hecho-form"><input data-hn="${key}" placeholder="Qué hablaron / qué te contó (queda en la evolución)" aria-label="Nota del contacto">
+    <button class="btn" data-tok="${key}">Guardar como hecho</button><button class="btn ghost" data-thecho="">Cancelar</button></div>`}
+function marcarHecha(c,t,nota){
+  const autor=autorGuardado(),f=isoD(hoy());
+  t.log=t.log||[];t.log.push({fecha:f,autor,nota});
+  if(+t.cada>0)t.prox=isoD(addD(hoy(),+t.cada));else t.activa=false;
+  c.evolucion=c.evolucion||[];
+  c.evolucion.push({id:'e'+Date.now(),fecha:f,autor,fuente:'Staff Pumas 7s',contacto:t.con,dolor:'',hizo:`📞 ${t.t}${nota?': '+nota:''}`,fisico:'',resp:'',plan:'',creado:new Date().toISOString()});
+}
+function renderAvisos(){
+  const l=pendientes();
+  $('#avisos').innerHTML=l.length?`<div class="avisos"><h3>⚠ Recordatorios para hoy (${l.length})</h3>${l.map(({c,t})=>`<div class="aviso">
+    <b>${esc(t.t)}</b><span>· ${esc(c.jugador)}${esRemoto(c)&&c.provincia?' ('+esc(c.provincia)+')':''}${t.con==='kine'&&c.kine_nombre?' · '+esc(c.kine_nombre):''}${t.con==='kine'&&c.kine_contacto?' · '+esc(c.kine_contacto):''}${t.con==='jugador'&&c.jug_contacto?' · '+esc(c.jug_contacto):''}</span>
+    ${tareaPill(t)}<span style="margin-left:auto;display:flex;gap:6px"><button class="btn" style="padding:4px 10px" data-thecho="${c.id}|${t.id}">Hecho</button><button class="btn ghost" style="padding:4px 10px" data-open="${c.id}">Abrir</button></span>
+    ${hechoForm(c,t)}</div>`).join('')}</div>`:'';
+}
+function tareasSec(){
+  return `<div class="sec"><h3>Seguimiento y recordatorios</h3><p class="hint">Cada recordatorio tiene una frecuencia (cada cuántos días) y la próxima fecha. Al marcarlo hecho anotás qué hablaron: queda en la evolución y se reprograma solo. Los que vencen aparecen arriba de todo, en Recordatorios. Cada 0 = una sola vez.</p>
+    <div class="scroll"><table><thead><tr><th>Recordatorio</th><th>Con</th><th>Cada (días)</th><th>Próxima</th><th>Último contacto</th><th>Estado</th><th></th></tr></thead><tbody id="tarBody"></tbody></table></div>
+    <div class="actions" style="align-items:flex-end">
+      <label class="f">Nuevo recordatorio<input id="ntT" placeholder="Ej. Pedir la eco de control"></label>
+      <label class="f">Con<select id="ntCon">${Object.entries(CON_TXT).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label>
+      <label class="f">Cada (días)<input type="number" id="ntCada" min="0" value="0" style="width:80px"></label>
+      <label class="f">Primera vez<input type="date" id="ntProx" value="${isoD(hoy())}"></label>
+      <button class="btn ghost" id="btnAddTar">Agregar recordatorio</button></div></div>`;
+}
+function renderTareas(c){
+  const b=$('#tarBody');if(!b)return;const l=tareasAct(c);
+  b.innerHTML=l.length?l.map(t=>{const u=ultLog(t);return `<tr><td><input data-tar="${t.id}" data-k="t" value="${esc(t.t)}" aria-label="Recordatorio"></td>
+    <td><select data-tar="${t.id}" data-k="con" aria-label="Con quién">${Object.entries(CON_TXT).map(([k,v])=>`<option value="${k}" ${t.con===k?'selected':''}>${v}</option>`).join('')}</select></td>
+    <td><input type="number" min="0" data-tar="${t.id}" data-k="cada" value="${esc(t.cada)}" style="width:64px" aria-label="Cada cuántos días"></td>
+    <td><input type="date" data-tar="${t.id}" data-k="prox" value="${esc(t.prox)}" aria-label="Próxima fecha"></td>
+    <td>${u?`${fLarga(parseD(u.fecha))}${u.autor?' · '+esc(u.autor):''}${u.nota?`<br><span class="muted">${esc(u.nota.length>70?u.nota.slice(0,70)+'…':u.nota)}</span>`:''}`:'<span class="muted">Nunca</span>'}</td>
+    <td>${tareaPill(t)}</td>
+    <td style="white-space:nowrap"><button class="btn" style="padding:4px 10px" data-thecho="${c.id}|${t.id}">Hecho</button> <button class="btn ghost" style="padding:4px 8px" data-tdel="${t.id}" aria-label="Quitar recordatorio">✕</button></td></tr>
+    ${HECHO===c.id+'|'+t.id?`<tr><td colspan="7">${hechoForm(c,t)}</td></tr>`:''}`}).join('')
+    :'<tr><td colspan="7" class="muted">Sin recordatorios. Agregá uno abajo.</td></tr>';
+}
+const diaEv=c=>diffD(parseD(c.fecha),hoy());
+function renderCaseRemoto(c){
+  $('#viewCase').innerHTML=`
+  <div class="panel">
+    <div class="panel-head">
+      <div><h2>${esc(c.jugador)}</h2><div class="meta" id="hMeta"></div></div>
+      <div class="state"><div class="lbl">Estado</div><div class="val" id="hState"></div><div class="lbl">Se rehabilita en su provincia</div></div>
+    </div>
+    <div class="tiempo" id="tiempo"></div>
+    <div class="flags" id="flags"></div>
+  </div>
+  <div class="sec">
+    <h3>Datos del tratamiento</h3><p class="hint">Rehabilitación a distancia: la hace con su kine en la provincia. No hay carga de Catapult ni fases automáticas; el seguimiento es por la evolución que te pasan y los recordatorios.</p>
+    <div class="grid">
+      <label class="f">Dónde se rehabilita<select data-f="modalidad" data-rerender="1"><option value="grupo">Con el equipo</option><option value="remoto" selected>En su provincia (a distancia)</option></select></label>
+      <label class="f">Lesión<select data-f="tipo" data-rerender="1">${Object.entries(LESIONES).map(([k,l])=>`<option value="${k}" ${c.tipo===k?'selected':''}>${l.t}</option>`).join('')}</select></label>
+      <label class="f">Detalle (grado, estructura)<input data-f="lesion" value="${esc(c.lesion)}"></label>
+      <label class="f">Lado<select data-f="lado">${['Izquierdo','Derecho','Bilateral','No aplica'].map(x=>`<option ${c.lado===x?'selected':''}>${x}</option>`).join('')}</select></label>
+      <label class="f">Fecha de lesión<input type="date" data-f="fecha" value="${esc(c.fecha)}"></label>
+      <label class="f">Retorno estimado<input type="date" data-f="ret_est" value="${esc(c.ret_est)}"></label>
+      <label class="f">Puesto<select data-f="puesto"><option value="">—</option>${['FWDS','BACKS'].map(x=>`<option ${c.puesto===x?'selected':''}>${x}</option>`).join('')}</select></label>
+      <label class="f">Provincia / ciudad<input data-f="provincia" value="${esc(c.provincia)}" placeholder="Ej. Tucumán"></label>
+      <label class="f">Club<input data-f="club" value="${esc(c.club)}"></label>
+      <label class="f">Kine que lo trata<input data-f="kine_nombre" value="${esc(c.kine_nombre)}" placeholder="Nombre"></label>
+      <label class="f">Contacto del kine<input data-f="kine_contacto" value="${esc(c.kine_contacto)}" placeholder="Teléfono o mail"></label>
+      <label class="f">Contacto del jugador<input data-f="jug_contacto" value="${esc(c.jug_contacto)}" placeholder="Teléfono"></label>
+    </div>
+    <label class="f" style="margin-top:10px">Lesiones previas relevantes
+      <input data-f="previas" value="${esc(c.previas)}" placeholder="${esc(previasAuto(c).join(' · ')||'Sin registros previos en el historial')}"></label>
+  </div>
+  ${tareasSec()}
+  <div class="sec">
+    <h3>Evolución</h3><p class="hint">Lo que te cuentan el kine o el jugador, con fecha y fuente. Los contactos marcados como hechos en Recordatorios se suman solos.</p>
+    <div class="grid">
+      <label class="f">Fecha<input type="date" id="evFecha" value="${isoD(hoy())}"></label>
+      <label class="f">Fuente<select id="evFuente">${FUENTES.map(x=>`<option ${x==='Kine provincial'?'selected':''}>${x}</option>`).join('')}</select></label>
+      <label class="f">Cargado por<input id="evAutor" value="${esc(autorGuardado())}" placeholder="Tu nombre"></label>
+      <label class="f">Dolor (0-10)<input type="number" id="evDolor" min="0" max="10" step="1"></label>
+    </div>
+    <div class="grid" style="margin-top:10px">
+      <label class="f">Qué hizo<textarea id="evHizo" placeholder="Fase, contenidos, gimnasio, campo"></textarea></label>
+      <label class="f">Físico<textarea id="evFis" placeholder="Pasadas, distancias, tiempos"></textarea></label>
+      <label class="f">Cómo respondió<textarea id="evResp" placeholder="Síntomas, reacción a 24 h, tests que le hicieron"></textarea></label>
+      <label class="f">Plan / próximo paso<textarea id="evPlan"></textarea></label>
+    </div>
+    <div class="actions"><button class="btn" id="btnEv">Agregar a la evolución</button></div>
+    <div id="evList" style="margin-top:14px"></div>
+  </div>
+  <div class="sec">
+    <h3>Estado y decisión</h3><p class="hint" id="decStamp"></p>
+    <div class="twocol">
+      <div>
+        <label class="f">Estado<select data-f="est_rem">${Object.entries(EST_REM).map(([k,v])=>`<option value="${k}" ${(c.est_rem||'no')===k?'selected':''}>${v}</option>`).join('')}</select></label>
+        <label class="f" style="margin-top:10px">Pronóstico<textarea data-f="pron">${esc(c.pron)}</textarea></label>
+        <label class="f" style="margin-top:10px">Recomendación<textarea data-f="recom">${esc(c.recom)}</textarea></label>
+      </div>
+      <div><label class="f">Restricciones / qué falta para sumarse al grupo<textarea data-f="restr" style="min-height:150px">${esc(c.restr)}</textarea></label></div>
+    </div>
+  </div>
+  <div class="sec" id="secInforme">
+    <h3 class="noprint">Informe para cuerpo técnico / médico</h3><p class="hint noprint">Se arma con los datos, la evolución y lo que escribas en Estado y decisión.</p>
+    <div class="report" id="report"></div>
+    <div class="actions">
+      <button class="btn ghost" id="btnPrint">Imprimir informe</button>
+      <button class="btn ok" id="btnAlta">Dar alta</button>
+      <button class="btn danger" id="btnDel">Eliminar tratamiento</button>
+    </div>
+  </div>`;
+  refresh();
+}
+function contactoUlt(c,con){const l=tareasAct(c).filter(t=>t.con===con).map(ultLog).filter(Boolean).sort((a,b)=>b.fecha.localeCompare(a.fecha));return l[0]||null}
+function informeRemoto(c,final){
+  const L=parseD(c.fecha),prev=[c.previas,...previasAuto(c)].filter(Boolean).join(' · ');
+  const est=final?`Alta el ${fLarga(parseD(c.fecha_alta))}, ${c.dias_baja} días de baja`:EST_REM[c.est_rem||'no'];
+  const ret=c.ret_est?` Retorno estimado: ${fLarga(parseD(c.ret_est))}${final?'':` (${diffD(hoy(),parseD(c.ret_est))>=0?'faltan '+diffD(hoy(),parseD(c.ret_est))+' días':'pasado hace '+(-diffD(hoy(),parseD(c.ret_est)))+' días'})`}.`:'';
+  const ck=contactoUlt(c,'kine'),cj=contactoUlt(c,'jugador');
+  return `<div class="rep-head"><div><b style="font-size:15px">${esc(c.jugador)}</b> · ${esc(c.puesto||'')}<br><span class="muted">${esc(lesionTxt(c))} · ${esc(c.lado||'')} · lesión ${fLarga(L)}${prev?` · previas: ${esc(prev)}`:''}</span></div>
+    <div style="text-align:right"><img src="${CREST}" alt=""><br><span class="muted">${final?'Informe de alta':'Día '+diaEv(c)+' post-lesión'}</span></div></div>
+    <h4>Estado actual</h4>
+    <p><b>${est}</b>. Se rehabilita a distancia${c.provincia?' en '+esc(c.provincia):''}${c.club?' ('+esc(c.club)+')':''}${c.kine_nombre?', con '+esc(c.kine_nombre):''}. Día ${diaEv(c)} (semana ${Math.floor(diaEv(c)/7)+1}).${ret}
+    Último contacto con el kine: ${ck?fLarga(parseD(ck.fecha)):'sin registrar'} · con el jugador: ${cj?fLarga(parseD(cj.fecha)):'sin registrar'}.</p>
+    ${(c.evolucion||[]).length?`<h4>Evolución reciente</h4><ul>${evOrden(c).slice(0,4).map(e=>`<li><b>${fLarga(parseD(e.fecha))}${e.fuente?' · '+esc(e.fuente):''}${e.dolor!==''&&e.dolor!=null?' · dolor '+esc(e.dolor)+'/10':''}:</b> ${esc([e.hizo,e.fisico&&'Físico: '+e.fisico,e.resp&&'Respuesta: '+e.resp,e.plan&&'Plan: '+e.plan].filter(Boolean).join(' · '))}</li>`).join('')}</ul>`:''}
+    <h4>Pronóstico</h4><p>${esc(c.pron)||'<span class="muted">Sin cargar.</span>'}</p>
+    <h4>Recomendación</h4><p>${esc(c.recom)||'<span class="muted">Sin cargar.</span>'}</p>
+    <h4>Qué falta para el alta</h4><p>${esc(c.restr)||'<span class="muted">Sin cargar.</span>'}</p>
+    <p class="muted" style="font-size:11.5px">Seguimiento a distancia: sin carga de campo ni evaluaciones medidas por el staff. Lo informado surge del kine tratante y del jugador.</p>`;
+}
+function refreshRemoto(c){
+  const d=diaEv(c);
+  $('#hMeta').textContent=`${c.puesto||'Sin puesto'} · ${lesionTxt(c)} · ${c.lado||''} · lesión ${fLarga(parseD(c.fecha))}${c.provincia?' · '+c.provincia:''}${c.kine_nombre?' · kine: '+c.kine_nombre:''}`;
+  const e=c.est_rem||'no';$('#hState').textContent=EST_REM[e];$('#hState').className='val '+e;
+  const r=c.ret_est?diffD(hoy(),parseD(c.ret_est)):null,ck=contactoUlt(c,'kine'),cj=contactoUlt(c,'jugador');
+  $('#tiempo').innerHTML=`<div><b>Día ${d}</b>semana ${Math.floor(d/7)+1} desde la lesión</div>
+    <div><b>${c.ret_est?fCorta(parseD(c.ret_est)):'—'}</b>${r===null?'retorno estimado sin cargar':r>=0?`retorno estimado · faltan ${r} días`:`retorno estimado · pasado hace ${-r} días`}</div>
+    <div><b>${ck?fCorta(parseD(ck.fecha)):'—'}</b>último contacto con el kine</div>
+    <div><b>${cj?fCorta(parseD(cj.fecha)):'—'}</b>último contacto con el jugador</div>`;
+  const fl=[];const p=pendCaso(c);if(p.length)fl.push(['Recordatorios',p.map(t=>t.t).join(' · ')+' — para hoy o vencidos.']);
+  if(r!==null&&r<0&&e==='no')fl.push(['Retorno estimado vencido','pasó la fecha estimada y sigue no disponible: revisar el pronóstico con el kine.']);
+  if(e==='dr')fl.push(['Disponible con riesgo sin evaluación propia','la decisión se apoya en lo que informa el kine provincial; sin carga de campo ni tests medidos por el staff. Riesgo de recidiva mal cuantificado.']);
+  $('#flags').innerHTML=fl.map(f=>`<div class="flag"><b>${esc(f[0])}:</b> ${esc(f[1])}</div>`).join('');
+  renderTareas(c);renderEv(c);
+  $('#decStamp').textContent=c.dec_act?`Última actualización: ${fLarga(parseD(c.dec_act.fecha))}${c.dec_act.autor?' · '+c.dec_act.autor:''}`:'';
+  $('#report').innerHTML=informeRemoto(c,false);
+}
 function autorGuardado(){try{return localStorage.getItem('rtp_autor')||''}catch(e){return ''}}
 const evOrden=c=>(c.evolucion||[]).slice().sort((a,b)=>(b.fecha+b.creado).localeCompare(a.fecha+a.creado));
 function renderEv(c){
   const l=evOrden(c);
   $('#evList').innerHTML=l.length?l.map(e=>`<div style="border-left:3px solid var(--sky);padding:8px 12px;margin-bottom:8px;background:#FAFCFE;border-radius:0 8px 8px 0">
-    <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px"><b>${fLarga(parseD(e.fecha))}${e.autor?' · '+esc(e.autor):''}${e.dolor!==''&&e.dolor!=null?` · <span class="pill ${+e.dolor>=4?'p-r':+e.dolor>=2?'p-a':'p-g'}">dolor ${esc(e.dolor)}/10</span>`:''}</b>
+    <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px"><b>${fLarga(parseD(e.fecha))}${e.fuente?' · '+esc(e.fuente):''}${e.autor?' · '+esc(e.autor):''}${e.dolor!==''&&e.dolor!=null?` · <span class="pill ${+e.dolor>=4?'p-r':+e.dolor>=2?'p-a':'p-g'}">dolor ${esc(e.dolor)}/10</span>`:''}</b>
       <button class="btn ghost" style="padding:2px 8px" data-delev="${e.id}" aria-label="Borrar registro">✕</button></div>
     ${e.hizo?`<p style="font-size:13px;margin-top:4px"><span class="muted">Hizo:</span> ${esc(e.hizo)}</p>`:''}
     ${e.fisico?`<p style="font-size:13px"><span class="muted">Físico:</span> ${esc(e.fisico)}</p>`:''}
@@ -634,10 +804,18 @@ function previasAuto(c){return cerrados().filter(x=>x.jugador===c.jugador&&x.id!
 
 function renderCases(){
   const a=activos();
-  $('#cases').innerHTML=a.length?a.map(c=>{const k=calcular(c);const col=k.cur?k.cur.c:'var(--f4)';
+  renderAvisos();
+  $('#cases').innerHTML=a.length?a.map(c=>{const np=pendCaso(c).length,al=np?`<span class="chip-al">⚠ ${np} recordatorio${np>1?'s':''}</span>`:'';
+    if(esRemoto(c)){const e=c.est_rem||'no';
+      return `<button class="ccard ${SEL===c.id&&VIEW==='case'?'sel':''}" data-open="${c.id}">
+      <span class="sbar" style="background:var(--sky)"></span>
+      <h3>${esc(c.jugador)}</h3><div class="sub">${esc(lesionTxt(c))}</div><span class="chip-rem">En su provincia${c.provincia?' · '+esc(c.provincia):''}</span>${al}
+      <div class="row"><span class="muted">Día ${diaEv(c)}${c.kine_nombre?' · '+esc(c.kine_nombre):''}</span><span class="pill ${ESTADO_PILL[e]}">${EST_REM[e]}</span></div>
+    </button>`}
+    const k=calcular(c);const col=k.cur?k.cur.c:'var(--f4)';
     return `<button class="ccard ${SEL===c.id&&VIEW==='case'?'sel':''}" data-open="${c.id}">
       <span class="sbar" style="background:${col}"></span>
-      <h3>${esc(c.jugador)}</h3><div class="sub">${esc(lesionTxt(c))}</div>
+      <h3>${esc(c.jugador)}</h3><div class="sub">${esc(lesionTxt(c))}</div>${al}
       <div class="row"><span class="muted">Día ${diffD(k.L,hoy())} · ${k.cur?esc(k.cur.t):'Criterios completos'}</span><span class="pill ${ESTADO_PILL[k.estado]}">${ESTADO_TXT[k.estado]}</span></div>
     </button>`}).join(''):'<div class="empty">No hay tratamientos activos.</div>';
   $('#btnHist').textContent=`Historial (${cerrados().length})`;
@@ -683,6 +861,7 @@ function testRows(c){
 function renderCase(){
   const c=caso(SEL);
   if(!c||c.estado==='alta'){$('#viewCase').innerHTML=activos().length?'':'';return}
+  if(esRemoto(c)){renderCaseRemoto(c);return}
   const jug=Object.keys(CARGA?.roster||{}).sort();
   $('#viewCase').innerHTML=`
   <div class="panel">
@@ -697,6 +876,7 @@ function renderCase(){
   <div class="sec">
     <h3>Datos del tratamiento</h3><p class="hint">La lesión define los criterios que aplican y la batería de evaluación. El puesto define contra qué objetivo de la hoja se compara cada sesión.</p>
     <div class="grid">
+      <label class="f">Dónde se rehabilita<select data-f="modalidad" data-rerender="1"><option value="grupo" selected>Con el equipo</option><option value="remoto">En su provincia (a distancia)</option></select></label>
       <label class="f">Lesión<select data-f="tipo" data-rerender="1">${Object.entries(LESIONES).map(([k,l])=>`<option value="${k}" ${c.tipo===k?'selected':''}>${l.t}</option>`).join('')}</select></label>
       <label class="f">Detalle (grado, estructura)<input data-f="lesion" value="${esc(c.lesion)}"></label>
       <label class="f">Lado<select data-f="lado">${['Izquierdo','Derecho','Bilateral','No aplica'].map(x=>`<option ${c.lado===x?'selected':''}>${x}</option>`).join('')}</select></label>
@@ -707,6 +887,7 @@ function renderCase(){
     <label class="f" style="margin-top:10px">Lesiones previas relevantes
       <input data-f="previas" value="${esc(c.previas)}" placeholder="${esc(previasAuto(c).join(' · ')||'Sin registros previos en el historial')}"></label>
   </div>
+  ${tareasSec()}
 
   <div class="sec">
     <h3>Evolución</h3><p class="hint">Registro fechado de cada día: qué hizo, cómo respondió y qué sigue. Queda firmado con el nombre de quien lo carga y lo ve todo el equipo.</p>
@@ -818,6 +999,8 @@ function informeHTML(c,k,final){
 function refresh(){
   renderCases();renderFollow();actLabel();
   const c=caso(SEL); if(!c||c.estado==='alta'||VIEW!=='case')return;
+  if(esRemoto(c)){refreshRemoto(c);return}
+  renderTareas(c);
   const k=calcular(c);
   $('#hMeta').textContent=`${c.puesto||'Sin puesto'} · ${lesionTxt(c)} · ${c.lado||''} · lesión ${fLarga(k.L)} · día ${diffD(k.L,hoy())}`;
   $('#hState').textContent=ESTADO_TXT[k.estado];$('#hState').className='val '+k.estado;
@@ -1043,7 +1226,9 @@ function renderNew(){
   const jug=Object.keys(CARGA?.roster||{}).sort().filter(n=>!act.has(n));
   $('#newBox').innerHTML=`<div class="sec newcase"><h3>Nuevo tratamiento</h3><p class="hint">La lista de jugadores sale del plantel del tablero (Catapult). Al elegir la lesión se cargan solos los criterios y la batería de evaluación.</p>
    <div class="grid">
-    <label class="f">Jugador<select id="nJug"><option value="">Elegí un jugador</option>${jug.map(n=>`<option>${esc(n)}</option>`).join('')}</select></label>
+    <label class="f">Dónde se rehabilita<select id="nMod"><option value="grupo">Con el equipo</option><option value="remoto">En su provincia (a distancia)</option></select></label>
+    <label class="f">Jugador<select id="nJug"><option value="">Elegí un jugador</option>${jug.map(n=>`<option>${esc(n)}</option>`).join('')}<option value="__otro">Otro (escribir el nombre)</option></select></label>
+    <label class="f" id="nOtroBox" hidden>Nombre del jugador<input id="nOtro" placeholder="Nombre y apellido"></label>
     <label class="f">Puesto<select id="nPue"><option value="">—</option><option>FWDS</option><option>BACKS</option></select></label>
     <label class="f">Lesión<select id="nTipo">${Object.entries(LESIONES).map(([k,l])=>`<option value="${k}">${l.t}</option>`).join('')}</select></label>
     <label class="f">Detalle (grado, estructura)<input id="nLes" placeholder="Ej. grado II, LTAA"></label>
@@ -1051,15 +1236,30 @@ function renderNew(){
     <label class="f">Fecha de lesión<input type="date" id="nFec" value="${isoD(hoy())}"></label>
     <label class="f">Batería de evaluación<input id="nBat" disabled></label>
    </div>
+   <div id="nRem" hidden><div class="grid" style="margin-top:10px">
+    <label class="f">Provincia / ciudad<input id="nProv" placeholder="Ej. Tucumán"></label>
+    <label class="f">Club<input id="nClub"></label>
+    <label class="f">Kine que lo trata<input id="nKine" placeholder="Nombre"></label>
+    <label class="f">Contacto del kine<input id="nKineC" placeholder="Teléfono o mail"></label>
+    <label class="f">Contacto del jugador<input id="nJugC" placeholder="Teléfono"></label>
+    <label class="f">Retorno estimado<input type="date" id="nRet"></label>
+    <label class="f">Escribirle al kine cada (días)<input type="number" id="nCadaK" min="1" value="7"></label>
+    <label class="f">Escribirle al jugador cada (días)<input type="number" id="nCadaJ" min="1" value="14"></label>
+   </div><p class="hint" style="margin-top:6px">Los dos recordatorios arrancan hoy; después los podés cambiar o agregar otros en el caso.</p></div>
    <div class="actions"><button class="btn" id="nOk">Crear tratamiento</button><button class="btn ghost" id="nCancel">Cancelar</button></div></div>`;
   const setBat=()=>{const l=LESIONES[$('#nTipo').value],bt=BATERIAS[l.bat];$('#nBat').value=bt&&bt.tests.length?bt.t:'Pendiente: cargá los tests a mano'};
   $('#nTipo').onchange=setBat;setBat();
-  $('#nJug').onchange=e=>{const p=PLAN?.plantel?.[e.target.value];if(p)$('#nPue').value=p};
+  $('#nJug').onchange=e=>{$('#nOtroBox').hidden=e.target.value!=='__otro';const p=PLAN?.plantel?.[e.target.value];if(p)$('#nPue').value=p};
+  $('#nMod').onchange=e=>{$('#nRem').hidden=e.target.value!=='remoto'};
   $('#nCancel').onclick=()=>$('#newBox').innerHTML='';
   $('#nOk').onclick=()=>{
-    const j=$('#nJug').value;if(!j){msg('Elegí un jugador.','error');return}
+    let j=$('#nJug').value;if(j==='__otro')j=norm($('#nOtro').value);
+    if(!j){msg('Elegí un jugador o escribí el nombre.','error');return}
+    if(activos().some(x=>sinTilde(x.jugador)===sinTilde(j))){msg(`${j} ya tiene un tratamiento activo.`,'error');return}
     const c={id:'c'+Date.now(),jugador:j,puesto:$('#nPue').value,tipo:$('#nTipo').value,lesion:$('#nLes').value,region:LESIONES[$('#nTipo').value].region,lado:$('#nLado').value,fecha:$('#nFec').value,
       bateria:LESIONES[$('#nTipo').value].bat,checks:{},pct:{},contacto:0,previas:'',pron:'',recom:'',disp:false,restr:'',tests:{},umb:{},extra:[],estado:'activo',creado:isoD(hoy())};
+    if($('#nMod').value==='remoto')Object.assign(c,{modalidad:'remoto',est_rem:'no',provincia:$('#nProv').value.trim(),club:$('#nClub').value.trim(),
+      kine_nombre:$('#nKine').value.trim(),kine_contacto:$('#nKineC').value.trim(),jug_contacto:$('#nJugC').value.trim(),ret_est:$('#nRet').value,tareas:tareasDef($('#nCadaK').value,$('#nCadaJ').value)});
     RTP.casos.push(c);SEL=c.id;$('#newBox').innerHTML='';dirty();showView('case');renderCase();
   };
 }
@@ -1077,6 +1277,9 @@ document.addEventListener('input',e=>{
   else if(el.dataset.test){c.tests=c.tests||{};c.tests[el.dataset.test]=c.tests[el.dataset.test]||{};c.tests[el.dataset.test][el.dataset.k]=el.value}
   else if(el.dataset.oi){setOi(c,OI_SEM,el.dataset.oi,'_',num(el.value));dirty();renderOiVals(c);refresh();return}
   else if(el.dataset.oiv){const [d,k]=el.dataset.oiv.split('|');setOi(c,OI_SEM,d,k,num(el.value));dirty();renderOiVals(c);refresh();return}
+  else if(el.dataset.tar){const t=(c.tareas||[]).find(x=>x.id===el.dataset.tar);if(!t)return;
+    t[el.dataset.k]=el.dataset.k==='cada'?Math.max(0,+el.value||0):el.value;dirty();renderCases();return}
+  else if(el.dataset.hn!==undefined)return;
   else if(el.dataset.umb){c.umb=c.umb||{};c.umb[el.dataset.umb]=c.umb[el.dataset.umb]||{};c.umb[el.dataset.umb][el.dataset.k]=num(el.value)??UMB_DEF[el.dataset.k]}
   else return;
   dirty();refresh();
@@ -1086,11 +1289,21 @@ document.addEventListener('change',e=>{const el=e.target;
   if(el.id==='oiSem'){OI_SEM=+el.value;const c=caso(SEL);if(c)renderOi(c);return}
   if(el.dataset.f==='puesto'){const c=caso(SEL);if(c){c.puesto=el.value;dirty();renderOi(c);refresh()}return}
   if(el.dataset.rerender){const c=caso(SEL);if(!c)return;c[el.dataset.f]=el.value;
-    if(el.dataset.f==='tipo'){const l=LESIONES[el.value];c.region=l.region;c.bateria=l.bat}dirty();renderCase()}
+    if(el.dataset.f==='tipo'){const l=LESIONES[el.value];c.region=l.region;c.bateria=l.bat}
+    if(el.dataset.f==='modalidad'&&el.value==='remoto'){c.est_rem=c.est_rem||(c.disp?'dr':'no');if(!tareasAct(c).length)c.tareas=tareasDef()}
+    dirty();renderCase()}
   else if(el.type==='checkbox'||el.tagName==='SELECT')el.dispatchEvent(new Event('input',{bubbles:true}))});
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.open){SEL=b.dataset.open;showView('case');renderCase();return}
+  if(b.dataset.thecho!==undefined){HECHO=b.dataset.thecho||null;renderAvisos();const c=caso(SEL);if(c&&VIEW==='case')renderTareas(c);
+    if(HECHO)(b.closest('.aviso,tr')?.parentElement?document.querySelector(`[data-hn="${HECHO}"]`):null)?.focus();return}
+  if(b.dataset.tok){const [cid,tid]=b.dataset.tok.split('|'),c=caso(cid),t=(c?.tareas||[]).find(x=>x.id===tid);if(!t)return;
+    const nota=(b.closest('.hecho-form').querySelector('input').value||'').trim();
+    marcarHecha(c,t,nota);HECHO=null;dirty();refresh();renderAvisos();
+    msg(`Hecho: ${t.t} (${c.jugador}).${+t.cada>0?' Próximo: '+fLarga(parseD(t.prox))+'.':''}`);if(!DEMO)guardar(false);return}
+  if(b.dataset.tdel){const c=caso(SEL),t=(c?.tareas||[]).find(x=>x.id===b.dataset.tdel);if(!t||!confirm(`¿Quitar el recordatorio "${t.t}"?`))return;
+    t.activa=false;dirty();refresh();return}
   if(b.dataset.delev){const c=caso(SEL);if(!confirm('¿Borrar este registro de la evolución?'))return;c.evolucion=(c.evolucion||[]).filter(e=>e.id!==b.dataset.delev);dirty();refresh();return}
   if(b.dataset.deltest){const c=caso(SEL);c.extra=(c.extra||[]).filter(t=>t.id!==b.dataset.deltest);dirty();renderCase();return}
   if(b.dataset.snap){const c=caso(b.dataset.snap);const box=$('#snapBox');box.hidden=false;
@@ -1103,19 +1316,28 @@ document.addEventListener('click',e=>{
     case 'btnPrintIC':imprimir('print-ic');break;
     case 'btnAcwr':ACWR_OPEN=!ACWR_OPEN;$('#acwrBox').hidden=!ACWR_OPEN;b.textContent=(ACWR_OPEN?'Ocultar':'Ver')+' ACWR vs. pre-lesión';break;
     case 'btnNew':renderNew();break;
+    case 'btnAddTar':{const c=caso(SEL);const t=$('#ntT').value.trim();if(!t){msg('Escribí el recordatorio.','error');return}
+      c.tareas=c.tareas||[];c.tareas.push({id:'t'+Date.now(),t,con:$('#ntCon').value,cada:Math.max(0,+$('#ntCada').value||0),prox:$('#ntProx').value||isoD(hoy()),log:[]});
+      dirty();refresh();msg('Recordatorio agregado.');break}
     case 'btnHist':showView(VIEW==='hist'?'case':'hist');break;
     case 'btnSave':guardar(false);break;
     case 'btnPrint':imprimir('print-live');break;
     case 'btnEv':{const c=caso(SEL);const hizo=$('#evHizo').value.trim(),fisico=$('#evFis').value.trim(),resp=$('#evResp').value.trim(),plan=$('#evPlan').value.trim();
       if(!hizo&&!fisico&&!resp&&!plan){msg('Escribí al menos qué hizo, el físico, cómo respondió o el plan.','error');return}
       const autor=$('#evAutor').value.trim();try{localStorage.setItem('rtp_autor',autor)}catch(e){}
-      c.evolucion=c.evolucion||[];c.evolucion.push({id:'e'+Date.now(),fecha:$('#evFecha').value||isoD(hoy()),autor,dolor:$('#evDolor').value,hizo,fisico,resp,plan,creado:new Date().toISOString()});
+      const ev={id:'e'+Date.now(),fecha:$('#evFecha').value||isoD(hoy()),autor,dolor:$('#evDolor').value,hizo,fisico,resp,plan,creado:new Date().toISOString()};
+      if($('#evFuente'))ev.fuente=$('#evFuente').value;
+      c.evolucion=c.evolucion||[];c.evolucion.push(ev);
       ['#evHizo','#evFis','#evResp','#evPlan','#evDolor'].forEach(s=>$(s).value='');
       dirty();refresh();if(!DEMO)guardar(false);else msg('Registro agregado.');break}
     case 'btnAddTest':{const c=caso(SEL);const t=$('#nxTest').value.trim();if(!t){msg('Poné el nombre del test.','error');return}
       c.extra=c.extra||[];c.extra.push({id:'x'+Date.now(),eq:$('#nxEq').value,test:t,met:$('#nxMet').value.trim()||'Valor',uni:$('#nxUni').value==='1',adhoc:true});
       dirty();renderCase();break}
-    case 'btnAlta':{const c=caso(SEL);const k=calcular(c);
+    case 'btnAlta':{const c=caso(SEL);
+      if(esRemoto(c)){if(!confirm(`¿Dar el alta a ${c.jugador}?`))return;
+        c.estado='alta';c.fecha_alta=isoD(hoy());c.dias_baja=diaEv(c);c.informe_final=informeRemoto(c,true);
+        SEL=activos()[0]?.id||null;dirty();renderCase();refresh();msg(`Alta registrada. ${c.jugador} pasa al historial.`);break}
+      const k=calcular(c);
       const txt=k.pend.length?`Quedan ${k.pend.length} criterio(s) pendientes. ¿Dar el alta igual a ${c.jugador}?`:`¿Dar el alta a ${c.jugador}?`;
       if(!confirm(txt))return;
       c.estado='alta';c.fecha_alta=isoD(hoy());c.dias_baja=diffD(k.L,hoy());
@@ -1183,7 +1405,7 @@ const clave=n=>String(n||'').normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCas
 const valdDe=(d,n)=>{const k=Object.keys(d?.players||{}).find(x=>clave(x)===clave(n));return k?{k,p:d.players[k],t:d.parcial?.[k]||null}:null};
 function actLabel(){
   const b=$('#btnAct');if(!b)return;
-  const c=caso(SEL);const ok=!DEMO&&c&&c.estado!=='alta'&&VIEW==='case';
+  const c=caso(SEL);const ok=!DEMO&&c&&c.estado!=='alta'&&VIEW==='case'&&!esRemoto(c);
   b.hidden=!ok&&!ACT;
   if(ACT){b.disabled=true;b.textContent='Actualizando '+ACT.jugador.split(' ')[0]+'…';return}
   b.disabled=false;if(c)b.textContent='↻ Actualizar datos de '+c.jugador.split(' ')[0];
