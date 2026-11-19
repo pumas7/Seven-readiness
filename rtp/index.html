@@ -637,9 +637,10 @@ function tareasDef(cadaK=7,cadaJ=14){const h=isoD(hoy()),n=Date.now();
   return [{id:'t'+n,t:'Escribirle al kine',con:'kine',cada:+cadaK||7,prox:h,log:[]},{id:'t'+(n+1),t:'Escribirle al jugador',con:'jugador',cada:+cadaJ||14,prox:h,log:[]}]}
 const tareasAct=c=>(c.tareas||[]).filter(t=>t.activa!==false);
 const venceEn=t=>t.prox?diffD(hoy(),parseD(t.prox)):null; // < 0 vencida · 0 hoy
-const pendCaso=c=>tareasAct(c).filter(t=>t.prox&&venceEn(t)<=0);
+const tareaOn=t=>t.on!==false;
+const pendCaso=c=>tareasAct(c).filter(t=>tareaOn(t)&&t.prox&&venceEn(t)<=0);
 const pendientes=()=>activos().flatMap(c=>pendCaso(c).map(t=>({c,t}))).sort((a,b)=>venceEn(a.t)-venceEn(b.t));
-function tareaPill(t){const d=venceEn(t);if(d===null)return '<span class="pill p-n">sin fecha</span>';
+function tareaPill(t){if(!tareaOn(t))return '<span class="pill p-n">pausado</span>';const d=venceEn(t);if(d===null)return '<span class="pill p-n">sin fecha</span>';
   if(d<0)return `<span class="pill p-r">vencido hace ${-d} día${d<-1?'s':''}</span>`;if(d===0)return '<span class="pill p-a">hoy</span>';
   return `<span class="pill p-n">en ${d} día${d>1?'s':''}</span>`}
 const ultLog=t=>(t.log||[]).slice(-1)[0];
@@ -661,8 +662,8 @@ function renderAvisos(){
     ${hechoForm(c,t)}</div>`).join('')}</div>`:'';
 }
 function tareasSec(){
-  return `<div class="sec"><h3>Seguimiento y recordatorios</h3><p class="hint">Cada recordatorio tiene una frecuencia (cada cuántos días) y la próxima fecha. Al marcarlo hecho anotás qué hablaron: queda en la evolución y se reprograma solo. Los que vencen aparecen arriba de todo, en Recordatorios. Cada 0 = una sola vez.</p>
-    <div class="scroll"><table><thead><tr><th>Recordatorio</th><th>Con</th><th>Cada (días)</th><th>Próxima</th><th>Último contacto</th><th>Estado</th><th></th></tr></thead><tbody id="tarBody"></tbody></table></div>
+  return `<div class="sec"><h3>Seguimiento y recordatorios</h3><p class="hint">Cada recordatorio tiene una frecuencia (cada cuántos días) y la próxima fecha. Al marcarlo hecho anotás qué hablaron: queda en la evolución y se reprograma solo. Los que vencen aparecen arriba de todo, en Recordatorios. Destildá "Activo" para pausar uno sin borrarlo. Cada 0 = una sola vez.</p>
+    <div class="scroll"><table><thead><tr><th>Activo</th><th>Recordatorio</th><th>Con</th><th>Cada (días)</th><th>Próxima</th><th>Último contacto</th><th>Estado</th><th></th></tr></thead><tbody id="tarBody"></tbody></table></div>
     <div class="actions" style="align-items:flex-end">
       <label class="f">Nuevo recordatorio<input id="ntT" placeholder="Ej. Pedir la eco de control"></label>
       <label class="f">Con<select id="ntCon">${Object.entries(CON_TXT).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label>
@@ -672,15 +673,15 @@ function tareasSec(){
 }
 function renderTareas(c){
   const b=$('#tarBody');if(!b)return;const l=tareasAct(c);
-  b.innerHTML=l.length?l.map(t=>{const u=ultLog(t);return `<tr><td><input data-tar="${t.id}" data-k="t" value="${esc(t.t)}" aria-label="Recordatorio"></td>
+  b.innerHTML=l.length?l.map(t=>{const u=ultLog(t);return `<tr style="${tareaOn(t)?'':'opacity:.55'}"><td><input type="checkbox" data-tar="${t.id}" data-k="on" ${tareaOn(t)?'checked':''} aria-label="Recordatorio activo"></td><td><input data-tar="${t.id}" data-k="t" value="${esc(t.t)}" aria-label="Recordatorio"></td>
     <td><select data-tar="${t.id}" data-k="con" aria-label="Con quién">${Object.entries(CON_TXT).map(([k,v])=>`<option value="${k}" ${t.con===k?'selected':''}>${v}</option>`).join('')}</select></td>
     <td><input type="number" min="0" data-tar="${t.id}" data-k="cada" value="${esc(t.cada)}" style="width:64px" aria-label="Cada cuántos días"></td>
     <td><input type="date" data-tar="${t.id}" data-k="prox" value="${esc(t.prox)}" aria-label="Próxima fecha"></td>
     <td>${u?`${fLarga(parseD(u.fecha))}${u.autor?' · '+esc(u.autor):''}${u.nota?`<br><span class="muted">${esc(u.nota.length>70?u.nota.slice(0,70)+'…':u.nota)}</span>`:''}`:'<span class="muted">Nunca</span>'}</td>
     <td>${tareaPill(t)}</td>
     <td style="white-space:nowrap"><button class="btn" style="padding:4px 10px" data-thecho="${c.id}|${t.id}">Hecho</button> <button class="btn ghost" style="padding:4px 8px" data-tdel="${t.id}" aria-label="Quitar recordatorio">✕</button></td></tr>
-    ${HECHO===c.id+'|'+t.id?`<tr><td colspan="7">${hechoForm(c,t)}</td></tr>`:''}`}).join('')
-    :'<tr><td colspan="7" class="muted">Sin recordatorios. Agregá uno abajo.</td></tr>';
+    ${HECHO===c.id+'|'+t.id?`<tr><td colspan="8">${hechoForm(c,t)}</td></tr>`:''}`}).join('')
+    :'<tr><td colspan="8" class="muted">Sin recordatorios. Agregá uno abajo.</td></tr>';
 }
 const diaEv=c=>diffD(parseD(c.fecha),hoy());
 function renderCaseRemoto(c){
@@ -1278,6 +1279,7 @@ document.addEventListener('input',e=>{
   else if(el.dataset.oi){setOi(c,OI_SEM,el.dataset.oi,'_',num(el.value));dirty();renderOiVals(c);refresh();return}
   else if(el.dataset.oiv){const [d,k]=el.dataset.oiv.split('|');setOi(c,OI_SEM,d,k,num(el.value));dirty();renderOiVals(c);refresh();return}
   else if(el.dataset.tar){const t=(c.tareas||[]).find(x=>x.id===el.dataset.tar);if(!t)return;
+    if(el.dataset.k==='on'){t.on=el.checked;dirty();refresh();return}
     t[el.dataset.k]=el.dataset.k==='cada'?Math.max(0,+el.value||0):el.value;dirty();renderCases();return}
   else if(el.dataset.hn!==undefined)return;
   else if(el.dataset.umb){c.umb=c.umb||{};c.umb[el.dataset.umb]=c.umb[el.dataset.umb]||{};c.umb[el.dataset.umb][el.dataset.k]=num(el.value)??UMB_DEF[el.dataset.k]}
