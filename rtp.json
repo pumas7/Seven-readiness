@@ -226,8 +226,14 @@
           "t": "Escribirle al jugador",
           "con": "jugador",
           "cada": 14,
-          "prox": "2026-11-19",
-          "log": []
+          "prox": "2026-12-03",
+          "log": [
+            {
+              "fecha": "2026-11-19",
+              "autor": "jokin",
+              "nota": ""
+            }
+          ]
         }
       ],
       "evolucion": [
@@ -243,6 +249,19 @@
           "resp": "",
           "plan": "",
           "creado": "2026-11-19T19:46:30.022Z"
+        },
+        {
+          "id": "e1795117593938",
+          "fecha": "2026-11-19",
+          "autor": "jokin",
+          "fuente": "Staff Pumas 7s",
+          "contacto": "jugador",
+          "dolor": "",
+          "hizo": "📞 Escribirle al jugador",
+          "fisico": "",
+          "resp": "",
+          "plan": "",
+          "creado": "2026-11-19T19:46:33.938Z"
         }
       ]
     }
