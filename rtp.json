@@ -499,7 +499,7 @@
       "lesion": "LCA + Lesión meniscal externa",
       "region": "art",
       "lado": "Izquierdo",
-      "fecha": "2026-10-04",
+      "fecha": "2026-11-04",
       "bateria": "rodilla",
       "checks": {},
       "pct": {},
@@ -521,7 +521,7 @@
       "kine_nombre": "Santiago Infante Martinez",
       "kine_contacto": "2915743247",
       "jug_contacto": "91140956800",
-      "ret_est": "2026-11-04",
+      "ret_est": "2027-08-04",
       "tareas": [
         {
           "id": "t1795187475108",
@@ -542,8 +542,14 @@
           "t": "Escribirle al jugador",
           "con": "jugador",
           "cada": 14,
-          "prox": "2026-11-20",
-          "log": []
+          "prox": "2026-12-04",
+          "log": [
+            {
+              "fecha": "2026-11-20",
+              "autor": "Tucha",
+              "nota": ""
+            }
+          ]
         }
       ],
       "evolucion": [
@@ -559,6 +565,19 @@
           "resp": "",
           "plan": "",
           "creado": "2026-11-20T15:11:25.888Z"
+        },
+        {
+          "id": "e1795187487603",
+          "fecha": "2026-11-20",
+          "autor": "Tucha",
+          "fuente": "Staff Pumas 7s",
+          "contacto": "jugador",
+          "dolor": "",
+          "hizo": "📞 Escribirle al jugador",
+          "fisico": "",
+          "resp": "",
+          "plan": "",
+          "creado": "2026-11-20T15:11:27.603Z"
         }
       ]
     }
