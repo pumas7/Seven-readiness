@@ -490,6 +490,77 @@
           "creado": "2026-11-20T12:01:16.636Z"
         }
       ]
+    },
+    {
+      "id": "c1795187475106",
+      "jugador": "Mateo Fossati",
+      "puesto": "BACKS",
+      "tipo": "rodilla",
+      "lesion": "LCA + Lesión meniscal externa",
+      "region": "art",
+      "lado": "Izquierdo",
+      "fecha": "2026-10-04",
+      "bateria": "rodilla",
+      "checks": {},
+      "pct": {},
+      "contacto": 0,
+      "previas": "",
+      "pron": "",
+      "recom": "",
+      "disp": false,
+      "restr": "",
+      "tests": {},
+      "umb": {},
+      "extra": [],
+      "estado": "activo",
+      "creado": "2026-11-20",
+      "modalidad": "remoto",
+      "est_rem": "no",
+      "provincia": "Buenos Aires",
+      "club": "Belgrano / Grupo Agile",
+      "kine_nombre": "Santiago Infante Martinez",
+      "kine_contacto": "2915743247",
+      "jug_contacto": "91140956800",
+      "ret_est": "2026-11-04",
+      "tareas": [
+        {
+          "id": "t1795187475108",
+          "t": "Escribirle al kine",
+          "con": "kine",
+          "cada": 7,
+          "prox": "2026-11-27",
+          "log": [
+            {
+              "fecha": "2026-11-20",
+              "autor": "Tucha",
+              "nota": ""
+            }
+          ]
+        },
+        {
+          "id": "t1795187475109",
+          "t": "Escribirle al jugador",
+          "con": "jugador",
+          "cada": 14,
+          "prox": "2026-11-20",
+          "log": []
+        }
+      ],
+      "evolucion": [
+        {
+          "id": "e1795187485888",
+          "fecha": "2026-11-20",
+          "autor": "Tucha",
+          "fuente": "Staff Pumas 7s",
+          "contacto": "kine",
+          "dolor": "",
+          "hizo": "📞 Escribirle al kine",
+          "fisico": "",
+          "resp": "",
+          "plan": "",
+          "creado": "2026-11-20T15:11:25.888Z"
+        }
+      ]
     }
   ]
 }
