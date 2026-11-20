@@ -546,7 +546,8 @@
               "autor": "Tucha",
               "nota": ""
             }
-          ]
+          ],
+          "on": false
         },
         {
           "id": "t1795187475109",
@@ -560,7 +561,8 @@
               "autor": "Tucha",
               "nota": ""
             }
-          ]
+          ],
+          "on": false
         }
       ],
       "evolucion": [
