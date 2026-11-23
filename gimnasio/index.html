@@ -65,6 +65,10 @@ body.idle .ctrl{opacity:0;transform:translateY(-100%);pointer-events:none}
 .head h1{font-family:var(--f-display);font-weight:800;font-size:var(--s-hero);line-height:.88;letter-spacing:.01em;text-transform:uppercase}
 .head h1 em{font-style:normal;color:var(--gold)}
 .head .sub{font-family:var(--f-display);font-weight:600;font-size:clamp(18px,1.7vw,36px);color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.head .hcrest{display:none;flex:none;align-self:center;height:calc(var(--s-hero) * 1.45);aspect-ratio:475/273;background:#fff;border-radius:calc(var(--s-hero) * .16);padding:calc(var(--s-hero) * .12) calc(var(--s-hero) * .16)}
+.head .hcrest img{width:100%;height:100%;object-fit:contain;display:block}
+/* el logo aparece solo cuando no está la barra de arriba (tele / pantalla completa) */
+body.idle .head .hcrest,:fullscreen .head .hcrest{display:flex}
 .head .clock{margin-left:auto;font-family:var(--f-display);font-weight:700;font-size:clamp(30px,3.4vw,72px);font-variant-numeric:tabular-nums;line-height:.9;text-align:right}
 .head .clock small{display:block;font-size:.34em;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
 .previo{display:flex;flex-wrap:wrap;gap:10px}
@@ -305,11 +309,13 @@ function aplicar(lista,vista,base,datos,origenDe,avisos,arrastre,pisables){
   const H=unidades(lista,vista),B=unidades(base,vista),D=unidades(datos,vista),out=new Map(H),marc={};
   for(const [k,u] of D){
     const b=B.get(k);if(b&&firma(b)===firma(u))continue;
+    if(H.has(k)&&firma(H.get(k))===firma(u))continue; // el PF ya puso en la hoja lo mismo que tu ajuste: nada que avisar
     if(firma(H.get(k))===firma(b)||(arrastre&&!H.has(k))||(!b&&pisables?.has(k))){out.set(k,u);marc[k]=origenDe(k)}
     else avisos.push({k,nombre:nombreU(u,vista),...origenDe(k)});
   }
   for(const [k,b] of B){
     if(D.has(k))continue;
+    if(!H.has(k))continue; // lo sacaste y el PF también lo sacó de la hoja: nada que avisar
     if(firma(H.get(k))===firma(b)){out.delete(k);marc[k]={...origenDe(k),borrado:true}}
     else avisos.push({k,nombre:nombreU(b,vista),...origenDe(k)});
   }
@@ -350,7 +356,7 @@ function render(){
   const {datos,aj}=EDIT?{datos:EDIT,aj:null}:seccion(PLAN,DIA,VISTA);
   const ds=p.dias_semana?.[DIA];
   const dsTxt=ds?ds.charAt(0).toUpperCase()+ds.slice(1).replace('miercoles','miércoles').replace('sabado','sábado'):'';
-  let h=`<div class="head"><div><h1>${VISTA==='rut'?'Gimnasio':'Correctivos'} · <em>Día ${esc(DIA)}</em></h1>
+  let h=`<div class="head"><div class="hcrest"><img src="${$('.ctrl .crest img')?.src||''}" alt="Pumas Seven"></div><div><h1>${VISTA==='rut'?'Gimnasio':'Correctivos'} · <em>Día ${esc(DIA)}</em></h1>
     <div class="sub">${esc(dsTxt)}${dsTxt?' · ':''}${esc(p.etiqueta)}</div></div>
     <div class="clock" id="clock"></div></div>`;
   const S=seccion(PLAN,DIA,VISTA);
