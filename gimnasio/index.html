@@ -715,7 +715,8 @@ async function guardarSemana(eliminar){
     const items=SED.dias[d].map(i=>({id:(i.id||'').trim().toUpperCase(),ej:(i.ej||'').trim(),dosis:(i.dosis||'').trim()})).filter(i=>i.ej||i.dosis);
     const cur=clone(seccion(PLAN,d,'cor').datos),ix=cur.findIndex(u=>nk(u.jugador)===k);
     const antes=ix>=0?cur[ix].items:[];
-    if(JSON.stringify(antes.map(i=>[nk(i.id),nk(i.ej),nk(i.dosis)]))===JSON.stringify(items.map(i=>[nk(i.id),nk(i.ej),nk(i.dosis)])))continue;
+    // al eliminar, también cuenta un jugador que está en el día sin ejercicios (fila vacía en la hoja)
+    if(!(eliminar&&ix>=0)&&JSON.stringify(antes.map(i=>[nk(i.id),nk(i.ej),nk(i.dosis)]))===JSON.stringify(items.map(i=>[nk(i.id),nk(i.ej),nk(i.dosis)])))continue;
     if(ix>=0){if(items.length)cur[ix]={...cur[ix],items};else cur.splice(ix,1)}
     else if(items.length)cur.push({jugador:SED.jug,items});
     const key=ajKey(PLAN,d,'cor'),v={datos:cur,base:seccion(PLAN,d,'cor',true).datos,autor,fecha};
