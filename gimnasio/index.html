@@ -434,6 +434,18 @@ const fFecha=iso=>{if(!iso)return '';const d=new Date(iso);return d.toLocaleDate
 function tick(){const c=$('#clock');if(!c)return;const d=new Date();
   c.innerHTML=`${d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',hour12:false})}<small>${d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'short'})}</small>`}
 setInterval(tick,15000);
+/* auto-actualización: si se publicó una versión nueva de esta página, se recarga sola
+   (sin estar editando ni con una ventana abierta), así la tele y las pestañas viejas no quedan con código viejo */
+let VERSION_PAG=null;
+async function chequearVersion(){
+  try{const t=await (await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'})).text();
+    let h=0;for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))|0;
+    if(VERSION_PAG===null){VERSION_PAG=h;return}
+    if(h!==VERSION_PAG&&!EDIT&&!SED&&$('#semModal')?.hidden!==false&&$('#notasModal')?.hidden!==false)location.reload();
+  }catch(e){}
+}
+chequearVersion();setInterval(chequearVersion,5*60000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')chequearVersion()});
 
 /* ---------- selects ---------- */
 function fillSelects(){
