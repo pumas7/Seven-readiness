@@ -498,6 +498,8 @@ async function persistir(){
     const prev=SHA;const remoto=await leerAjustesApi(token);
     // fusiona: lo remoto + lo que cambió acá (por clave), para no pisar a otra pantalla
     AJ={...remoto,ajustes:{...remoto.ajustes,...PEND.set}};PEND.del.forEach(k=>delete AJ.ajustes[k]);
+    const pv=PEND.vistos||{};PEND.vistos={};
+    if(Object.keys(pv).length||remoto.vistos)AJ.vistos={...(remoto.vistos||{}),...pv};
     const pb=PEND.bajas||{};PEND.bajas={};
     if(Object.keys(pb).length||remoto.bajas){AJ.bajas={...(remoto.bajas||{})};for(const [k,v] of Object.entries(pb)){if(v)AJ.bajas[k]=v;else delete AJ.bajas[k]}}
     const body={message:'Gimnasio: ajuste desde la pantalla',content:b64e(JSON.stringify(AJ,null,1)+'\n'),branch:'main'};if(SHA)body.sha=SHA;
@@ -508,7 +510,7 @@ async function persistir(){
     SHA=(await r.json()).content.sha;return true;
   }catch(e){toast('No se pudo guardar: '+e.message,true);return false}
 }
-const PEND={set:{},del:[],bajas:{}};
+const PEND={set:{},del:[],bajas:{},vistos:{}};
 function pedirToken(){
   $('#saveTxt').innerHTML='Para guardar en el tablero pegá el token de GitHub (el mismo de Carga). Queda guardado en esta compu. <input id="tok" type="password" style="width:220px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:5px 8px" aria-label="Token de GitHub">';
 }
@@ -596,6 +598,17 @@ function llenarDias(){const sem=+$('#nSem').value,v=$('#nDia').value;
   $('#nDia').innerHTML='<option value="">Toda la semana</option>'+diasDeSemana(sem).map(([d,w])=>`<option value="${d}">Día ${d}${w?' · '+w:''}</option>`).join('');
   if([...$('#nDia').options].some(o=>o.value===v))$('#nDia').value=v}
 /* panel solo para el staff (no sale en la tele ni en pantalla completa) */
+/* aviso "el PF cambió esto": "Entendido" lo oculta en todos los días de la semana.
+   Clave: semana, vista, jugador/bloque y semana de origen del ajuste (un conflicto distinto vuelve a avisar) */
+const avisoKey=a=>`${PLAN}|${VISTA}|${a.k}|${a.plan||''}`;
+async function avisosEntendidos(){
+  const ks=[...new Set(Object.keys(DATA.planes[PLAN].dias).flatMap(d=>seccion(PLAN,d,VISTA).avisos.map(avisoKey)))].filter(k=>!AJ.vistos?.[k]);if(!ks.length)return;
+  if(!DEMO&&!ls.get('gh_token')){toast('Pegá el token de GitHub (Editar → Guardar) para poder guardarlo.',true);return}
+  const f=new Date().toISOString(),v=Object.fromEntries(ks.map(k=>[k,f]));
+  PEND.set={};PEND.del=[];PEND.bajas={};PEND.vistos=v;const prev=AJ.vistos;AJ.vistos={...(AJ.vistos||{}),...v};
+  if(await persistir()){guardarCache();bc?.postMessage({t:'aj',aj:AJ});render();toast('Listo, avisos ocultos.')}else{AJ.vistos=prev;render()}
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-avok]');if(b&&!EDIT){b.disabled=true;avisosEntendidos().finally(()=>{b.disabled=false})}});
 function panelStaff(S){
   const sem=DATA.planes[PLAN].semana,hoyD=notasDelDia(PLAN,DIA),ns=notasVisibles(PLAN).filter(n=>!hoyD.includes(n));let h='';
   const li=n=>`<li><b>${esc(n.jugador)}</b>${diaTxt(n)} ${esc(n.texto)}<small>${n.semana<sem?'pendiente desde Sem '+n.semana+' · ':''}${esc(n.autor||'')}</small> <button class="sbtn" data-nhecha="${esc(n.id)}" title="Marcar que ya se tuvo en cuenta">✓ Hecha</button></li>`;
@@ -603,7 +616,8 @@ function panelStaff(S){
   if(ns.length)h+=`<h3>Notas para esta semana (${ns.length}) <button class="sbtn" data-abrir-notas>ver todas</button></h3><ul>${ns.map(li).join('')}</ul>`;
   const bj=Object.values(AJ.bajas||{}).filter(b=>b.semana!=null&&sem>=b.semana);
   if(bj.length)h+=`<h3>Dados de baja (${bj.length})</h3><ul>${bj.map(b=>`<li><b>${esc(b.jugador)}</b>desde ${esc(b.desde)}${b.alias?.length?' (también '+b.alias.map(esc).join(', ')+')':''}<small>${esc(b.autor||'')}${b.autor?' · ':''}${esc(fFecha(b.fecha))}</small> <button class="sbtn" data-bver="${esc(b.jugador)}" title="Ver las semanas anteriores a la baja">Ver lo que venía haciendo</button> <button class="sbtn" data-breact="${esc(nk(b.jugador))}" title="Vuelve a aparecer con lo que diga la hoja">↺ Reactivar</button></li>`).join('')}</ul>`;
-  if(S.avisos.length)h+=`<h3 class="w">El PF cambió esto en la hoja</h3><ul>${S.avisos.map(a=>`<li><b>${esc(a.nombre)}</b>tu ajuste de ${esc(a.plan)} no se aplicó: se muestra lo de la hoja.</li>`).join('')}</ul>`;
+  const avs=S.avisos.filter(a=>!AJ.vistos?.[avisoKey(a)]);
+  if(avs.length)h+=`<h3 class="w">El PF cambió esto en la hoja <button class="sbtn" data-avok title="Ocultar estos avisos (queda guardado para todas las pantallas)">✓ Entendido</button></h3><ul>`+avs.map(a=>`<li><b>${esc(a.nombre)}</b>tu ajuste de ${esc(a.plan)} no se aplicó: se muestra lo de la hoja.</li>`).join('')+`</ul>`;
   return h?`<div class="spanel staff${hoyD.length?' alarma':''}">${h}</div>`:'';
 }
 const fDMn=d=>d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});
