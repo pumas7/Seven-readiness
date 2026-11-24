@@ -253,7 +253,14 @@
           "cada": 0,
           "prox": "2026-12-01",
           "antes": 7,
-          "log": []
+          "log": [
+            {
+              "fecha": "2026-11-24",
+              "autor": "jokin",
+              "nota": ""
+            }
+          ],
+          "activa": false
         }
       ],
       "evolucion": [
@@ -282,6 +289,19 @@
           "resp": "",
           "plan": "",
           "creado": "2026-11-19T19:46:33.938Z"
+        },
+        {
+          "id": "e1795528386170",
+          "fecha": "2026-11-24",
+          "autor": "jokin",
+          "fuente": "Staff Pumas 7s",
+          "contacto": "staff",
+          "dolor": "",
+          "hizo": "✔ check out en diciembre",
+          "fisico": "",
+          "resp": "",
+          "plan": "",
+          "creado": "2026-11-24T13:53:06.170Z"
         }
       ],
       "adjuntos": [
