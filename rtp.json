@@ -520,6 +520,20 @@
           "plan": "",
           "creado": "2026-11-20T12:01:16.636Z"
         }
+      ],
+      "adjuntos": [
+        {
+          "id": "a1795539109795_0",
+          "nombre": "ECO - BAUTISTA LESCANO.docx",
+          "path": "rtp_adjuntos/c1795119555397/1795539107762_ECO_-_BAUTISTA_LESCANO.docx",
+          "size": 97340,
+          "tipo": "Rutina",
+          "fecha": "2026-11-24",
+          "fuente": "Kine provincial",
+          "nota": "Realiza ECOGRAFIA (24/11). Desgarro union miotendinosa con tendón central en el tercio medio del recto femoral (25mm).",
+          "autor": "Tucha",
+          "subido": "2026-11-24T16:51:49.795Z"
+        }
       ]
     },
     {
