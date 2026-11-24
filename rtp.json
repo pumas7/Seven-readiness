@@ -460,12 +460,17 @@
           "t": "Escribirle al kine",
           "con": "kine",
           "cada": 7,
-          "prox": "2026-11-26",
+          "prox": "2026-12-01",
           "log": [
             {
               "fecha": "2026-11-19",
               "autor": "jokin",
               "nota": "ya le avise que ibas a escribirle tucha"
+            },
+            {
+              "fecha": "2026-11-24",
+              "autor": "Tucha",
+              "nota": "Me pasa resultado de la ecografía confirmando la lesión muscular."
             }
           ]
         },
@@ -531,6 +536,19 @@
           "plan": "",
           "creado": "2026-11-24T16:53:29.169Z",
           "fuente": "Kine provincial"
+        },
+        {
+          "id": "e1795539261075",
+          "fecha": "2026-11-24",
+          "autor": "Tucha",
+          "fuente": "Staff Pumas 7s",
+          "contacto": "kine",
+          "dolor": "",
+          "hizo": "📞 Escribirle al kine: Me pasa resultado de la ecografía confirmando la lesión muscular.",
+          "fisico": "",
+          "resp": "",
+          "plan": "",
+          "creado": "2026-11-24T16:54:21.075Z"
         }
       ],
       "adjuntos": [
