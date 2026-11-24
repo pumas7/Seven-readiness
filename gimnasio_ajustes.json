@@ -5974,31 +5974,6 @@
        "dosis": "3X5"
       }
      ]
-    },
-    {
-     "jugador": "TOTO ",
-     "items": [
-      {
-       "id": "A1",
-       "ej": "LACROSSE + TOALLA",
-       "dosis": "3X15+15"
-      },
-      {
-       "id": "F1",
-       "ej": "PUENTE ISQUIO ELEVADO 1P",
-       "dosis": "3X3-10\" X LADO"
-      },
-      {
-       "id": "F2",
-       "ej": "CONTROLES UNIPODALES PARED C DISCO",
-       "dosis": "3X8+8 10KG"
-      },
-      {
-       "id": "F3",
-       "ej": "PRENSA 1P",
-       "dosis": "3X8+8 (RIR 1)"
-      }
-     ]
     }
    ],
    "base": [
@@ -6083,31 +6058,6 @@
      ]
     },
     {
-     "jugador": "LVB",
-     "items": [
-      {
-       "id": "A1",
-       "ej": "ARMADO DE ARCO ISO",
-       "dosis": "3 X 6+6"
-      },
-      {
-       "id": "F1",
-       "ej": "ADUCTOR EN BANCO",
-       "dosis": "3 X 10+10"
-      },
-      {
-       "id": "F2",
-       "ej": "GEMELOS SENTADO",
-       "dosis": "4 X 15\""
-      },
-      {
-       "id": "F3",
-       "ej": "FLEXORES DE CADERA C/SB",
-       "dosis": ""
-      }
-     ]
-    },
-    {
      "jugador": "PELLAN",
      "items": [
       {
@@ -6176,35 +6126,10 @@
        "dosis": "3X5"
       }
      ]
-    },
-    {
-     "jugador": "TOTO ",
-     "items": [
-      {
-       "id": "A1",
-       "ej": "LACROSSE + TOALLA",
-       "dosis": "3X15+15"
-      },
-      {
-       "id": "F1",
-       "ej": "PUENTE ISQUIO ELEVADO 1P",
-       "dosis": "3X3-10\" X LADO"
-      },
-      {
-       "id": "F2",
-       "ej": "CONTROLES UNIPODALES PARED C DISCO",
-       "dosis": "3X8+8 10KG"
-      },
-      {
-       "id": "F3",
-       "ej": "PRENSA 1P",
-       "dosis": "3X8+8 (RIR 1)"
-      }
-     ]
     }
    ],
    "autor": "jokin",
-   "fecha": "2026-11-24T07:22:18.960Z"
+   "fecha": "2026-11-24T08:10:06.133Z"
   },
   "Sem 19 Dbx|3|cor": {
    "datos": [
