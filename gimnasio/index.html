@@ -321,7 +321,27 @@ function aplicar(lista,vista,base,datos,origenDe,avisos,arrastre,pisables){
   }
   return {lista:[...out.values()],marc};
 }
+/* ---------- bajas: un jugador dado de baja deja de aparecer desde esa semana en adelante
+   (en todos los días, venga de la hoja o del arrastre). Las semanas anteriores quedan como estaban. ---------- */
+function bajaDe(plan,jug){
+  const s=DATA.planes[plan]?.semana,k=nk(jug);if(s==null||!k)return null;
+  for(const b of Object.values(AJ.bajas||{})){
+    if(b?.semana==null||s<b.semana)continue;
+    if([b.jugador,...(b.alias||[])].some(n=>nk(n)===k))return b;
+  }
+  return null;
+}
+const deBaja=(plan,jug)=>!!bajaDe(plan,jug);
 function seccion(plan,dia,vista,sinPropio){
+  const r=seccion0(plan,dia,vista,sinPropio);
+  if(vista!=='cor'||!Object.keys(AJ.bajas||{}).length)return r;
+  r.datos=r.datos.filter(u=>!deBaja(plan,u.jugador));
+  for(const k of Object.keys(r.marc))if(deBaja(plan,k))delete r.marc[k];
+  r.avisos=r.avisos.filter(a=>!deBaja(plan,a.nombre));
+  if(!Object.keys(r.marc).length)r.aj=null;
+  return r;
+}
+function seccion0(plan,dia,vista,sinPropio){
   let lista=hoja(plan,dia,vista),marc={},avisos=[];
   const a=AJ.ajustes[ajKey(plan,dia,vista)];
   if(!a?.sinArrastre){
@@ -478,6 +498,8 @@ async function persistir(){
     const prev=SHA;const remoto=await leerAjustesApi(token);
     // fusiona: lo remoto + lo que cambió acá (por clave), para no pisar a otra pantalla
     AJ={...remoto,ajustes:{...remoto.ajustes,...PEND.set}};PEND.del.forEach(k=>delete AJ.ajustes[k]);
+    const pb=PEND.bajas||{};PEND.bajas={};
+    if(Object.keys(pb).length||remoto.bajas){AJ.bajas={...(remoto.bajas||{})};for(const [k,v] of Object.entries(pb)){if(v)AJ.bajas[k]=v;else delete AJ.bajas[k]}}
     const body={message:'Gimnasio: ajuste desde la pantalla',content:b64e(JSON.stringify(AJ,null,1)+'\n'),branch:'main'};if(SHA)body.sha=SHA;
     const r=await fetch(AJ_API,{method:'PUT',headers:{Authorization:'token '+token,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});
     if(r.status===401){try{localStorage.removeItem('gh_token')}catch(e){}toast('El token no sirve. Volvé a guardar para ingresarlo de nuevo.',true);return false}
@@ -486,7 +508,7 @@ async function persistir(){
     SHA=(await r.json()).content.sha;return true;
   }catch(e){toast('No se pudo guardar: '+e.message,true);return false}
 }
-const PEND={set:{},del:[]};
+const PEND={set:{},del:[],bajas:{}};
 function pedirToken(){
   $('#saveTxt').innerHTML='Para guardar en el tablero pegá el token de GitHub (el mismo de Carga). Queda guardado en esta compu. <input id="tok" type="password" style="width:220px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:5px 8px" aria-label="Token de GitHub">';
 }
@@ -579,6 +601,8 @@ function panelStaff(S){
   const li=n=>`<li><b>${esc(n.jugador)}</b>${diaTxt(n)} ${esc(n.texto)}<small>${n.semana<sem?'pendiente desde Sem '+n.semana+' · ':''}${esc(n.autor||'')}</small> <button class="sbtn" data-nhecha="${esc(n.id)}" title="Marcar que ya se tuvo en cuenta">✓ Hecha</button></li>`;
   if(hoyD.length)h+=`<h3 class="a">⚠ Modificar en este día (Día ${esc(DIA)}) · ${hoyD.length}</h3><ul>${hoyD.map(li).join('')}</ul>`;
   if(ns.length)h+=`<h3>Notas para esta semana (${ns.length}) <button class="sbtn" data-abrir-notas>ver todas</button></h3><ul>${ns.map(li).join('')}</ul>`;
+  const bj=Object.values(AJ.bajas||{}).filter(b=>b.semana!=null&&sem>=b.semana);
+  if(bj.length)h+=`<h3>Dados de baja (${bj.length})</h3><ul>${bj.map(b=>`<li><b>${esc(b.jugador)}</b>desde ${esc(b.desde)}${b.alias?.length?' (también '+b.alias.map(esc).join(', ')+')':''}<small>${esc(b.autor||'')}${b.autor?' · ':''}${esc(fFecha(b.fecha))}</small> <button class="sbtn" data-bver="${esc(b.jugador)}" title="Ver las semanas anteriores a la baja">Ver lo que venía haciendo</button> <button class="sbtn" data-breact="${esc(nk(b.jugador))}" title="Vuelve a aparecer con lo que diga la hoja">↺ Reactivar</button></li>`).join('')}</ul>`;
   if(S.avisos.length)h+=`<h3 class="w">El PF cambió esto en la hoja</h3><ul>${S.avisos.map(a=>`<li><b>${esc(a.nombre)}</b>tu ajuste de ${esc(a.plan)} no se aplicó: se muestra lo de la hoja.</li>`).join('')}</ul>`;
   return h?`<div class="spanel staff${hoyD.length?' alarma':''}">${h}</div>`:'';
 }
@@ -634,13 +658,16 @@ $('#screen').addEventListener('click',e=>{const h=e.target.closest('[data-nhecha
 /* ---------- semana completa de un jugador y su progresión ---------- */
 let SEM_N=4,SEM_JUG=null,SEM_MODO='jug';
 function semanaJugador(jug){
-  const k=nk(jug),filas=[];let pl=PLAN;
+  const k=nk(jug),filas=[],bj=bajaDe(PLAN,jug);let pl=PLAN;
+  // dado de baja: muestra las últimas semanas antes de la baja (lo que venía haciendo)
+  if(bj)while(pl&&DATA.planes[pl].semana>=bj.semana)pl=predecesor(pl);
   while(pl&&filas.length<SEM_N){filas.push(pl);pl=predecesor(pl)}
-  const p0=DATA.planes[PLAN],dias=Object.keys(p0.dias).sort((a,b)=>a-b);
-  const itemsDe=(plan,d)=>DATA.planes[plan]?.dias?.[d]?(unidades(seccion(plan,d,'cor').datos,'cor').get(k)?.items||[]):null;
+  const p0=DATA.planes[filas[0]||PLAN],dias=Object.keys(p0.dias).sort((a,b)=>a-b);
+  const ks=[k,...(bj?[bj.jugador,...(bj.alias||[])].map(nk):[])];
+  const itemsDe=(plan,d)=>{if(!DATA.planes[plan]?.dias?.[d])return null;const u=unidades(seccion(plan,d,'cor').datos,'cor');const kk=ks.find(x=>u.has(x));return kk?u.get(kk).items:[]};
   const clave=i=>nk(i.id)+'|'+nk(i.ej);
   const cap1=s=>s?s.charAt(0).toUpperCase()+s.slice(1).replace('miercoles','miércoles').replace('sabado','sábado'):'';
-  let h=`<div class="sedbar"><button class="btn gold" data-sedit>✎ Editar la semana de ${esc(jug)} (${esc(PLAN)})</button><span class="note">Cambiás todos los días juntos; se guarda como ajuste del tablero, igual que Editar.</span><span id="delBox" style="margin-left:auto;display:flex;gap:8px;align-items:center"><button class="btn danger" data-sdelj>🗑 Eliminar jugador</button></span></div>`;
+  let h=`<div class="sedbar">${bj?`<span class="note">${esc(jug)} está de baja desde ${esc(bj.desde)}: se ven las últimas semanas antes de la baja.</span>`:`<button class="btn gold" data-sedit>✎ Editar la semana de ${esc(jug)} (${esc(PLAN)})</button><span class="note">Cambiás todos los días juntos; se guarda como ajuste del tablero, igual que Editar.</span>`}<span id="delBox" style="margin-left:auto;display:flex;gap:8px;align-items:center">${bajaDe(PLAN,jug)?`<span class="note">De baja desde ${esc(bajaDe(PLAN,jug).desde)}</span><button class="btn" data-breact="${esc(nk(bajaDe(PLAN,jug).jugador))}">↺ Reactivar</button>`:'<button class="btn danger" data-sdelj>🗑 Dar de baja</button>'}</span></div>`;
   h+=`<div class="semtab"><table><thead><tr><th>Semana</th>${dias.map(d=>`<th>Día ${esc(d)}${p0.dias_semana?.[d]?' · '+esc(cap1(p0.dias_semana[d])):''}</th>`).join('')}</tr></thead><tbody>`;
   filas.forEach((plan,ri)=>{
     const p=DATA.planes[plan],prev=filas[ri+1];
@@ -743,17 +770,30 @@ async function guardarSemana(eliminar){
 }
 /* eliminar un jugador de todos los días del plan (pide confirmar en dos toques, sin cuadros del navegador) */
 function pedirEliminar(){
-  const n=Object.keys(DATA.planes[PLAN].dias).filter(d=>unidades(seccion(PLAN,d,'cor').datos,'cor').has(nk(SEM_JUG))).length;
-  $('#delBox').innerHTML=`<span class="note" style="color:var(--bad)">Se saca a ${esc(SEM_JUG)} de ${n} día${n>1?'s':''} de ${esc(PLAN)} (se arrastra a las semanas siguientes, salvo que el PF le cambie los correctivos en la hoja).</span>
+  $('#delBox').innerHTML=`<span class="note" style="color:var(--bad)">${esc(SEM_JUG)} deja de aparecer desde ${esc(PLAN)} en adelante, en todos los días, aunque siga en la hoja. Las semanas anteriores quedan. Se puede reactivar.</span>
+    <input id="bAlias" placeholder="También figura como… (ej. LBV)" aria-label="Otros nombres en la hoja" style="width:190px">
     ${!DEMO&&!ls.get('gh_token')?'<input id="tok" type="password" placeholder="Token de GitHub (el de Carga)" aria-label="Token de GitHub" style="width:200px">':''}
     <button class="btn ghost" data-sdelno>Cancelar</button><button class="btn danger" data-sdelsi style="background:var(--bad);color:#fff">Sí, eliminar</button>`;
 }
 async function eliminarJugador(){
   if(EDIT){toast('Terminá primero la edición de la pantalla.',true);return}
   if(!DEMO&&!ls.get('gh_token')&&!$('#tok')?.value?.trim()){toast('Pegá el token de GitHub para guardar.',true);return}
-  SED={jug:SEM_JUG,dias:{}};Object.keys(DATA.planes[PLAN].dias).forEach(d=>SED.dias[d]=[]);
-  await guardarSemana(true);
+  const jug=SEM_JUG.trim(),alias=($('#bAlias')?.value||'').split(',').map(x=>x.trim().toUpperCase()).filter(x=>x&&nk(x)!==nk(jug));
+  const v={jugador:jug,alias,desde:PLAN,semana:DATA.planes[PLAN].semana,autor:(ls.get('gym_autor')||'').trim(),fecha:new Date().toISOString()};
+  PEND.set={};PEND.del=[];PEND.bajas={[nk(jug)]:v};AJ.bajas={...(AJ.bajas||{}),[nk(jug)]:v};
+  if(await persistir()){toast(`${jug} dado de baja desde ${PLAN}. Lo reactivás desde el panel.`);guardarCache();bc?.postMessage({t:'aj',aj:AJ});$('#semModal').hidden=true;SED=null;render()}
 }
+async function reactivar(k){
+  const b=AJ.bajas?.[k];if(!b)return;
+  if(!DEMO&&!ls.get('gh_token')){toast('Pegá el token de GitHub (Editar → Guardar) para poder reactivar.',true);return}
+  PEND.set={};PEND.del=[];PEND.bajas={[k]:null};const prev=AJ.bajas;AJ.bajas={...AJ.bajas};delete AJ.bajas[k];
+  if(await persistir()){toast(`${b.jugador} reactivado: vuelve a aparecer con lo que diga la hoja.`);guardarCache();bc?.postMessage({t:'aj',aj:AJ});$('#semModal').hidden=true;SED=null;render()}
+  else AJ.bajas=prev;
+}
+document.addEventListener('click',e=>{
+  const r=e.target.closest('[data-breact]');if(r){r.disabled=true;reactivar(r.dataset.breact).finally(()=>{r.disabled=false});return}
+  const v=e.target.closest('[data-bver]');if(v&&!EDIT){SEM_N=4;abrirSemana(v.dataset.bver)}
+});
 $('#semBody').addEventListener('click',e=>{
   if(e.target.closest('[data-sedit]')){if(EDIT){toast('Terminá primero la edición de la pantalla.',true);return}editarSemana(SEM_JUG);return}
   if(e.target.closest('[data-sdelj]')){pedirEliminar();return}
