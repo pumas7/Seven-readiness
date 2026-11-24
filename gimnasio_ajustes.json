@@ -6548,5 +6548,17 @@
    "autor": "jokin",
    "fecha": "2026-11-23T14:56:36.761Z"
   }
+ },
+ "bajas": {
+  "LVB": {
+   "jugador": "LVB",
+   "alias": [
+    "LBV"
+   ],
+   "desde": "Sem 19 Dbx",
+   "semana": 19,
+   "autor": "jokin",
+   "fecha": "2026-11-24T08:05:04.950Z"
+  }
  }
 }
